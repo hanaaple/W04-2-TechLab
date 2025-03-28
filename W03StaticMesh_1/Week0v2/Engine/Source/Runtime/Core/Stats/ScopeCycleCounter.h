@@ -1,6 +1,5 @@
 #pragma once
 #include "HAL/WindowsPlatformTIme.h"
-
 struct TStatId
 {
 };
@@ -25,6 +24,8 @@ public:
     {
         const uint64 EndCycles = FPlatformTime::Cycles64();
         const uint64 CycleDiff = EndCycles - StartCycles;
+
+        // FThreadStats::AddMessage(UsedStatId, EStatOperation::Add, CycleDiff);
 
         return CycleDiff;
     }

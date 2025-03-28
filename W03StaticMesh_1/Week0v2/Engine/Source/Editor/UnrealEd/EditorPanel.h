@@ -7,7 +7,7 @@
 #define	FEATHER_FONT		1
 
 #endif // !__ICON_FONT_INDEX__
-
+#include <Windows.h>
 class UEditorPanel
 {
 public:

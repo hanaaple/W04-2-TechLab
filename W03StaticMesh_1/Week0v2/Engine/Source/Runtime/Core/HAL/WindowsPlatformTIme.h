@@ -16,4 +16,5 @@ public:
     static double ToMilliseconds(uint64 CycleDiff);
 
     static uint64 Cycles64();
+    
 };

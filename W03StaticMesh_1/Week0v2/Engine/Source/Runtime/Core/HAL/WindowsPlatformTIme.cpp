@@ -1,5 +1,8 @@
 #include "WindowsPlatformTime.h"
 
+double FWindowsPlatformTime::GSecondsPerCycle = 0; // 0
+bool FWindowsPlatformTime:: bInitialized = false; // false
+
 void FWindowsPlatformTime::InitTiming()
 {
     if (!bInitialized)
