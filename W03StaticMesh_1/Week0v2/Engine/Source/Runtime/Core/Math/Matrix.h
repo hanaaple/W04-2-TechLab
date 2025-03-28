@@ -3,13 +3,10 @@
 #include <DirectXMath.h>
 
 // 4x4 행렬 연산
-struct FMatrix
+union FMatrix
 {
-    union Mat44 {
-        float M[4][4];
-        __m128 row[4];
-    };
-	
+	float M[4][4];
+    __m128 row[4];
 	static const FMatrix Identity;
 
     FMatrix() noexcept;
@@ -49,21 +46,5 @@ struct FMatrix
 			M[0][3], M[1][3], M[2][3], M[3][3]  // 네 번째 열
 		);
 	}
-	FVector4 TransformFVector4(const FVector4& vector)
-	{
-		return FVector4(
-			M[0][0] * vector.x + M[1][0] * vector.y + M[2][0] * vector.z + M[3][0] * vector.a,
-			M[0][1] * vector.x + M[1][1] * vector.y + M[2][1] * vector.z + M[3][1] * vector.a,
-			M[0][2] * vector.x + M[1][2] * vector.y + M[2][2] * vector.z + M[3][2] * vector.a,
-			M[0][3] * vector.x + M[1][3] * vector.y + M[2][3] * vector.z + M[3][3] * vector.a
-		);
-	}
-	FVector TransformPosition(const FVector& vector) const
-	{
-		float x = M[0][0] * vector.x + M[1][0] * vector.y + M[2][0] * vector.z + M[3][0];
-		float y = M[0][1] * vector.x + M[1][1] * vector.y + M[2][1] * vector.z + M[3][1];
-		float z = M[0][2] * vector.x + M[1][2] * vector.y + M[2][2] * vector.z + M[3][2];
-		float w = M[0][3] * vector.x + M[1][3] * vector.y + M[2][3] * vector.z + M[3][3];
-		return w != 0.0f ? FVector{ x / w, y / w, z / w } : FVector{ x, y, z };
-	}
+	FVector TransformPosition(const FVector& vector) const;
 };
