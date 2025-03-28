@@ -249,6 +249,36 @@ struct FBoundingBox
         return true;
     }
 
+    FBoundingBox Transform(const FMatrix& mat) const
+    {
+        FVector corners[8] = {
+            FVector(min.x, min.y, min.z),
+            FVector(max.x, min.y, min.z),
+            FVector(min.x, max.y, min.z),
+            FVector(max.x, max.y, min.z),
+            FVector(min.x, min.y, max.z),
+            FVector(max.x, min.y, max.z),
+            FVector(min.x, max.y, max.z),
+            FVector(max.x, max.y, max.z)
+        };
+
+        FVector transformedMin = mat.TransformPosition(corners[0]);
+        FVector transformedMax = transformedMin;
+
+        for (int i = 1; i < 8; ++i)
+        {
+            FVector p = mat.TransformPosition(corners[i]);
+            transformedMin.x = std::min(transformedMin.x, p.x);
+            transformedMin.y = std::min(transformedMin.y, p.y);
+            transformedMin.z = std::min(transformedMin.z, p.z);
+
+            transformedMax.x = std::max(transformedMax.x, p.x);
+            transformedMax.y = std::max(transformedMax.y, p.y);
+            transformedMax.z = std::max(transformedMax.z, p.z);
+        }
+
+        return FBoundingBox(transformedMin, transformedMax);
+    }
 };
 struct FCone
 {
