@@ -357,36 +357,36 @@ void ControlEditorPanel::CreateFlagButton() const
 
     ImGui::SameLine();
     
-    const char* ViewModeNames[] = { "Lit", "Unlit", "Wireframe" };
-    FString SelectLightControl = ViewModeNames[(int)ActiveViewport->GetViewMode()];
-    ImVec2 LightTextSize = ImGui::CalcTextSize(GetData(SelectLightControl));
+    //const char* ViewModeNames[] = { "Lit", "Unlit", "Wireframe" };
+    //FString SelectLightControl = ViewModeNames[(int)ActiveViewport->GetViewMode()];
+    //ImVec2 LightTextSize = ImGui::CalcTextSize(GetData(SelectLightControl));
     
-    if (ImGui::Button(GetData(SelectLightControl), ImVec2(30 + LightTextSize.x, 32)))
-    {
-        ImGui::OpenPopup("LightControl");
-    }
-
-    if (ImGui::BeginPopup("LightControl"))
-    {
-        for (int i = 0; i < IM_ARRAYSIZE(ViewModeNames); i++)
-        {
-            bool bIsSelected = ((int)ActiveViewport->GetViewMode() == i);
-            if (ImGui::Selectable(ViewModeNames[i], bIsSelected))
-            {
-                ActiveViewport->SetViewMode((EViewModeIndex)i);
-                FEngineLoop::graphicDevice.ChangeRasterizer(ActiveViewport->GetViewMode());
-                FEngineLoop::renderer.ChangeViewMode(ActiveViewport->GetViewMode());
-            }
-
-            if (bIsSelected)
-            {
-                ImGui::SetItemDefaultFocus();
-            }
-        }
-        ImGui::EndPopup();
-    }
-
-    ImGui::SameLine();
+    // if (ImGui::Button(GetData(SelectLightControl), ImVec2(30 + LightTextSize.x, 32)))
+    // {
+    //     ImGui::OpenPopup("LightControl");
+    // }
+    //
+    // if (ImGui::BeginPopup("LightControl"))
+    // {
+    //     for (int i = 0; i < IM_ARRAYSIZE(ViewModeNames); i++)
+    //     {
+    //         bool bIsSelected = ((int)ActiveViewport->GetViewMode() == i);
+    //         if (ImGui::Selectable(ViewModeNames[i], bIsSelected))
+    //         {
+    //             ActiveViewport->SetViewMode((EViewModeIndex)i);
+    //             FEngineLoop::graphicDevice.ChangeRasterizer(ActiveViewport->GetViewMode());
+    //             FEngineLoop::renderer.ChangeViewMode(ActiveViewport->GetViewMode());
+    //         }
+    //
+    //         if (bIsSelected)
+    //         {
+    //             ImGui::SetItemDefaultFocus();
+    //         }
+    //     }
+    //     ImGui::EndPopup();
+    // }
+    //
+    //ImGui::SameLine();
     
     if (ImGui::Button("Show", ImVec2(60, 32)))
     {

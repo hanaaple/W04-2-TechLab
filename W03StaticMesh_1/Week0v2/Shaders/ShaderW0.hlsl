@@ -5,10 +5,10 @@ SamplerState Sampler : register(s0);
 cbuffer MatrixBuffer : register(b0)
 {
     row_major float4x4 MVP;
-    row_major float4x4 MInverseTranspose;
-    float4 UUID;
-    bool isSelected;
-    float3 MatrixPad0;
+    //row_major float4x4 MInverseTranspose;
+    //float4 UUID;
+    //bool isSelected;
+    //float3 MatrixPad0;
 };
 
 // LightingBuffer: 조명 관련 파라미터 관리

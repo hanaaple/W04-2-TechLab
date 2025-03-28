@@ -1,6 +1,7 @@
 #pragma once
+#include "HAL/PlatformType.h"
 
-enum EViewModeIndex
+enum class EViewModeIndex : int32
 {
     VMI_Lit,
     VMI_Unlit,
