@@ -8,6 +8,7 @@
 #include "fstream"
 #include "sstream"
 #include "ostream"
+#include "UnrealEd/SceneMgr.h"
 extern FEngineLoop GEngineLoop;
 
 SLevelEditor::SLevelEditor() : bInitialize(false), HSplitter(nullptr), VSplitter(nullptr),
@@ -21,12 +22,16 @@ SLevelEditor::~SLevelEditor()
 
 void SLevelEditor::Initialize()
 {
-    for (size_t i = 0; i < 4; i++)
-    {
-        viewportClients[i] = std::make_shared<FEditorViewportClient>();
-        viewportClients[i]->Initialize(i);
-    }
-    ActiveViewportClient = viewportClients[0];
+    // for (size_t i = 0; i < 4; i++)
+    // {
+    //     viewportClients[i] = std::make_shared<FEditorViewportClient>();
+    //     viewportClients[i]->Initialize(i);
+    // }
+    // ActiveViewportClient = viewportClients[0];
+    
+    ActiveViewportClient = std::make_shared<FEditorViewportClient>();
+    ActiveViewportClient->Initialize(0);
+    
     OnResize();
     VSplitter = new SSplitterV();
     VSplitter->Initialize(FRect(0.0f, EditorHeight * 0.5f - 10, EditorHeight, 20));
@@ -194,22 +199,22 @@ bool SLevelEditor::IsMultiViewport()
 
 void SLevelEditor::LoadConfig()
 {
-    auto config = ReadIniFile(IniFilePath);
-    ActiveViewportClient->Pivot.x = GetValueFromConfig(config, "OrthoPivotX", 0.0f);
-    ActiveViewportClient->Pivot.y = GetValueFromConfig(config, "OrthoPivotY", 0.0f);
-    ActiveViewportClient->Pivot.z = GetValueFromConfig(config, "OrthoPivotZ", 0.0f);
-    ActiveViewportClient->orthoSize = GetValueFromConfig(config, "OrthoZoomSize", 10.0f);
-
-    SetViewportClient(GetValueFromConfig(config, "ActiveViewportIndex", 0));
-    bMultiViewportMode = GetValueFromConfig(config, "bMutiView", false);
-    for (size_t i = 0; i < 4; i++)
-    {
-        viewportClients[i]->LoadConfig(config);
-    }
-    if (HSplitter)
-        HSplitter->LoadConfig(config);
-    if (VSplitter)
-        VSplitter->LoadConfig(config);
+    // auto config = ReadIniFile(IniFilePath);
+    // ActiveViewportClient->Pivot.x = GetValueFromConfig(config, "OrthoPivotX", 0.0f);
+    // ActiveViewportClient->Pivot.y = GetValueFromConfig(config, "OrthoPivotY", 0.0f);
+    // ActiveViewportClient->Pivot.z = GetValueFromConfig(config, "OrthoPivotZ", 0.0f);
+    // ActiveViewportClient->orthoSize = GetValueFromConfig(config, "OrthoZoomSize", 10.0f);
+    //
+    // SetViewportClient(GetValueFromConfig(config, "ActiveViewportIndex", 0));
+    // bMultiViewportMode = false; //GetValueFromConfig(config, "bMutiView", false);
+    // for (size_t i = 0; i < 4; i++)
+    // {
+    //     viewportClients[i]->LoadConfig(config);
+    // }
+    // if (HSplitter)
+    //     HSplitter->LoadConfig(config);
+    // if (VSplitter)
+    //     VSplitter->LoadConfig(config);
 
 }
 

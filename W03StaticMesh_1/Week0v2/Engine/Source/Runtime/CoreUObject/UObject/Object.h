@@ -7,7 +7,6 @@ extern FEngineLoop GEngineLoop;
 class UClass;
 class UWorld;
 
-
 class UObject
 {
 private:

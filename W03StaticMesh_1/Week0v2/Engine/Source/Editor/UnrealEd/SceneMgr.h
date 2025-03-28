@@ -2,19 +2,47 @@
 #include "Define.h"
 #include "Container/Map.h"
 
-class UObject;
-struct SceneData {
+struct FPerspectiveData
+{
+    float FOV;
+    float FarClip;
+    FVector Location;
+    float NearClip;
+    FVector Rotation;
+};
+
+struct FPrimitiveData
+{
+    FVector Location;
+    FString ObjStaticMeshAsset;
+    FVector Rotation;
+    FVector Scale;
+    FString Type;
+public:
+    FPrimitiveData() : Location(), ObjStaticMeshAsset(""), Rotation(), Scale(), Type("") {}
+};
+
+struct FSceneData
+{
     int32 Version;
     int32 NextUUID;
-    TMap<int32, UObject*> Primitives;
-    TMap<int32, UObject*> Cameras;
+    FPerspectiveData PerspectiveCamera;
+    TMap<uint32, FPrimitiveData> Primitives;
+
+public:
+    FSceneData() : Version(-1), NextUUID(-1), PerspectiveCamera(), Primitives() {}
 };
+
 class FSceneMgr
 {
 public:
-    static SceneData ParseSceneData(const FString& jsonStr);
-    static FString LoadSceneFromFile(const FString& filename);
-    static std::string SerializeSceneData(const SceneData& sceneData);
-    static bool SaveSceneToFile(const FString& filename, const SceneData& sceneData);
+    static bool LoadSceneData(const FString& FileName);
+    static bool NewSceneData();
+    static bool SaveSceneData(const FString& FileName, FSceneData InSceneData);
+public:
+    static FSceneData GetCurrentSceneData() { return CurrentSceneData; }
+
+private:
+    static FSceneData CurrentSceneData;
 };
 

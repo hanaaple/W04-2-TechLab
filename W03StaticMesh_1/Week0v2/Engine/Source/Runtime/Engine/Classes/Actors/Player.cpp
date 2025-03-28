@@ -386,31 +386,37 @@ void AEditorPlayer::PickedObjControl()
 
 void AEditorPlayer::ControlRotation(USceneComponent* pObj, UGizmoBaseComponent* Gizmo, int32 deltaX, int32 deltaY)
 {
-    FVector cameraForward = GetWorld()->GetCamera()->GetForwardVector();
-    FVector cameraRight = GetWorld()->GetCamera()->GetRightVector();
-    FVector cameraUp = GetWorld()->GetCamera()->GetUpVector();
+    auto ActiveViewport = GetEngine().GetLevelEditor()->GetActiveViewportClient();
 
+    FVector CameraForward = ActiveViewport->GetViewportType() == LVT_Perspective ?
+        ActiveViewport->ViewTransformPerspective.GetForwardVector() : ActiveViewport->ViewTransformOrthographic.GetForwardVector();
+    FVector CamearRight = ActiveViewport->GetViewportType() == LVT_Perspective ?
+        ActiveViewport->ViewTransformPerspective.GetRightVector() : ActiveViewport->ViewTransformOrthographic.GetRightVector();
+    FVector CameraUp = ActiveViewport->GetViewportType() == LVT_Perspective ?
+        ActiveViewport->ViewTransformPerspective.GetUpVector() : ActiveViewport->ViewTransformOrthographic.GetUpVector();
+
+    
     FQuat currentRotation = pObj->GetQuat();
 
     FQuat rotationDelta;
 
     if (Gizmo->GetGizmoType() == UGizmoBaseComponent::CircleX)
     {
-        float rotationAmount = (cameraUp.z >= 0 ? -1.0f : 1.0f) * deltaY * 0.01f;
-        rotationAmount = rotationAmount + (cameraRight.x >= 0 ? 1.0f : -1.0f) * deltaX * 0.01f;
+        float rotationAmount = (CameraUp.z >= 0 ? -1.0f : 1.0f) * deltaY * 0.01f;
+        rotationAmount = rotationAmount + (CamearRight.x >= 0 ? 1.0f : -1.0f) * deltaX * 0.01f;
 
         rotationDelta = FQuat(FVector(1.0f, 0.0f, 0.0f), rotationAmount); // ���� X �� ���� ȸ��
     }
     else if (Gizmo->GetGizmoType() == UGizmoBaseComponent::CircleY)
     {
-        float rotationAmount = (cameraRight.x >= 0 ? 1.0f : -1.0f) * deltaX * 0.01f;
-        rotationAmount = rotationAmount + (cameraUp.z >= 0 ? 1.0f : -1.0f) * deltaY * 0.01f;
+        float rotationAmount = (CamearRight.x >= 0 ? 1.0f : -1.0f) * deltaX * 0.01f;
+        rotationAmount = rotationAmount + (CameraUp.z >= 0 ? 1.0f : -1.0f) * deltaY * 0.01f;
 
         rotationDelta = FQuat(FVector(0.0f, 1.0f, 0.0f), rotationAmount); // ���� Y �� ���� ȸ��
     }
     else if (Gizmo->GetGizmoType() == UGizmoBaseComponent::CircleZ)
     {
-        float rotationAmount = (cameraForward.x <= 0 ? -1.0f : 1.0f) * deltaX * 0.01f;
+        float rotationAmount = (CameraForward.x <= 0 ? -1.0f : 1.0f) * deltaX * 0.01f;
         rotationDelta = FQuat(FVector(0.0f, 0.0f, 1.0f), rotationAmount); // ���� Z �� ���� ȸ��
     }
     if (cdMode == CDM_LOCAL)

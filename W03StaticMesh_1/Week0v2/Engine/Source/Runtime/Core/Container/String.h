@@ -88,7 +88,7 @@ public:
     FString(const std::string& InString) : PrivateString(InString) {}
     FString(const ANSICHAR* InString) : PrivateString(InString) {}
 #endif
-
+public:
 #if USE_WIDECHAR
 	FORCEINLINE std::string ToAnsiString() const
 	{
@@ -110,25 +110,48 @@ public:
 	FORCEINLINE std::wstring ToWideString() const
 	{
 #if USE_WIDECHAR
-		return PrivateString;
+        return PrivateString;
 #else
-        // Narrow 문자열을 UTF-8로 가정하고 wide 문자열로 변환
         if (PrivateString.empty())
         {
             return std::wstring();
         }
+        // 필요한 버퍼 크기 (널 종료 문자 포함)
         int sizeNeeded = MultiByteToWideChar(CP_UTF8, 0, PrivateString.c_str(), -1, nullptr, 0);
         if (sizeNeeded <= 0)
         {
             return std::wstring();
         }
-        // sizeNeeded에는 널 문자를 포함한 길이가 들어 있음
-        std::wstring wstr(sizeNeeded - 1, 0); // 널 문자를 제외한 크기로 초기화
-        MultiByteToWideChar(CP_UTF8, 0, PrivateString.c_str(), -1, wstr.data(), sizeNeeded);
+        // 널 종료 문자를 포함한 크기로 버퍼를 할당
+        std::wstring wstr;
+        wstr.resize(sizeNeeded);
+        MultiByteToWideChar(CP_UTF8, 0, PrivateString.c_str(), -1, &wstr[0], sizeNeeded);
+        // std::wstring은 내부적으로 널 종료 문자를 관리하지만, 필요에 따라 길이를 널 문자 제외 크기로 조정
+        wstr.resize(sizeNeeded - 1);
         return wstr;
 #endif
 	}
 #endif
+    
+public:
+    FORCEINLINE const ElementType* c_str() const
+    {
+        return PrivateString.c_str();
+    }
+
+#if USE_WIDECHAR
+    FORCEINLINE const wchar_t* c_wstr() const
+    {
+        return PrivateString.c_str();
+    }
+#else
+    // USE_WIDECHAR가 정의되어 있지 않다면, 내부 narrow 문자열을 wide 문자열로 변환하여 반환합니다.
+    FORCEINLINE std::wstring c_wstr() const
+    {
+        return ToWideString();
+    }
+#endif
+    
 	template <typename Number>
 		requires std::is_arithmetic_v<Number>
     static FString FromInt(Number Num);
@@ -186,6 +209,8 @@ public:
 
     FORCEINLINE bool operator==(const FString& Rhs) const;
     FORCEINLINE bool operator==(const ElementType* Rhs) const;
+public:
+    
 };
 
 template <typename Number>
