@@ -111,9 +111,10 @@ int32 FEngineLoop::PreInit()
 
 int32 FEngineLoop::Init(HINSTANCE hInstance)
 {
-    //FSceneMgr::LoadSceneData(TEXT("Default.scene"));
-    if (FSceneMgr::LoadSceneData(TEXT("Test.scene")) == false)
+    if (FSceneMgr::LoadSceneData(TEXT("Default.scene")) == false)
         assert(false, TEXT("Can't Load Default Scene"));
+    // if (FSceneMgr::LoadSceneData(TEXT("Test.scene")) == false)
+    //     assert(false, TEXT("Can't Load Test Scene"));
     
     FWindowsPlatformTime::InitTiming();
 
@@ -132,7 +133,7 @@ int32 FEngineLoop::Init(HINSTANCE hInstance)
     LevelEditor = new SLevelEditor();
     LevelEditor->Initialize();
 
-    GWorld = new UWorld;
+    GWorld = FObjectFactory::ConstructObject<UWorld>();
     GWorld->Initialize();
 
     return 0;
