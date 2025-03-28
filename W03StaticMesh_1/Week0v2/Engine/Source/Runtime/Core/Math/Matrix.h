@@ -5,8 +5,21 @@
 // 4x4 행렬 연산
 struct FMatrix
 {
-	float M[4][4];
+    union Mat44 {
+        float M[4][4];
+        __m128 row[4];
+    };
+	
 	static const FMatrix Identity;
+
+    FMatrix() noexcept;
+
+    constexpr FMatrix(
+        float m00, float m10, float m20, float m30,
+        float m01, float m11, float m21, float m31,
+        float m02, float m12, float m22, float m32,
+        float m03, float m13, float m23, float m33
+    ) noexcept;
 	// 기본 연산자 오버로딩
 	FMatrix operator+(const FMatrix& Other) const;
 	FMatrix operator-(const FMatrix& Other) const;
