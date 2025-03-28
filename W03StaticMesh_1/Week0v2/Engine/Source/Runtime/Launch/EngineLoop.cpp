@@ -9,7 +9,8 @@
 #include "slate/Widgets/Layout/SSplitter.h"
 #include "LevelEditor/SLevelEditor.h"
 #include "UnrealEd/SceneMgr.h"
-
+#include "Stats/ScopeCycleCounter.h"
+#include "PropertyEditor/FPSEditorPanel.h"
 
 extern LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
@@ -115,6 +116,8 @@ int32 FEngineLoop::Init(HINSTANCE hInstance)
     // if (FSceneMgr::LoadSceneData(TEXT("Test.scene")) == false)
     //     assert(false, TEXT("Can't Load Test Scene"));
     
+    FWindowsPlatformTime::InitTiming();
+
     /* must be initialized before window. */
     UnrealEditor = new UnrealEd();
     UnrealEditor->Initialize();
@@ -160,17 +163,19 @@ void FEngineLoop::Render()
 
 void FEngineLoop::Tick()
 {
-    LARGE_INTEGER frequency;
-    const double targetFrameTime = 1000.0 / targetFPS; // 한 프레임의 목표 시간 (밀리초 단위)
+    //LARGE_INTEGER frequency;
+    //const double targetFrameTime = 1000.0 / targetFPS; // 한 프레임의 목표 시간 (밀리초 단위)
 
-    QueryPerformanceFrequency(&frequency);
+    //QueryPerformanceFrequency(&frequency);
 
-    LARGE_INTEGER startTime, endTime;
+    //LARGE_INTEGER startTime, endTime;
     double elapsedTime = 1.0;
 
     while (bIsExit == false)
     {
-        QueryPerformanceCounter(&startTime);
+        //QueryPerformanceCounter(&startTime);
+        TStatId dummy;
+        FScopeCycleCounter counter(dummy);
 
         MSG msg;
         while (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE))
@@ -200,6 +205,8 @@ void FEngineLoop::Tick()
         GUObjectArray.ProcessPendingDestroyObjects();
 
         graphicDevice.SwapBuffer();
+        
+        /*
         do
         {
             Sleep(0);
@@ -207,6 +214,10 @@ void FEngineLoop::Tick()
             elapsedTime = (endTime.QuadPart - startTime.QuadPart) * 1000.0 / frequency.QuadPart;
         }
         while (elapsedTime < targetFrameTime);
+        */
+        uint64 CycleDiff = counter.Finish();;
+        elapsedTime = FWindowsPlatformTime::ToMilliseconds(CycleDiff);
+        FPSEditorPanel::elapsedTime = elapsedTime;
     }
 }
 

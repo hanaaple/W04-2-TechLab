@@ -1,9 +1,10 @@
-﻿#include "UnrealEd.h"
+#include "UnrealEd.h"
 #include "EditorPanel.h"
 
 #include "PropertyEditor/ControlEditorPanel.h"
 #include "PropertyEditor/OutlinerEditorPanel.h"
 #include "PropertyEditor/PropertyEditorPanel.h"
+#include "PropertyEditor/FPSEditorPanel.h"
 
 void UnrealEd::Initialize()
 {
@@ -11,7 +12,9 @@ void UnrealEd::Initialize()
     
     Panels[TEXT("OutlinerPanel")] = std::make_shared<OutlinerEditorPanel>();
     
-    Panels[TEXT("PropertyPanel")] = std::make_shared<PropertyEditorPanel>();
+    Panels["PropertyPanel"] = std::make_shared<PropertyEditorPanel>();
+
+    Panels["FPSPanel"] =std::make_shared<FPSEditorPanel>();
 }
 
 void UnrealEd::Render() const
