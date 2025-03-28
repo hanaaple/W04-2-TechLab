@@ -1023,10 +1023,10 @@ void FRenderer::RenderStaticMeshes(UWorld* World, std::shared_ptr<FEditorViewpor
 {
     PrepareShader();
 
-    if (ActiveViewport->GetShowFlag() & static_cast<uint64>(EEngineShowFlags::SF_AABB))
-    {
-        UPrimitiveBatch::GetInstance().AddAABB(World->GetSceneBoundingBox());
-    }
+    // if (ActiveViewport->GetShowFlag() & static_cast<uint64>(EEngineShowFlags::SF_AABB))
+    // {
+    //     UPrimitiveBatch::GetInstance().AddAABB(World->GetSceneBoundingBox());
+    // }
     
     for (UStaticMeshComponent* StaticMeshComp : StaticMeshObjs)
     {
@@ -1042,8 +1042,7 @@ void FRenderer::RenderStaticMeshes(UWorld* World, std::shared_ptr<FEditorViewpor
         FVector4 UUIDColor = StaticMeshComp->EncodeUUID() / 255.0f;
         if (World->GetSelectedActor() == StaticMeshComp->GetOwner())
         {
-            UpdateConstant(MVP, NormalMatrix, UUIDColor, true);\
-            \
+            UpdateConstant(MVP, NormalMatrix, UUIDColor, true);
             if (ActiveViewport->GetShowFlag() & static_cast<uint64>(EEngineShowFlags::SF_AABB))
             {
                 UPrimitiveBatch::GetInstance().RenderAABB(
@@ -1051,6 +1050,13 @@ void FRenderer::RenderStaticMeshes(UWorld* World, std::shared_ptr<FEditorViewpor
                     StaticMeshComp->GetWorldLocation(),
                     Model
                 );
+
+                TArray<FBoundingBox> AncestorBoxes = World->GetOcTree().GetAncestorBoundingBoxes(StaticMeshComp->GetUUID());
+
+                for (auto item : AncestorBoxes)
+                {
+                    UPrimitiveBatch::GetInstance().RenderAABB(item);
+                }
             }
         }
         else
@@ -1064,15 +1070,15 @@ void FRenderer::RenderStaticMeshes(UWorld* World, std::shared_ptr<FEditorViewpor
         {
             UpdateTextureConstant(0, 0);
         }
-
-        if (ActiveViewport->GetShowFlag() & static_cast<uint64>(EEngineShowFlags::SF_AABB))
-        {
-            UPrimitiveBatch::GetInstance().RenderAABB(
-                StaticMeshComp->GetBoundingBox(),
-                StaticMeshComp->GetWorldLocation(),
-                Model
-            );
-        }
+        //
+        // if (ActiveViewport->GetShowFlag() & static_cast<uint64>(EEngineShowFlags::SF_AABB))
+        // {
+        //     UPrimitiveBatch::GetInstance().RenderAABB(
+        //         StaticMeshComp->GetBoundingBox(),
+        //         StaticMeshComp->GetWorldLocation(),
+        //         Model
+        //     );
+        // }
                 
     
         if (!StaticMeshComp->GetStaticMesh()) continue;

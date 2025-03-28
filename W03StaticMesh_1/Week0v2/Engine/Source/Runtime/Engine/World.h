@@ -3,6 +3,7 @@
 #include "Container/Set.h"
 #include "UObject/ObjectFactory.h"
 #include "UObject/ObjectMacros.h"
+#include "Container/FOcTree.h"
 
 class FObjectFactory;
 class AActor;
@@ -19,7 +20,7 @@ class UWorld : public UObject
     DECLARE_CLASS(UWorld, UObject)
 
 public:
-    UWorld() = default;
+    UWorld();
 
     void Initialize();
     void CreateBaseObject();
@@ -80,8 +81,12 @@ public:
 public:
     inline FBoundingBox GetSceneBoundingBox() const { return SceneBoundingBox; }
     inline void SetSceneBoundingBox(const FBoundingBox& InBoundingBox) { SceneBoundingBox = InBoundingBox; }
+
+    inline FOctree<FOctreeElement> GetOcTree() const { return OcTree; }
 private:
     FBoundingBox SceneBoundingBox;
+
+    FOctree<FOctreeElement> OcTree;
 };
 
 template <typename T>

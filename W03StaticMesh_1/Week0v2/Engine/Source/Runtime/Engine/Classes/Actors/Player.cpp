@@ -4,7 +4,6 @@
 #include "World.h"
 #include "BaseGizmos/GizmoArrowComponent.h"
 #include "BaseGizmos/GizmoCircleComponent.h"
-#include "BaseGizmos/GizmoRectangleComponent.h"
 #include "BaseGizmos/TransformGizmo.h"
 #include "Camera/CameraComponent.h"
 #include "Components/LightComponent.h"

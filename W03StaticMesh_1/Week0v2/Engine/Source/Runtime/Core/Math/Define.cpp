@@ -218,6 +218,8 @@ FVector4 FMatrix::TransformVector(const FVector4& v, const FMatrix& m)
     return result;
 }
 
+FBoundingBox::FBoundingBox(FVector _min, FVector _max): min(_min), max(_max)
+{}
 
 void FBoundingBox::ExpandToInclude(const FBoundingBox& Other)
 {

@@ -171,11 +171,13 @@ struct FBoundingBox
 {
 public:
     FBoundingBox(){}
-    FBoundingBox(FVector _min, FVector _max) : min(_min), max(_max) {}
+    FBoundingBox(FVector _min, FVector _max);
+
 	FVector min; // Minimum extents
 	float pad;
 	FVector max; // Maximum extents
 	float pad1;
+    
     bool Intersect(const FVector& rayOrigin, const FVector& rayDir, float& outDistance)
     {
         float tmin = -FLT_MAX;
@@ -257,6 +259,16 @@ public:
     static FBoundingBox ComputeSceneBoundingBox(const TSet<class AActor*>& SpawnedActors);
 
     static FBoundingBox TransformBy(const FBoundingBox& localAABB, const FVector& center, const FMatrix& modelMatrix);
+
+    FVector GetCenter() const
+    {
+        return (max + min) * 0.5f;
+    }
+
+    FVector GetExtent() const
+    {
+        return (max - min) * 0.5f;
+    }
 };
 struct FCone
 {

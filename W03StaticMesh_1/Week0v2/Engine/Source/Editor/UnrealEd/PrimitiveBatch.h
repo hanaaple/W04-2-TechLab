@@ -25,6 +25,7 @@ public:
     void UpdateOBBResources();
     void ReleaseOBBResources();
     void RenderAABB(const FBoundingBox& localAABB, const FVector& center, const FMatrix& modelMatrix);
+    void RenderAABB(const FBoundingBox& worldAABB);
     void RenderOBB(const FBoundingBox& localAABB, const FVector& center, const FMatrix& modelMatrix);
 	
     void AddCone(const FVector& center, float radius, float height, int segments,const FVector4& color, const FMatrix& modelMatri);

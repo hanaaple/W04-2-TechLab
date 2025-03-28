@@ -110,10 +110,10 @@ int32 FEngineLoop::PreInit()
 
 int32 FEngineLoop::Init(HINSTANCE hInstance)
 {
-    // if (FSceneMgr::LoadSceneData(TEXT("Default.scene")) == false)
-    //     assert(false, TEXT("Can't Load Default Scene"));
-    if (FSceneMgr::LoadSceneData(TEXT("Test.scene")) == false)
-        assert(false, TEXT("Can't Load Test Scene"));
+    if (FSceneMgr::LoadSceneData(TEXT("Default.scene")) == false)
+        assert(false, TEXT("Can't Load Default Scene"));
+    // if (FSceneMgr::LoadSceneData(TEXT("Test.scene")) == false)
+    //     assert(false, TEXT("Can't Load Test Scene"));
     
     /* must be initialized before window. */
     UnrealEditor = new UnrealEd();
@@ -130,7 +130,7 @@ int32 FEngineLoop::Init(HINSTANCE hInstance)
     LevelEditor = new SLevelEditor();
     LevelEditor->Initialize();
 
-    GWorld = new UWorld;
+    GWorld = FObjectFactory::ConstructObject<UWorld>();
     GWorld->Initialize();
 
     return 0;
