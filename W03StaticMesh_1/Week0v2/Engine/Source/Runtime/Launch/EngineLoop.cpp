@@ -221,7 +221,7 @@ void FEngineLoop::Tick()
         }
         while (elapsedTime < targetFrameTime);
         */
-        uint64 CycleDiff = FWindowsPlatformTime::Cycles64();
+        uint64 CycleDiff = counter.Finish();;
         elapsedTime = FWindowsPlatformTime::ToMilliseconds(CycleDiff);
         FPSEditorPanel::elapsedTime = elapsedTime;
     }

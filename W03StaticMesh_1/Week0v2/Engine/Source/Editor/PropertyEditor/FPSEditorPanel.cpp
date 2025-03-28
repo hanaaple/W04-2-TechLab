@@ -42,8 +42,6 @@ void FPSEditorPanel::Render()
     double DeltaTimeMs = elapsedTime;
     double DeltaTimeSec = DeltaTimeMs / 1000.0;
     double FPS = 1.0 / DeltaTimeSec;
-    ImGui::Text("DeltaTimeMs: %.4f", DeltaTimeMs);
-    ImGui::Text("DeltaTimeSec: %.8f", DeltaTimeSec);
     ImGui::Text("FPS: %.1f (%.4f ms)", FPS,DeltaTimeMs);
 
     ImGui::Text("Picking Time %.4f ms", pickElapsedTime);
