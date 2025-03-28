@@ -1,4 +1,4 @@
-﻿#include "Player.h"
+#include "Player.h"
 
 #include "UnrealClient.h"
 #include "World.h"
@@ -14,8 +14,8 @@
 #include "PropertyEditor/ShowFlags.h"
 #include "UnrealEd/EditorViewportClient.h"
 #include "UObject/UObjectIterator.h"
-
-
+#include "Stats/ScopeCycleCounter.h"
+#include "PropertyEditor/FPSEditorPanel.h"
 using namespace DirectX;
 
 AEditorPlayer::AEditorPlayer()
@@ -220,6 +220,9 @@ bool AEditorPlayer::PickGizmo(FVector& pickPosition)
 
 void AEditorPlayer::PickActor(const FVector& pickPosition)
 {
+    TStatId dummy;
+    FScopeCycleCounter counter(dummy);
+
     if (!(ShowFlags::GetInstance().currentFlags & EEngineShowFlags::SF_Primitives)) return;
 
     const UActorComponent* Possible = nullptr;
@@ -259,6 +262,9 @@ void AEditorPlayer::PickActor(const FVector& pickPosition)
     }
     if (Possible)
     {
+        uint64 CycleDiff = counter.Finish();;
+        double elapsedTime = FWindowsPlatformTime::ToMilliseconds(CycleDiff);
+        FPSEditorPanel::SetPickElapsedTime(elapsedTime);
         GetWorld()->SetPickedActor(Possible->GetOwner());
     }
 }
