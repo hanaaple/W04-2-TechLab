@@ -146,10 +146,12 @@ bool UBillboardComponent::CheckPickingOnNDC(const TArray<FVector>& checkQuad, fl
 	float avgZ = 0.0f;
 	for (int i = 0; i < checkQuad.Num(); i++)
 	{
-		FVector4 v = FVector4(checkQuad[i].x, checkQuad[i].y, checkQuad[i].z, 1.0f);
-		FVector4 clipPos = FMatrix::TransformVector(v, MVP);
+		//FVector4 v = FVector4(checkQuad[i].x, checkQuad[i].y, checkQuad[i].z, 1.0f);
+		//FVector4 clipPos = FMatrix::TransformVector(v, MVP);
+        FVector v = FVector(checkQuad[i].x, checkQuad[i].y, checkQuad[i].z);
+        FVector clipPos = MVP.TransformPosition(v);
 		
-		if (clipPos.a != 0)	clipPos = clipPos/clipPos.a;
+		//if (clipPos.a != 0)	clipPos = clipPos/clipPos.a;
 
 		minX = FMath::Min(minX, clipPos.x);
 		maxX = FMath::Max(maxX, clipPos.x);

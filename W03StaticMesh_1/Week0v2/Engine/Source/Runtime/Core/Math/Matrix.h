@@ -36,6 +36,11 @@ union FMatrix
 	static FVector TransformVector(const FVector& v, const FMatrix& m);
 	static FVector4 TransformVector(const FVector4& v, const FMatrix& m);
 	static FMatrix CreateTranslationMatrix(const FVector& position);
+	static FMatrix CreateInverseMatrixWithSRT(
+        const FVector& scale, 
+        const FVector& rotation, 
+        const FVector& position
+    );
 
 
 	DirectX::XMMATRIX ToXMMATRIX() const

@@ -300,21 +300,21 @@ void AEditorPlayer::ScreenToViewSpace(int screenX, int screenY, const FMatrix& v
 
 int AEditorPlayer::RayIntersectsObject(const FVector& pickPosition, USceneComponent* obj, float& hitDistance, int& intersectCount)
 {
-	FMatrix scaleMatrix = FMatrix::CreateScale(
-		obj->GetWorldScale().x,
-		obj->GetWorldScale().y,
-		obj->GetWorldScale().z
-	);
-	FMatrix rotationMatrix = FMatrix::CreateRotation(
-		obj->GetWorldRotation().x,
-		obj->GetWorldRotation().y,
-		obj->GetWorldRotation().z
-	);
+	//FMatrix scaleMatrix = FMatrix::CreateScale(
+	//	obj->GetWorldScale().x,
+	//	obj->GetWorldScale().y,
+	//	obj->GetWorldScale().z
+	//);
+	//FMatrix rotationMatrix = FMatrix::CreateRotation(
+	//	obj->GetWorldRotation().x,
+	//	obj->GetWorldRotation().y,
+	//	obj->GetWorldRotation().z
+	//);
 
-	FMatrix translationMatrix = FMatrix::CreateTranslationMatrix(obj->GetWorldLocation());
+	//FMatrix translationMatrix = FMatrix::CreateTranslationMatrix(obj->GetWorldLocation());
 
-	// ���� ��ȯ ���
-	FMatrix worldMatrix = scaleMatrix * rotationMatrix * translationMatrix;
+	//// ���� ��ȯ ���
+	//FMatrix worldMatrix = scaleMatrix * rotationMatrix * translationMatrix;
 	FMatrix viewMatrix = GEngineLoop.GetLevelEditor()->GetActiveViewportClient()->GetViewMatrix();
     
     bool bIsOrtho = GetEngine().GetLevelEditor()->GetActiveViewportClient()->IsOrtho();
@@ -332,7 +332,12 @@ int AEditorPlayer::RayIntersectsObject(const FVector& pickPosition, USceneCompon
         FVector orthoRayDir = GEngineLoop.GetLevelEditor()->GetActiveViewportClient()->ViewTransformOrthographic.GetForwardVector().Normalize();
 
         // 객체의 로컬 좌표계로 변환
-        FMatrix localMatrix = FMatrix::Inverse(worldMatrix);
+        //FMatrix localMatrix = FMatrix::Inverse(worldMatrix);
+        FMatrix localMatrix = FMatrix::CreateInverseMatrixWithSRT(
+            obj->GetWorldScale(), 
+            obj->GetWorldRotation(), 
+            obj->GetWorldLocation()
+        );
         FVector localRayOrigin = localMatrix.TransformPosition(rayOrigin);
         FVector localRayDir = (localMatrix.TransformPosition(rayOrigin + orthoRayDir) - localRayOrigin).Normalize();
         
@@ -341,7 +346,13 @@ int AEditorPlayer::RayIntersectsObject(const FVector& pickPosition, USceneCompon
     }
     else
     {
-        FMatrix inverseMatrix = FMatrix::Inverse(worldMatrix * viewMatrix);
+        FMatrix localMatrix = FMatrix::CreateInverseMatrixWithSRT(
+            obj->GetWorldScale(),
+            obj->GetWorldRotation(),
+            obj->GetWorldLocation()
+        );
+        //FMatrix inverseMatrix = FMatrix::Inverse(worldMatrix * viewMatrix);
+        FMatrix inverseMatrix = FMatrix::Inverse(viewMatrix) * localMatrix;
         FVector cameraOrigin = { 0,0,0 };
         FVector pickRayOrigin = inverseMatrix.TransformPosition(cameraOrigin);
         // 퍼스펙티브 모드의 기존 로직 사용

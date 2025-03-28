@@ -502,6 +502,18 @@ FMatrix FMatrix::CreateTranslationMatrix(const FVector& position)
     return translationMatrix;
 }
 
+FMatrix FMatrix::CreateInverseMatrixWithSRT(
+    const FVector& scale, 
+    const FVector& rotation, 
+    const FVector& position
+) {
+    FMatrix invScaleMatrix = FMatrix::CreateScale(1 / scale.x, 1 / scale.y, 1 / scale.z);
+    FMatrix invRotationMatrix = FMatrix::Transpose(FMatrix::CreateRotation(rotation.x, rotation.y, rotation.z));
+    FMatrix invPositionMatrix = FMatrix::CreateTranslationMatrix(position * -1.f);
+
+    return invPositionMatrix * invRotationMatrix * invScaleMatrix;
+}
+
 // 행렬을 사용하여 벡터 변환 (W = 1으로 가정)
 FVector FMatrix::TransformPosition(const FVector& vector) const {
 #if defined(__AVX2__)
