@@ -1,5 +1,10 @@
 #include "Define.h"
 
+#include "JungleMath.h"
+#include "MathUtility.h"
+#include "BaseGizmos/TransformGizmo.h"
+#include "Components/PrimitiveComponent.h"
+
 // 단위 행렬 정의.
 const FMatrix FMatrix::Identity = FMatrix(
     1.0f, 0.0f, 0.0f, 0.0f,
@@ -652,5 +657,82 @@ FVector4 FMatrix::TransformVector(const FVector4& v, const FMatrix& m)
 #endif
 }
 
+FBoundingBox::FBoundingBox(FVector _min, FVector _max): min(_min), max(_max)
+{}
 
+void FBoundingBox::ExpandToInclude(const FBoundingBox& Other)
+{
+    min.x = FMath::Min(min.x, Other.min.x);
+    min.y = FMath::Min(min.y, Other.min.y);
+    min.z = FMath::Min(min.z, Other.min.z);
+    
+    max.x = FMath::Max(max.x, Other.max.x);
+    max.y = FMath::Max(max.y, Other.max.y);
+    max.z = FMath::Max(max.z, Other.max.z);
+}
 
+FBoundingBox FBoundingBox::ComputeSceneBoundingBox(const TSet<class AActor*>& SpawnedActors)
+{
+    if (SpawnedActors.IsEmpty())
+    {
+        return FBoundingBox();
+    }
+
+    FBoundingBox result;
+    for (auto SpawnedActor : SpawnedActors)
+    {
+        if (SpawnedActor->IsA(UTransformGizmo::StaticClass())) continue;
+        
+        UPrimitiveComponent* spawnedPrim = SpawnedActor->GetComponentByClass<UPrimitiveComponent>();
+        if (spawnedPrim == nullptr) continue;
+
+        FMatrix Model = JungleMath::CreateModelMatrix(
+            spawnedPrim->GetWorldLocation(),
+            spawnedPrim->GetWorldRotation(),
+            spawnedPrim->GetWorldScale()
+        );
+
+        FBoundingBox WorldBoundingBox = FBoundingBox::TransformBy(spawnedPrim->AABB, spawnedPrim->GetWorldLocation(), Model);
+        result.ExpandToInclude(WorldBoundingBox);
+    }
+
+    return result;
+}
+
+FBoundingBox FBoundingBox::TransformBy(const FBoundingBox& localAABB, const FVector& center, const FMatrix& modelMatrix)
+{
+    FVector localVertices[8] = {
+        { localAABB.min.x, localAABB.min.y, localAABB.min.z },
+        { localAABB.max.x, localAABB.min.y, localAABB.min.z },
+        { localAABB.min.x, localAABB.max.y, localAABB.min.z },
+        { localAABB.max.x, localAABB.max.y, localAABB.min.z },
+        { localAABB.min.x, localAABB.min.y, localAABB.max.z },
+        { localAABB.max.x, localAABB.min.y, localAABB.max.z },
+        { localAABB.min.x, localAABB.max.y, localAABB.max.z },
+        { localAABB.max.x, localAABB.max.y, localAABB.max.z }
+    };
+
+    FVector worldVertices[8];
+    worldVertices[0] = center + FMatrix::TransformVector(localVertices[0], modelMatrix);
+
+    FVector min = worldVertices[0], max = worldVertices[0];
+
+    // 첫 번째 값을 제외한 나머지 버텍스를 변환하고 min/max 계산
+    for (int i = 1; i < 8; ++i)
+    {
+        worldVertices[i] = center + FMatrix::TransformVector(localVertices[i], modelMatrix);
+
+        min.x = (worldVertices[i].x < min.x) ? worldVertices[i].x : min.x;
+        min.y = (worldVertices[i].y < min.y) ? worldVertices[i].y : min.y;
+        min.z = (worldVertices[i].z < min.z) ? worldVertices[i].z : min.z;
+
+        max.x = (worldVertices[i].x > max.x) ? worldVertices[i].x : max.x;
+        max.y = (worldVertices[i].y > max.y) ? worldVertices[i].y : max.y;
+        max.z = (worldVertices[i].z > max.z) ? worldVertices[i].z : max.z;
+    }
+    FBoundingBox BoundingBox;
+    BoundingBox.min = min;
+    BoundingBox.max = max;
+
+    return BoundingBox;
+}

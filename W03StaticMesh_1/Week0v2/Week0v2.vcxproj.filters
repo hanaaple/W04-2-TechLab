@@ -425,6 +425,7 @@
     <ClCompile Include="Engine\Source\Editor\PropertyEditor\FPSEditorPanel.cpp" />
     <ClCompile Include="Engine\Source\Runtime\Core\Stats\ScopeCycleCounter.cpp" />
     <ClCompile Include="Engine\Source\Runtime\Engine\Classes\GameFramework\Actor.cpp" />
+    <ClInclude Include="Engine\Source\Runtime\Renderer\Frustum.h" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Engine\Source\ThirdParty\DirectXTK\Include\DDSTextureLoader.h" />
@@ -516,5 +517,8 @@
   </ItemGroup>
   <ItemGroup>
     <Natvis Include="Week0v2.natvis" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Engine\Source\Runtime\Renderer\Frustum.cpp" />
   </ItemGroup>
 </Project>
