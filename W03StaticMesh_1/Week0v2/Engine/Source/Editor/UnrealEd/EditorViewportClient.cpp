@@ -4,9 +4,11 @@
 #include "ostream"
 #include "Math/JungleMath.h"
 #include "EngineLoop.h"
+#include "SceneMgr.h"
 #include "UnrealClient.h"
 #include "World.h"
 #include "GameFramework/Actor.h"
+#include "Editor/UnrealEd/SceneMgr.h"
 
 FVector FEditorViewportClient::Pivot = FVector(0.0f, 0.0f, 0.0f);
 float FEditorViewportClient::orthoSize = 10.0f;
@@ -27,10 +29,15 @@ void FEditorViewportClient::Draw(FViewport* Viewport)
 
 void FEditorViewportClient::Initialize(int32 viewportIndex)
 {
+    FSceneData DefaultSceneData = FSceneMgr::GetCurrentSceneData();
 
-    ViewTransformPerspective.SetLocation(FVector(8.0f, 8.0f, 8.f));
-    ViewTransformPerspective.SetRotation(FVector(0.0f, 45.0f, -135.0f));
+    FOVAngle = DefaultSceneData.PerspectiveCamera.FOV;
+    farPlane = DefaultSceneData.PerspectiveCamera.FarClip;
+    ViewTransformPerspective.SetLocation(DefaultSceneData.PerspectiveCamera.Location);
+    nearPlane = DefaultSceneData.PerspectiveCamera.NearClip;
+    ViewTransformPerspective.SetRotation(DefaultSceneData.PerspectiveCamera.Rotation);
     Viewport = new FViewport(static_cast<EViewScreenLocation>(viewportIndex));
+    
     ResizeViewport(GEngineLoop.graphicDevice.SwapchainDesc);
     ViewportIndex = viewportIndex;
 }

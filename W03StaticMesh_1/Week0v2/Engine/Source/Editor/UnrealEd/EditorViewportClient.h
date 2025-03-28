@@ -13,8 +13,6 @@
 
 extern FEngineLoop GEngineLoop;
 
-
-
 struct FViewportCameraTransform
 {
 private:

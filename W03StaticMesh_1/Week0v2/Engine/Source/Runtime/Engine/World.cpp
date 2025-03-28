@@ -8,6 +8,7 @@
 #include "Classes/Components/StaticMeshComponent.h"
 #include "Engine/StaticMeshActor.h"
 #include "Components/SkySphereComponent.h"
+#include "UnrealEd/SceneMgr.h"
 
 
 void UWorld::Initialize()
@@ -15,13 +16,27 @@ void UWorld::Initialize()
     // TODO: Load Scene
     CreateBaseObject();
     //SpawnObject(OBJ_CUBE);
-    FManagerOBJ::CreateStaticMesh("Assets/Dodge/Dodge.obj");
+    //FManagerOBJ::CreateStaticMesh("Assets/Dodge/Dodge.obj");
 
-    FManagerOBJ::CreateStaticMesh("Assets/SkySphere.obj");
-    AActor* SpawnedActor = SpawnActor<AActor>();
-    USkySphereComponent* skySphere = SpawnedActor->AddComponent<USkySphereComponent>();
-    skySphere->SetStaticMesh(FManagerOBJ::GetStaticMesh(L"SkySphere.obj"));
-    skySphere->GetStaticMesh()->GetMaterials()[0]->Material->SetDiffuse(FVector((float)32/255, (float)171/255, (float)191/255));
+    //FManagerOBJ::CreateStaticMesh("Assets/SkySphere.obj");
+    //AActor* SpawnedActor = SpawnActor<AActor>();
+    //USkySphereComponent* skySphere = SpawnedActor->AddComponent<USkySphereComponent>();
+    // skySphere->SetStaticMesh(FManagerOBJ::GetStaticMesh(L"SkySphere.obj"));
+    // skySphere->GetStaticMesh()->GetMaterials()[0]->Material->SetDiffuse(FVector((float)32/255, (float)171/255, (float)191/255));
+
+    FSceneData defaultSceneData = FSceneMgr::GetCurrentSceneData();
+    
+    for (auto objectInfo : defaultSceneData.Primitives)
+    {
+        AActor* SpawnedActor = SpawnActor<AActor>();
+        UStaticMeshComponent* SpawnedStaticMeshComponent = SpawnedActor->AddComponent<UStaticMeshComponent>();
+        FString AssetPath = "Assets/";
+        UStaticMesh* SpawnedStaticMesh = FManagerOBJ::CreateStaticMesh(AssetPath + objectInfo.Value.ObjStaticMeshAsset);
+        SpawnedStaticMeshComponent->SetStaticMesh(SpawnedStaticMesh);
+        SpawnedActor->SetActorLocation(objectInfo.Value.Location);
+        SpawnedActor->SetActorRotation(objectInfo.Value.Rotation);
+        SpawnedActor->SetActorScale(objectInfo.Value.Scale);
+    }
 }
 
 void UWorld::CreateBaseObject()
@@ -31,12 +46,12 @@ void UWorld::CreateBaseObject()
         EditorPlayer = FObjectFactory::ConstructObject<AEditorPlayer>();;
     }
 
-    if (camera == nullptr)
-    {
-        camera = FObjectFactory::ConstructObject<UCameraComponent>();
-        camera->SetLocation(FVector(8.0f, 8.0f, 8.f));
-        camera->SetRotation(FVector(0.0f, 45.0f, -135.0f));
-    }
+    // if (camera == nullptr)
+    // {
+    //     camera = FObjectFactory::ConstructObject<UCameraComponent>();
+    //     camera->SetLocation(FVector(8.0f, 8.0f, 8.f));
+    //     camera->SetRotation(FVector(0.0f, 45.0f, -135.0f));
+    // }
 
     if (LocalGizmo == nullptr)
     {
@@ -58,11 +73,11 @@ void UWorld::ReleaseBaseObject()
         worldGizmo = nullptr;
     }
 
-    if (camera)
-    {
-        delete camera;
-        camera = nullptr;
-    }
+    // if (camera)
+    // {
+    //     delete camera;
+    //     camera = nullptr;
+    // }
 
     if (EditorPlayer)
     {
@@ -74,7 +89,7 @@ void UWorld::ReleaseBaseObject()
 
 void UWorld::Tick(float DeltaTime)
 {
-	camera->TickComponent(DeltaTime);
+	//camera->TickComponent(DeltaTime);
 	EditorPlayer->Tick(DeltaTime);
 	LocalGizmo->Tick(DeltaTime);
 
