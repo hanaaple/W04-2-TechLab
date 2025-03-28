@@ -507,8 +507,8 @@ FVector FMatrix::TransformPosition(const FVector& vector) const {
 #if defined(__AVX2__)
     FMatrix MT = FMatrix::Transpose(*this);
     __m256 vec = _mm256_set_ps(
-        vector.x, vector.y, vector.z, 1.f,
-        vector.x, vector.y, vector.z, 1.f
+        1.f, vector.z, vector.y, vector.x,
+        1.f, vector.z, vector.y, vector.x
     );
 
     float* xy = _mm256_mul_ps(vec, _mm256_loadu_ps(MT.M[0])).m256_f32;
@@ -531,7 +531,7 @@ FVector FMatrix::TransformPosition(const FVector& vector) const {
 #elif defined(_XM_SSE_INTRINSICS_)
     FMatrix MT = FMatrix::Transpose(*this);
 
-    __m128 vec = _mm_set_ps(vector.x, vector.y, vector.z, 1.f);
+    __m128 vec = _mm_set_ps(1.f, vector.z, vector.y, vector.x);
     float* xx = _mm_mul_ps(vec, MT.row[0]).m128_f32;
     float* yy = _mm_mul_ps(vec, MT.row[1]).m128_f32;
     float* zz = _mm_mul_ps(vec, MT.row[2]).m128_f32;
@@ -564,9 +564,10 @@ FVector FMatrix::TransformVector(const FVector& v, const FMatrix& m)
 {
 #if defined(__AVX2__)
     FMatrix MT = FMatrix::Transpose(m);
+    // 엔디안 때문에 거꾸로 넣어줘야 함.
     __m256 vec = _mm256_set_ps(
-        v.x, v.y, v.z, 0.f,
-        v.x, v.y, v.z, 0.f
+        0.f, v.z, v.y, v.x,
+        0.f, v.z, v.y, v.x
     );
     float* xy = _mm256_mul_ps(vec, _mm256_loadu_ps(MT.M[0])).m256_f32;
     float* zw = _mm256_mul_ps(vec, _mm256_loadu_ps(MT.M[2])).m256_f32;
@@ -578,7 +579,7 @@ FVector FMatrix::TransformVector(const FVector& v, const FMatrix& m)
 #elif defined(_XM_SSE_INTRINSICS_)
     FMatrix MT = FMatrix::Transpose(m);
 
-    __m128 vec = _mm_set_ps(v.x, v.y, v.z, 0.f);
+    __m128 vec = _mm_set_ps(0.f, v.z, v.y, v.x);
     float* xx = _mm_mul_ps(vec, MT.row[0]).m128_f32;
     float* yy = _mm_mul_ps(vec, MT.row[1]).m128_f32;
     float* zz = _mm_mul_ps(vec, MT.row[2]).m128_f32;
@@ -604,8 +605,8 @@ FVector4 FMatrix::TransformVector(const FVector4& v, const FMatrix& m)
 #if defined(__AVX2__)
     FMatrix MT = FMatrix::Transpose(m);
     __m256 vec = _mm256_set_ps(
-        v.x, v.y, v.z, 0.f,
-        v.x, v.y, v.z, 0.f
+        0.f, v.z, v.y, v.x,
+        0.f, v.z, v.y, v.x
     );
     float* xy = _mm256_mul_ps(vec, _mm256_loadu_ps(MT.M[0])).m256_f32;
     float* zw = _mm256_mul_ps(vec, _mm256_loadu_ps(MT.M[2])).m256_f32;
@@ -618,7 +619,7 @@ FVector4 FMatrix::TransformVector(const FVector4& v, const FMatrix& m)
 #elif defined(_XM_SSE_INTRINSICS_)
     FMatrix MT = FMatrix::Transpose(m);
 
-    __m128 vec = _mm_set_ps(v.x, v.y, v.z, 0.f);
+    __m128 vec = _mm_set_ps(0.f, v.z, v.y, v.x);
     float* xx = _mm_mul_ps(vec, MT.row[0]).m128_f32;
     float* yy = _mm_mul_ps(vec, MT.row[1]).m128_f32;
     float* zz = _mm_mul_ps(vec, MT.row[2]).m128_f32;
