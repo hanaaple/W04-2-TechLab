@@ -37,6 +37,10 @@ void UWorld::Initialize()
         SpawnedActor->SetActorRotation(objectInfo.Value.Rotation);
         SpawnedActor->SetActorScale(objectInfo.Value.Scale);
     }
+    
+    SceneBoundingBox = FBoundingBox::ComputeSceneBoundingBox(ActorsArray);
+    
+    bisInitialized = true;
 }
 
 void UWorld::CreateBaseObject()

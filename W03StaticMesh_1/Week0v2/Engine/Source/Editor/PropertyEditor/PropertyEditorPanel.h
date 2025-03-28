@@ -7,6 +7,7 @@ class UStaticMeshComponent;
 class PropertyEditorPanel : public UEditorPanel
 {
 public:
+    PropertyEditorPanel() = default;
     virtual void Render() override;
     virtual void OnResize(HWND hWnd) override;
 
@@ -32,6 +33,6 @@ private:
     int SelectedMaterialIndex = -1;
     int CurMaterialIndex = -1;
     UStaticMeshComponent* SelectedStaticMeshComp = nullptr;
-    FObjMaterialInfo tempMaterialInfo;
-    bool IsCreateMaterial;
+    FObjMaterialInfo tempMaterialInfo = FObjMaterialInfo();
+    bool IsCreateMaterial = false;
 };

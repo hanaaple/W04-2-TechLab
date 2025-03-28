@@ -3,6 +3,7 @@
 #include <algorithm>
 #include "Core/Container/String.h"
 #include "Core/Container/Array.h"
+#include "Container/Set.h"
 #include "UObject/NameTypes.h"
 
 // 수학 관련
@@ -15,6 +16,7 @@
 
 #define _TCHAR_DEFINED
 #include <d3d11.h>
+
 
 #include "UserInterface/Console.h"
 
@@ -167,6 +169,7 @@ struct FPoint
 };
 struct FBoundingBox
 {
+public:
     FBoundingBox(){}
     FBoundingBox(FVector _min, FVector _max) : min(_min), max(_max) {}
 	FVector min; // Minimum extents
@@ -249,6 +252,11 @@ struct FBoundingBox
         return true;
     }
 
+    void ExpandToInclude(const FBoundingBox& Other);
+
+    static FBoundingBox ComputeSceneBoundingBox(const TSet<class AActor*>& SpawnedActors);
+
+    static FBoundingBox TransformBy(const FBoundingBox& localAABB, const FVector& center, const FMatrix& modelMatrix);
 };
 struct FCone
 {

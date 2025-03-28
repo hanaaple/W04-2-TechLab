@@ -7,21 +7,19 @@
 
 void UnrealEd::Initialize()
 {
-    auto ControlPanel = std::make_shared<ControlEditorPanel>();
-    Panels["ControlPanel"] = ControlPanel;
+    Panels[TEXT("ControlPanel")] = std::make_shared<ControlEditorPanel>();
     
-    auto OutlinerPanel = std::make_shared<OutlinerEditorPanel>();
-    Panels["OutlinerPanel"] = OutlinerPanel;
+    Panels[TEXT("OutlinerPanel")] = std::make_shared<OutlinerEditorPanel>();
     
-    auto PropertyPanel = std::make_shared<PropertyEditorPanel>();
-    Panels["PropertyPanel"] = PropertyPanel;
+    Panels[TEXT("PropertyPanel")] = std::make_shared<PropertyEditorPanel>();
 }
 
 void UnrealEd::Render() const
 {
     for (const auto& Panel : Panels)
     {
-        Panel.Value->Render();
+        if (Panel.Value.get() == nullptr) continue;
+        Panel.Value.get()->Render();
     }
 }
 

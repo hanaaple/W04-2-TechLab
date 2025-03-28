@@ -1022,6 +1022,12 @@ void FRenderer::Render(UWorld* World, std::shared_ptr<FEditorViewportClient> Act
 void FRenderer::RenderStaticMeshes(UWorld* World, std::shared_ptr<FEditorViewportClient> ActiveViewport)
 {
     PrepareShader();
+
+    if (ActiveViewport->GetShowFlag() & static_cast<uint64>(EEngineShowFlags::SF_AABB))
+    {
+        UPrimitiveBatch::GetInstance().AddAABB(World->GetSceneBoundingBox());
+    }
+    
     for (UStaticMeshComponent* StaticMeshComp : StaticMeshObjs)
     {
         FMatrix Model = JungleMath::CreateModelMatrix(
@@ -1036,7 +1042,16 @@ void FRenderer::RenderStaticMeshes(UWorld* World, std::shared_ptr<FEditorViewpor
         FVector4 UUIDColor = StaticMeshComp->EncodeUUID() / 255.0f;
         if (World->GetSelectedActor() == StaticMeshComp->GetOwner())
         {
-            UpdateConstant(MVP, NormalMatrix, UUIDColor, true);
+            UpdateConstant(MVP, NormalMatrix, UUIDColor, true);\
+            \
+            if (ActiveViewport->GetShowFlag() & static_cast<uint64>(EEngineShowFlags::SF_AABB))
+            {
+                UPrimitiveBatch::GetInstance().RenderAABB(
+                    StaticMeshComp->GetBoundingBox(),
+                    StaticMeshComp->GetWorldLocation(),
+                    Model
+                );
+            }
         }
         else
             UpdateConstant(MVP, NormalMatrix, UUIDColor, false);

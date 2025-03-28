@@ -54,6 +54,8 @@ private:
     //UCameraComponent* camera = nullptr;
     AEditorPlayer* EditorPlayer = nullptr;
 
+    bool bisInitialized = false;
+
 public:
     UObject* worldGizmo = nullptr;
 
@@ -74,8 +76,13 @@ public:
     UObject* GetWorldGizmo() const { return worldGizmo; }
     USceneComponent* GetPickingGizmo() const { return pickingGizmo; }
     void SetPickingGizmo(UObject* Object);
-};
 
+public:
+    inline FBoundingBox GetSceneBoundingBox() const { return SceneBoundingBox; }
+    inline void SetSceneBoundingBox(const FBoundingBox& InBoundingBox) { SceneBoundingBox = InBoundingBox; }
+private:
+    FBoundingBox SceneBoundingBox;
+};
 
 template <typename T>
     requires std::derived_from<T, AActor>
