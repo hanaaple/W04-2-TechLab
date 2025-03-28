@@ -29,7 +29,12 @@ inline constexpr FMatrix::FMatrix(
 
 // 행렬 덧셈.
 FMatrix FMatrix::operator+(const FMatrix& Other) const {
-#ifdef _USING_SIMD
+#if defined(__AVX2__)
+    FMatrix m;
+    m._rowin256[0] = _mm256_add_ps(_rowin256[0], Other._rowin256[0]);
+    m._rowin256[1] = _mm256_add_ps(_rowin256[1], Other._rowin256[1]);
+    return m;
+#elif defined(_XM_SSE_INTRINSICS_)
     FMatrix m;
     m.row[0] = _mm_add_ps(row[0], Other.row[0]);
     m.row[1] = _mm_add_ps(row[1], Other.row[1]);
@@ -47,7 +52,12 @@ FMatrix FMatrix::operator+(const FMatrix& Other) const {
 
 // 행렬 뺄셈.
 FMatrix FMatrix::operator-(const FMatrix& Other) const {
-#ifdef _USING_SIMD
+#if defined(__AVX2__)
+    FMatrix m;
+    m._rowin256[0] = _mm256_sub_ps(_rowin256[0], Other._rowin256[0]);
+    m._rowin256[1] = _mm256_sub_ps(_rowin256[1], Other._rowin256[1]);
+    return m;
+#elif defined(_XM_SSE_INTRINSICS_)
     FMatrix m;
     m.row[0] = _mm_sub_ps(row[0], Other.row[0]);
     m.row[1] = _mm_sub_ps(row[1], Other.row[1]);
@@ -65,7 +75,7 @@ FMatrix FMatrix::operator-(const FMatrix& Other) const {
 
 // 행렬 곱셈.
 FMatrix FMatrix::operator*(const FMatrix& Other) const {
-#ifdef _USING_SIMD
+#if defined(_XM_SSE_INTRINSICS_)
     FMatrix R;
 
     // B를 column 단위로 분해
@@ -101,12 +111,20 @@ FMatrix FMatrix::operator*(const FMatrix& Other) const {
 
 // 스칼라 곱셈.
 FMatrix FMatrix::operator*(float Scalar) const {
-#ifdef _USING_SIMD
+
+#if defined(__AVX2__)
+    FMatrix R;
+    __m256 s = _mm256_set1_ps(Scalar);
+    R._rowin256[0] = _mm256_mul_ps(_rowin256[0], s);
+    R._rowin256[1] = _mm256_mul_ps(_rowin256[0], s);
+    return R;
+#elif defined(_XM_SSE_INTRINSICS_)
     FMatrix m;
-    m.row[0] = _mm_mul_ps(m.row[0], _mm_set_ps1(Scalar));
-    m.row[1] = _mm_mul_ps(m.row[1], _mm_set_ps1(Scalar));
-    m.row[2] = _mm_mul_ps(m.row[2], _mm_set_ps1(Scalar));
-    m.row[3] = _mm_mul_ps(m.row[3], _mm_set_ps1(Scalar));
+    __m128 s = _mm_set_ps1(Scalar);
+    m.row[0] = _mm_mul_ps(row[0], s);
+    m.row[1] = _mm_mul_ps(row[1], s);
+    m.row[2] = _mm_mul_ps(row[2], s);
+    m.row[3] = _mm_mul_ps(row[3], s);
     return m;
 #else
     FMatrix Result;
@@ -119,14 +137,23 @@ FMatrix FMatrix::operator*(float Scalar) const {
 
 // 스칼라 나눗셈.
 FMatrix FMatrix::operator/(float Scalar) const {
-#ifdef _USING_SIMD
+#if defined(__AVX2__)
     assert(Scalar != 0);
     const float RS = 1.f / Scalar;
+    __m256 rs = _mm256_set1_ps(RS);
     FMatrix m;
-    m.row[0] = _mm_mul_ps(m.row[0], _mm_set_ps1(RS));
-    m.row[1] = _mm_mul_ps(m.row[1], _mm_set_ps1(RS));
-    m.row[2] = _mm_mul_ps(m.row[2], _mm_set_ps1(RS));
-    m.row[3] = _mm_mul_ps(m.row[3], _mm_set_ps1(RS));
+    m._rowin256[0] = _mm256_mul_ps(_rowin256[0], rs);
+    m._rowin256[1] = _mm256_mul_ps(_rowin256[1], rs);
+    return m;
+#elif defined(_XM_SSE_INTRINSICS_)
+    assert(Scalar != 0);
+    const float RS = 1.f / Scalar;
+    __m128 rs = _mm_set_ps1(RS);
+    FMatrix m;
+    m.row[0] = _mm_mul_ps(row[0], rs);
+    m.row[1] = _mm_mul_ps(row[1], rs);
+    m.row[2] = _mm_mul_ps(row[2], rs);
+    m.row[3] = _mm_mul_ps(row[3], rs);
     return m;
 #else
     FMatrix Result;
@@ -148,7 +175,7 @@ const float* FMatrix::operator[](int row) const
 
 // 전치 행렬.
 FMatrix FMatrix::Transpose(const FMatrix& Mat) {
-#ifdef _USING_SIMD
+#if defined(_XM_SSE_INTRINSICS_)
     FMatrix temp;
     // x.x, x.y, y.x, y.y
     temp.row[0] = _mm_shuffle_ps(Mat.row[0], Mat.row[1], _MM_SHUFFLE(1, 0, 1, 0));
@@ -180,13 +207,13 @@ FMatrix FMatrix::Transpose(const FMatrix& Mat) {
 
 // 행렬식 계산.
 float FMatrix::Determinant(const FMatrix& mat) {
-#ifdef _USING_SIMD
+#if defined(_XM_SSE_INTRINSICS_)
     static const __m128 Sign = _mm_set_ps(1.f, -1.f, 1.f, -1.f);
 
     const float* R0 = mat.row[0].m128_f32;
     const float* R1 = mat.row[1].m128_f32;
     const float* R2 = mat.row[2].m128_f32;
-    const float *R3 = mat.row[3].m128_f32;
+    const float* R3 = mat.row[3].m128_f32;
 
     __m128 V0 = _mm_set_ps(R2[1], R2[0], R2[0], R2[0]);
     __m128 V1 = _mm_set_ps(R3[2], R3[2], R3[1], R3[1]);
@@ -255,7 +282,7 @@ float FMatrix::Determinant(const FMatrix& mat) {
 
 // 역행렬.
 FMatrix FMatrix::Inverse(const FMatrix& Mat) {
-#ifdef _USING_SIMD
+#if defined(_XM_SSE_INTRINSICS_)
     // DirectXMathMatrix 참고.
 
     float det = Determinant(Mat);
@@ -427,51 +454,27 @@ FMatrix FMatrix::CreateRotation(float roll, float pitch, float yaw)
     float cosPitch = cos(radPitch), sinPitch = sin(radPitch);
     float cosYaw = cos(radYaw), sinYaw = sin(radYaw);
 
-    //// Z축 (Yaw) 회전
-    //FMatrix rotationZ = { {
-    //    { cosYaw, sinYaw, 0, 0 },
-    //    { -sinYaw, cosYaw, 0, 0 },
-    //    { 0, 0, 1, 0 },
-    //    { 0, 0, 0, 1 }
-    //} };
-
-    //// Y축 (Pitch) 회전
-    //FMatrix rotationY = { {
-    //    { cosPitch, 0, -sinPitch, 0 },
-    //    { 0, 1, 0, 0 },
-    //    { sinPitch, 0, cosPitch, 0 },
-    //    { 0, 0, 0, 1 }
-    //} };
-    // 
-    // //// Y축 (Pitch) 회전
-    //FMatrix rotationY = { {
-    //    { cosPitch, 0, -sinPitch, 0 },
-    //    { 0, 1, 0, 0 },
-    //    { sinPitch, 0, cosPitch, 0 },
-    //    { 0, 0, 0, 1 }
-    //} };
-
     FMatrix rotationZ = FMatrix(
-        cosYaw, sinYaw, 0, 0,
-        -sinYaw, cosYaw, 0, 0,
-        0, 0, 1, 0,
-        0, 0, 0, 1
+        cosYaw, sinYaw, 0.f, 0.f,
+        -sinYaw, cosYaw, 0.f, 0.f,
+        0.f, 0.f, 1.f, 0.f,
+        0.f, 0.f, 0.f, 1.f
     );
 
     // Y축 (Pitch) 회전
     FMatrix rotationY = FMatrix(
-        cosPitch, 0, -sinPitch, 0,
-        0, 1, 0, 0,
-        sinPitch, 0, cosPitch, 0,
-        0, 0, 0, 1
+        cosPitch, 0.f, -sinPitch, 0.f,
+        0.f, 1.f, 0.f, 0.f,
+        sinPitch, 0.f, cosPitch, 0.f,
+        0.f, 0.f, 0.f, 1.f
     );
 
     // X축 (Roll) 회전
     FMatrix rotationX = FMatrix(
-        1, 0, 0, 0,
-        0, cosRoll, sinRoll, 0,
-        0, -sinRoll, cosRoll, 0,
-        0, 0, 0, 1
+        1.f, 0.f, 0.f, 0.f,
+        0.f, cosRoll, sinRoll, 0.f,
+        0.f, -sinRoll, cosRoll, 0.f,
+        0.f, 0.f, 0.f, 1.f
     );
 
     // DirectX 표준 순서: Z(Yaw) → Y(Pitch) → X(Roll)  
@@ -483,10 +486,10 @@ FMatrix FMatrix::CreateRotation(float roll, float pitch, float yaw)
 FMatrix FMatrix::CreateScale(float scaleX, float scaleY, float scaleZ)
 {
     return FMatrix(
-        scaleX, 0, 0, 0,
-        0, scaleY, 0, 0,
-        0, 0, scaleZ, 0,
-        0, 0, 0, 1
+        scaleX, 0.f, 0.f, 0.f,
+        0.f, scaleY, 0.f, 0.f,
+        0.f, 0.f, scaleZ, 0.f,
+        0.f, 0.f, 0.f, 1.f
     );
 }
 
@@ -501,7 +504,31 @@ FMatrix FMatrix::CreateTranslationMatrix(const FVector& position)
 
 // 행렬을 사용하여 벡터 변환 (W = 1으로 가정)
 FVector FMatrix::TransformPosition(const FVector& vector) const {
-#ifdef _USING_SIMD
+#if defined(__AVX2__)
+    FMatrix MT = FMatrix::Transpose(*this);
+    __m256 vec = _mm256_set_ps(
+        vector.x, vector.y, vector.z, 1.f,
+        vector.x, vector.y, vector.z, 1.f
+    );
+
+    float* xy = _mm256_mul_ps(vec, _mm256_loadu_ps(MT.M[0])).m256_f32;
+    float* zw = _mm256_mul_ps(vec, _mm256_loadu_ps(MT.M[2])).m256_f32;
+    float w = zw[4] + zw[5] + zw[6] + zw[7];
+    if ( w != 0.f ) {
+        return FVector(
+            (xy[0] + xy[1] + xy[2] + xy[3]) / w,
+            (xy[4] + xy[5] + xy[6] + xy[7]) / w,
+            (zw[0] + zw[1] + zw[2] + zw[3]) / w
+        );
+    } else {
+        return FVector(
+            xy[0] + xy[1] + xy[2] + xy[3],
+            xy[4] + xy[5] + xy[6] + xy[7],
+            zw[0] + zw[1] + zw[2] + zw[3]
+        );
+    }
+
+#elif defined(_XM_SSE_INTRINSICS_)
     FMatrix MT = FMatrix::Transpose(*this);
 
     __m128 vec = _mm_set_ps(vector.x, vector.y, vector.z, 1.f);
@@ -535,7 +562,20 @@ FVector FMatrix::TransformPosition(const FVector& vector) const {
 // 4x4 행렬을 사용하여 벡터 변환 (W = 0으로 가정, 방향 벡터)
 FVector FMatrix::TransformVector(const FVector& v, const FMatrix& m)
 {
-#ifdef _USING_SIMD
+#if defined(__AVX2__)
+    FMatrix MT = FMatrix::Transpose(m);
+    __m256 vec = _mm256_set_ps(
+        v.x, v.y, v.z, 0.f,
+        v.x, v.y, v.z, 0.f
+    );
+    float* xy = _mm256_mul_ps(vec, _mm256_loadu_ps(MT.M[0])).m256_f32;
+    float* zw = _mm256_mul_ps(vec, _mm256_loadu_ps(MT.M[2])).m256_f32;
+    return FVector(
+        xy[0] + xy[1] + xy[2],
+        xy[4] + xy[5] + xy[6],
+        zw[0] + zw[1] + zw[2]
+    );
+#elif defined(_XM_SSE_INTRINSICS_)
     FMatrix MT = FMatrix::Transpose(m);
 
     __m128 vec = _mm_set_ps(v.x, v.y, v.z, 0.f);
@@ -561,7 +601,21 @@ FVector FMatrix::TransformVector(const FVector& v, const FMatrix& m)
 // FVector4를 변환하는 함수
 FVector4 FMatrix::TransformVector(const FVector4& v, const FMatrix& m)
 {
-#ifdef _USING_SIMD
+#if defined(__AVX2__)
+    FMatrix MT = FMatrix::Transpose(m);
+    __m256 vec = _mm256_set_ps(
+        v.x, v.y, v.z, 0.f,
+        v.x, v.y, v.z, 0.f
+    );
+    float* xy = _mm256_mul_ps(vec, _mm256_loadu_ps(MT.M[0])).m256_f32;
+    float* zw = _mm256_mul_ps(vec, _mm256_loadu_ps(MT.M[2])).m256_f32;
+    return FVector4(
+        xy[0] + xy[1] + xy[2] + xy[3],
+        xy[4] + xy[5] + xy[6] + xy[7],
+        zw[0] + zw[1] + zw[2] + zw[3],
+        zw[4] + zw[5] + zw[6] + zw[7]
+    );
+#elif defined(_XM_SSE_INTRINSICS_)
     FMatrix MT = FMatrix::Transpose(m);
 
     __m128 vec = _mm_set_ps(v.x, v.y, v.z, 0.f);

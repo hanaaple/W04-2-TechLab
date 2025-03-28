@@ -14,7 +14,6 @@
 #define UE_LOG Console::GetInstance().AddLog
 
 #define _TCHAR_DEFINED
-#define _USING_SIMD
 #include <d3d11.h>
 
 #include "UserInterface/Console.h"

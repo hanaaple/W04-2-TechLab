@@ -7,6 +7,7 @@ union FMatrix
 {
 	float M[4][4];
     __m128 row[4];
+    __m256 _rowin256[2];
 	static const FMatrix Identity;
 
     FMatrix() noexcept;
