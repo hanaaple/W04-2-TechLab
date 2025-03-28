@@ -225,10 +225,10 @@ void SLevelEditor::SaveConfig()
         HSplitter->SaveConfig(config);
     if (VSplitter)
         VSplitter->SaveConfig(config);
-    for (size_t i = 0; i < 4; i++)
-    {
-        viewportClients[i]->SaveConfig(config);
-    }
+    //for (size_t i = 0; i < 4; i++)
+    //{
+    //    viewportClients[i]->SaveConfig(config);
+    //}
     ActiveViewportClient->SaveConfig(config);
     config["bMutiView"] = std::to_string(bMultiViewportMode);
     config["ActiveViewportIndex"] = std::to_string(ActiveViewportClient->ViewportIndex);
