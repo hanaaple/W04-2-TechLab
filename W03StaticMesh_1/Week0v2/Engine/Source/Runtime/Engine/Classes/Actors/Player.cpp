@@ -274,14 +274,39 @@ void AEditorPlayer::PickActor(const FVector& pickOrigin, const FVector& pickDire
     //}
 
     // travese octree
+    TArray<UStaticMeshComponent*> PossibleList = TArray<UStaticMeshComponent*>();
+
     FOctree octreeManager = GetWorld()->GetOcTree();
-    auto callback = [&Possible, &minDistance](const FOctreeElement<UStaticMeshComponent>& e, float hitDistance )-> void {
-        if (minDistance > hitDistance) {
-            minDistance = hitDistance;
-            Possible = e.element;
-        }
+    auto callback = [&PossibleList, &minDistance](const FOctreeElement<UStaticMeshComponent>& e, float hitDistance )-> void {
+        PossibleList.Add(e.element);
+        //if (minDistance > hitDistance) {
+        //    minDistance = hitDistance;
+        //    //Possible = e.element;
+        //}
     };
     octreeManager.QueryRay(pickOrigin, pickDirection, callback);
+    if (PossibleList.Num() > 0) {
+        for (UStaticMeshComponent* e : PossibleList) {
+            float hitDistance;
+
+            FMatrix inverseWorldMat = FMatrix::CreateInverseMatrixWithSRT(
+                e->GetWorldScale(),
+                e->GetWorldRotation(),
+                e->GetWorldLocation()
+            );
+
+            FVector rayOrigin = inverseWorldMat.TransformPosition(pickOrigin);
+            FVector rayDirection = FMatrix::TransformVector(pickDirection, inverseWorldMat);
+
+            if ( e->CheckRayIntersection(rayOrigin, rayDirection, hitDistance) > 0 ) {
+                if (minDistance > hitDistance) {
+                    minDistance = hitDistance;
+                    Possible = e;
+                }
+            }
+        }
+    }
+
 
     if (Possible)
     {
