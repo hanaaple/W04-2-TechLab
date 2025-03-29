@@ -66,7 +66,7 @@ float FVector::MagnitudePow() const {
     vTemp = _mm_hadd_ps(vTemp, vTemp);
     return vTemp.m128_f32[0];
 #else 
-    return x * other.x + y * other.y + z * other.z;
+    return x * x + y * y + z * z;
 #endif
 }
 

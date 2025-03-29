@@ -22,7 +22,7 @@ public:
 public:
     UGizmoBaseComponent() = default;
 
-    virtual int CheckRayIntersection(FVector& rayOrigin, FVector& rayDirection, float& pfNearHitDistance) override;
+    virtual int CheckRayIntersection(const FVector& rayOrigin, const FVector& rayDirection, float& pfNearHitDistance) override;
     virtual void TickComponent(float DeltaTime) override;
 
 private:

@@ -111,10 +111,10 @@ int32 FEngineLoop::PreInit()
 
 int32 FEngineLoop::Init(HINSTANCE hInstance)
 {
-    if (FSceneMgr::LoadSceneData(TEXT("Default.scene")) == false)
-        assert(false, TEXT("Can't Load Default Scene"));
-    // if (FSceneMgr::LoadSceneData(TEXT("Test.scene")) == false)
-    //     assert(false, TEXT("Can't Load Test Scene"));
+    //if (FSceneMgr::LoadSceneData(TEXT("Default.scene")) == false)
+    //    assert(false, TEXT("Can't Load Default Scene"));
+    if (FSceneMgr::LoadSceneData(TEXT("Test.scene")) == false)
+        assert(false, TEXT("Can't Load Test Scene"));
     
     FWindowsPlatformTime::InitTiming();
 
@@ -230,23 +230,23 @@ float FEngineLoop::GetAspectRatio(IDXGISwapChain* swapChain) const
 
 void FEngineLoop::Input()
 {
-    if (GetAsyncKeyState('M') & 0x8000)
-    {
-        if (!bTestInput)
-        {
-            bTestInput = true;
-            if (LevelEditor->IsMultiViewport())
-            {
-                LevelEditor->OffMultiViewport();
-            }
-            else
-                LevelEditor->OnMultiViewport();
-        }
-    }
-    else
-    {
-        bTestInput = false;
-    }
+    //if (GetAsyncKeyState('M') & 0x8000)
+    //{
+    //    if (!bTestInput)
+    //    {
+    //        bTestInput = true;
+    //        if (LevelEditor->IsMultiViewport())
+    //        {
+    //            LevelEditor->OffMultiViewport();
+    //        }
+    //        else
+    //            LevelEditor->OnMultiViewport();
+    //    }
+    //}
+    //else
+    //{
+    //    bTestInput = false;
+    //}
 }
 
 void FEngineLoop::Exit()

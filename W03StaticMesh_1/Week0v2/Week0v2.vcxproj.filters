@@ -426,6 +426,7 @@
     <ClCompile Include="Engine\Source\Runtime\Core\Stats\ScopeCycleCounter.cpp" />
     <ClCompile Include="Engine\Source\Runtime\Engine\Classes\GameFramework\Actor.cpp" />
     <ClInclude Include="Engine\Source\Runtime\Renderer\Frustum.h" />
+    <ClInclude Include="Engine\Source\Runtime\Core\Container\FOcTree.h" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Engine\Source\ThirdParty\DirectXTK\Include\DDSTextureLoader.h" />
@@ -520,5 +521,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Engine\Source\Runtime\Renderer\Frustum.cpp" />
+    <ClCompile Include="Engine\Source\Runtime\Core\Container\FOcTree.cpp" />
   </ItemGroup>
 </Project>

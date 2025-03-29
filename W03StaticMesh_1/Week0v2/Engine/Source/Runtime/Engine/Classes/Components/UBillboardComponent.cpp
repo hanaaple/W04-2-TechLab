@@ -44,7 +44,7 @@ void UBillboardComponent::TickComponent(float DeltaTime)
 }
 
 
-int UBillboardComponent::CheckRayIntersection(FVector& rayOrigin, FVector& rayDirection, float& pfNearHitDistance)
+int UBillboardComponent::CheckRayIntersection(const FVector& rayOrigin, const FVector& rayDirection, float& pfNearHitDistance)
 {
 	TArray<FVector> quad;
 	for (int i = 0; i < 4; i++)

@@ -14,7 +14,7 @@
 
 
 UWorld::UWorld()
-    : OcTree(FOctree<FOctreeElement>(FBoundingBox(FVector(-100.0f, -100.0f, -100.0f), FVector(100.0f, 100.0f, 100.0f))))
+    : OcTree(FOctree<UPrimitiveComponent>(FBoundingBox(FVector(-100.0f, -100.0f, -100.0f), FVector(100.0f, 100.0f, 100.0f))))
 {}
 
 void UWorld::Initialize()
@@ -45,7 +45,7 @@ void UWorld::Initialize()
     }
     
     SceneBoundingBox = FBoundingBox::ComputeSceneBoundingBox(ActorsArray);
-    OcTree = FOctree<FOctreeElement>(SceneBoundingBox);
+    OcTree = FOctree<UPrimitiveComponent>(SceneBoundingBox);
 
     for (const auto iter : TObjectRange<UPrimitiveComponent>())
     {
@@ -58,7 +58,14 @@ void UWorld::Initialize()
         );
 
         FBoundingBox localBoundingBox = iter->AABB;
-        FOctreeElement Element = FOctreeElement(FBoundingBox::TransformBy(localBoundingBox,iter->GetWorldLocation(), Model), iter->GetUUID());
+        FOctreeElement Element = FOctreeElement<UPrimitiveComponent>(
+			FBoundingBox::TransformBy(
+				localBoundingBox,iter->GetWorldLocation(), 
+				Model
+			),
+			iter->GetUUID()
+		);
+		Element.element = iter;
         OcTree.Insert(Element, Element.Bounds);
     }
     
