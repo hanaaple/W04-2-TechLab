@@ -1098,38 +1098,38 @@ void FRenderer::RenderBatch(
 // UISOO TODO: 매 프레임 순회하며 넣어주고 있음. 변경사항 있는 거만 체크
 void FRenderer::PrepareRender(std::shared_ptr<FEditorViewportClient> ActiveViewport)
 {
-    const FFrustum Frustum(ActiveViewport->GetViewMatrix(), ActiveViewport->GetProjectionMatrix());
+    //const FFrustum Frustum(ActiveViewport->GetViewMatrix(), ActiveViewport->GetProjectionMatrix());
     
     // 전역적으로 관리되는 UObject 배열에서 TMap으로 변경된 매핑을 가져옵니다.
-    TMap<uint32, UObject*> ObjectMap = GUObjectArray.GetObjectItemArrayUnsafe();
+    //TMap<uint32, UObject*> ObjectMap = GUObjectArray.GetObjectItemArrayUnsafe();
     
     // Octree의 FrustumCull을 호출하여, 프러스텀 내에 있는 요소들에 대해 처리합니다.
-    const auto ocTree =  GEngineLoop.GetWorld()->GetOcTree();;
-    ocTree.FrustumCull(Frustum, [&](const FOctreeElement<UStaticMeshComponent>& element)
+    //const auto ocTree =  GEngineLoop.GetWorld()->GetOcTree();;
+    //ocTree.FrustumCull(Frustum, [&](const FOctreeElement<UStaticMeshComponent>& element)
     {
-        if (!Cast<UGizmoBaseComponent>(element.element))
+        for ( auto a : TObjectRange<UStaticMeshComponent>() ) 
         {
-            // StaticMeshObjs.Add(pStaticMeshComp);
-                
-            for (uint32 i = 0; i < element.element->GetNumMaterials(); i++)
-            {
-                auto Material = element.element->GetMaterial(i);
-                auto MTLName = Material->GetMaterialInfo().MTLName;
-                if (!BatchRenderTargets.Contains(MTLName))
-                {
-                    BatchRenderTargets.Add(MTLName, BatchRenderTargetContext());
-                    BatchRenderTargets[MTLName].bIsDirty = true;
-                }
-                if (BatchRenderTargets[MTLName].bIsDirty)
-                {
-                    BatchRenderTargets[MTLName].StaticMeshes.Add({ i, element.element });
-                }
-                    
-                // Material의 변경, Transform의 변경, Culling에 의한 삭제에 따라 Targets 초기화 (BatchRenderTargets[MTLName].Empty();)
-            }
-        }
+            
+                if ( Cast<UGizmoBaseComponent>(a) )
+                    continue;
+                // StaticMeshObjs.Add(pStaticMeshComp);
 
-    });
+                for ( uint32 i = 0; i < a->GetNumMaterials(); i++ ) {
+                    auto Material = a->GetMaterial(i);
+                    auto MTLName = Material->GetMaterialInfo().MTLName;
+                    if ( !BatchRenderTargets.Contains(MTLName) ) {
+                        BatchRenderTargets.Add(MTLName, BatchRenderTargetContext());
+                        BatchRenderTargets[MTLName].bIsDirty = true;
+                    }
+                    if ( BatchRenderTargets[MTLName].bIsDirty ) {
+                        BatchRenderTargets[MTLName].StaticMeshes.Add({ i, a });
+                    }
+
+                    // Material의 변경, Transform의 변경, Culling에 의한 삭제에 따라 Targets 초기화 (BatchRenderTargets[MTLName].Empty();)
+                }
+            
+        }
+    };
     
     // for (auto iter : TObjectRange<UStaticMeshComponent>())
     // {
@@ -1151,15 +1151,15 @@ void FRenderer::PrepareRender(std::shared_ptr<FEditorViewportClient> ActiveViewp
         GizmoObjs.Add(iter);
     }
 
-    for (const auto iter : TObjectRange<UBillboardComponent>())
-    {
-        BillboardObjs.Add(iter);
-    }
+    //for (const auto iter : TObjectRange<UBillboardComponent>())
+    //{
+    //    BillboardObjs.Add(iter);
+    //}
 
-    for (const auto iter : TObjectRange<ULightComponentBase>())
-    {
-        LightObjs.Add(iter);
-    }
+    //for (const auto iter : TObjectRange<ULightComponentBase>())
+    //{
+    //    LightObjs.Add(iter);
+    //}
     
     CreateBatchRenderCache();
 }
