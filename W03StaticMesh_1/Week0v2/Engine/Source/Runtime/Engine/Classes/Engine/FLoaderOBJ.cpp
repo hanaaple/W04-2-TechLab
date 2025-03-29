@@ -438,7 +438,7 @@ OBJ::FStaticMeshRenderData* FLoaderOBJ:: CreateSimpleLOD(const OBJ::FStaticMeshR
         {
             if (i % step == 0)
             {
-                uint32 newIndex = newVertices.Num();
+                const uint32 newIndex = newVertices.Num();
                 newVertices.Add(HighResData->Vertices[i]);
                 indexMapping[i] = newIndex;
             }
@@ -448,31 +448,93 @@ OBJ::FStaticMeshRenderData* FLoaderOBJ:: CreateSimpleLOD(const OBJ::FStaticMeshR
             }
         }
         
-        TArray<UINT> newIndices;
-        size_t totalIndices = HighResData->Indices.Num();
-        for (size_t i = 0; i + 2 < totalIndices; i += 3)
+       TArray<UINT> newIndices;
+    size_t totalIndices = HighResData->Indices.Num();
+    // 이 배열은 원본 메시의 각 삼각형이 새 배열에서 어느 재질에 속하는지 추적하기 위한 임시 데이터입니다.
+    // 예를 들어, 각 삼각형의 원본 인덱스 중 최소값을 사용하여 재질을 판별할 수 있습니다.
+    TArray<uint32> triangleMaterial; 
+    triangleMaterial.SetNum(totalIndices / 3);
+
+    for (size_t i = 0; i + 2 < totalIndices; i += 3)
+    {
+        const uint32 idx0 = HighResData->Indices[i];
+        const uint32 idx1 = HighResData->Indices[i + 1];
+        const uint32 idx2 = HighResData->Indices[i + 2];
+        
+        if (indexMapping[idx0] != std::numeric_limits<uint32>::max() &&
+            indexMapping[idx1] != std::numeric_limits<uint32>::max() &&
+            indexMapping[idx2] != std::numeric_limits<uint32>::max())
         {
-            uint32 idx0 = HighResData->Indices[i];
-            uint32 idx1 = HighResData->Indices[i + 1];
-            uint32 idx2 = HighResData->Indices[i + 2];
+            newIndices.Add(indexMapping[idx0]);
+            newIndices.Add(indexMapping[idx1]);
+            newIndices.Add(indexMapping[idx2]);
             
-            if (indexMapping[idx0] != std::numeric_limits<uint32>::max() &&
-                indexMapping[idx1] != std::numeric_limits<uint32>::max() &&
-                indexMapping[idx2] != std::numeric_limits<uint32>::max())
+            // 삼각형이 속한 재질을 결정하는 간단한 방법:
+            // 원본 삼각형의 첫 인덱스를 사용하여 어느 MaterialSubset 범위에 포함되는지 확인
+            const uint32 originalIndex = HighResData->Indices[i];
+            uint32 materialID = 0;
+            for (int m = 0; m < HighResData->MaterialSubsets.Num(); ++m)
             {
-                newIndices.Add(indexMapping[idx0]);
-                newIndices.Add(indexMapping[idx1]);
-                newIndices.Add(indexMapping[idx2]);
+                const FMaterialSubset& subset = HighResData->MaterialSubsets[m];
+                if (originalIndex >= subset.IndexStart &&
+                    originalIndex < subset.IndexStart + subset.IndexCount)
+                {
+                    materialID = m;
+                    break;
+                }
             }
+            triangleMaterial[i / 3] = materialID;
         }
-        
-        LODData->Vertices = newVertices;
-        LODData->Indices = newIndices;
-        
-        // Bounding Box 재계산 (ComputeBoundingBox 함수는 별도로 정의되어 있어야 함)
-        ComputeBoundingBox(LODData->Vertices, LODData->BoundingBoxMin, LODData->BoundingBoxMax);
-        
-        return LODData;
+    }
+    
+    LODData->Vertices = newVertices;
+    LODData->Indices = newIndices;
+    
+    // Bounding Box 재계산
+    ComputeBoundingBox(LODData->Vertices, LODData->BoundingBoxMin, LODData->BoundingBoxMax);
+
+    // 재계산된 MaterialSubset 정보 업데이트
+    // 새 MaterialSubsets를 초기화하고, 각 삼각형을 순회하면서 재질별 인덱스 범위를 계산합니다.
+    TArray<FMaterialSubset> newSubsets;
+    newSubsets.SetNum(HighResData->MaterialSubsets.Num());
+    // 초기화: 각 subset의 IndexStart를 UINT32_MAX로, IndexCount를 0으로 설정
+    for (int m = 0; m < newSubsets.Num(); m++)
+    {
+        newSubsets[m].MaterialName = HighResData->MaterialSubsets[m].MaterialName;
+        newSubsets[m].MaterialIndex = HighResData->MaterialSubsets[m].MaterialIndex;
+        newSubsets[m].IndexStart = std::numeric_limits<uint32>::max();
+        newSubsets[m].IndexCount = 0;
+    }
+
+    // 새 인덱스 배열을 순회하면서 각 삼각형이 어떤 재질에 속하는지 보고 새 MaterialSubset 정보를 업데이트
+    for (uint32 tri = 0; tri < triangleMaterial.Num(); tri++)
+    {
+        const uint32 matID = triangleMaterial[tri];
+        if (matID < static_cast<uint32>(newSubsets.Num()))
+        {
+            // 삼각형은 3개의 인덱스로 구성되어 있으며, 새 인덱스 배열에서 이 삼각형의 시작 인덱스는 tri*3입니다.
+            const uint32 start = tri * 3;
+            if (newSubsets[matID].IndexStart == std::numeric_limits<uint32>::max())
+            {
+                newSubsets[matID].IndexStart = start;
+            }
+            newSubsets[matID].IndexCount += 3;
+        }
+    }
+    
+    // 실제로 유효하지 않은 subset(아무 삼각형도 속하지 않은)은 제거합니다.
+    TArray<FMaterialSubset> finalSubsets;
+    for (const FMaterialSubset& subset : newSubsets)
+    {
+        if (subset.IndexStart != std::numeric_limits<uint32>::max())
+        {
+            finalSubsets.Add(subset);
+        }
+    }
+    
+    LODData->MaterialSubsets = finalSubsets;
+
+    return LODData;
 }
 
 OBJ::FStaticMeshRenderData* FManagerOBJ::LoadObjStaticMeshAsset(const FString& PathFileName)

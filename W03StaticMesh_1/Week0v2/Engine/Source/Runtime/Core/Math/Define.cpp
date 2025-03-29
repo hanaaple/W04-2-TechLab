@@ -799,3 +799,73 @@ FBoundingBox FBoundingBox::TransformBy(const FBoundingBox& localAABB, const FVec
 
     return BoundingBox;
 }
+
+FBoundingBox FBoundingBox::Transform(const FMatrix& mat) const
+{
+    const FVector corners[8] = {
+        FVector(min.x, min.y, min.z),
+        FVector(max.x, min.y, min.z),
+        FVector(min.x, max.y, min.z),
+        FVector(max.x, max.y, min.z),
+        FVector(min.x, min.y, max.z),
+        FVector(max.x, min.y, max.z),
+        FVector(min.x, max.y, max.z),
+        FVector(max.x, max.y, max.z)
+    };
+
+    FVector transformedMin = mat.TransformPosition(corners[0]);
+    FVector transformedMax = transformedMin;
+
+    for (int i = 1; i < 8; ++i)
+    {
+        FVector p = mat.TransformPosition(corners[i]);
+        transformedMin.x = std::min(transformedMin.x, p.x);
+        transformedMin.y = std::min(transformedMin.y, p.y);
+        transformedMin.z = std::min(transformedMin.z, p.z);
+
+        transformedMax.x = std::max(transformedMax.x, p.x);
+        transformedMax.y = std::max(transformedMax.y, p.y);
+        transformedMax.z = std::max(transformedMax.z, p.z);
+    }
+
+    return FBoundingBox(transformedMin, transformedMax);
+}
+
+float FBoundingBox::ComputeBoundingBoxScreenCoverage(const FVector& min, const FVector& max, const FMatrix& view, const FMatrix& projection,
+    float viewportWidth, float viewportHeight)
+{
+    FVector corners[8];
+    corners[0] = FVector(min.x, min.y, min.z);
+    corners[1] = FVector(max.x, min.y, min.z);
+    corners[2] = FVector(min.x, max.y, min.z);
+    corners[3] = FVector(max.x, max.y, min.z);
+    corners[4] = FVector(min.x, min.y, max.z);
+    corners[5] = FVector(max.x, min.y, max.z);
+    corners[6] = FVector(min.x, max.y, max.z);
+    corners[7] = FVector(max.x, max.y, max.z);
+
+    FVector center = (max + min) * 0.5f;
+
+    float minX = FLT_MAX, minY = FLT_MAX;
+    float maxX = -FLT_MAX, maxY = -FLT_MAX;
+
+    FMatrix viewProj = view * projection;
+
+    for (INT i = 0; i < 8; ++i)
+    {
+        FVector4 clipPos = FMatrix::TransformVector(FVector4(corners[i].x, corners[i].y, corners[i].z, 1), viewProj);
+        FVector4 ndc = clipPos / clipPos.a;
+        
+        float x = ((ndc.x + 1.0f) * 0.5f) * viewportWidth;
+        float y = ((1.0f - ndc.y) * 0.5f) * viewportHeight;
+        
+        minX = std::min(minX, x);
+        minY = std::min(minY, y);
+        maxX = std::max(maxX, x);
+        maxY = std::max(maxY, y);
+    }
+
+    float rectArea = (maxX - minX) * (maxY - minY) * (maxX - maxY);
+    float screenArea = viewportWidth * viewportHeight;
+    return rectArea / screenArea;
+}
