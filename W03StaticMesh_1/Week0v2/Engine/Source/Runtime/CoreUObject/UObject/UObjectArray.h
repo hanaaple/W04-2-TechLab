@@ -1,5 +1,6 @@
 ﻿#pragma once
 #include "Container/Array.h"
+#include "Container/Map.h"
 #include "Container/Set.h"
 
 class UClass;
@@ -14,18 +15,18 @@ public:
 
     void ProcessPendingDestroyObjects();
 
-    TSet<UObject*>& GetObjectItemArrayUnsafe()
+     TMap<uint32, UObject*>& GetObjectItemArrayUnsafe()
     {
         return ObjObjects;
     }
 
-    const TSet<UObject*>& GetObjectItemArrayUnsafe() const
+    const  TMap<uint32, UObject*>& GetObjectItemArrayUnsafe() const
     {
         return ObjObjects;
     }
 
 private:
-    TSet<UObject*> ObjObjects;
+    TMap<uint32, UObject*> ObjObjects;
     TArray<UObject*> PendingDestroyObjects;
 };
 
