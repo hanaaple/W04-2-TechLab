@@ -1105,38 +1105,30 @@ void FRenderer::PrepareRender(std::shared_ptr<FEditorViewportClient> ActiveViewp
     
     // Octree의 FrustumCull을 호출하여, 프러스텀 내에 있는 요소들에 대해 처리합니다.
     const auto ocTree =  GEngineLoop.GetWorld()->GetOcTree();;
-    ocTree.FrustumCull(Frustum, [&](const FOctreeElement& element)
+    ocTree.FrustumCull(Frustum, [&](const FOctreeElement<UStaticMeshComponent>& element)
     {
-        // TMap에서 element.Id를 키로 UObject*를 조회합니다.
-        UObject** FoundObj = ObjectMap.Find(element.Id);
-        if (FoundObj)
+        if (!Cast<UGizmoBaseComponent>(element.element))
         {
-            // UObject*를 UStaticMeshComponent*로 캐스팅합니다.
-            if (UStaticMeshComponent* pStaticMeshComp = dynamic_cast<UStaticMeshComponent*>(*FoundObj))
-            {
-                if (!Cast<UGizmoBaseComponent>(pStaticMeshComp))
-                {
-                    // StaticMeshObjs.Add(pStaticMeshComp);
+            // StaticMeshObjs.Add(pStaticMeshComp);
                 
-                    for (uint32 i = 0; i < pStaticMeshComp->GetNumMaterials(); i++)
-                    {
-                        auto Material = pStaticMeshComp->GetMaterial(i);
-                        auto MTLName = Material->GetMaterialInfo().MTLName;
-                        if (!BatchRenderTargets.Contains(MTLName))
-                        {
-                            BatchRenderTargets.Add(MTLName, BatchRenderTargetContext());
-                            BatchRenderTargets[MTLName].bIsDirty = true;
-                        }
-                        if (BatchRenderTargets[MTLName].bIsDirty)
-                        {
-                            BatchRenderTargets[MTLName].StaticMeshes.Add({ i, pStaticMeshComp });
-                        }
-                    
-                        // Material의 변경, Transform의 변경, Culling에 의한 삭제에 따라 Targets 초기화 (BatchRenderTargets[MTLName].Empty();)
-                    }
+            for (uint32 i = 0; i < element.element->GetNumMaterials(); i++)
+            {
+                auto Material = element.element->GetMaterial(i);
+                auto MTLName = Material->GetMaterialInfo().MTLName;
+                if (!BatchRenderTargets.Contains(MTLName))
+                {
+                    BatchRenderTargets.Add(MTLName, BatchRenderTargetContext());
+                    BatchRenderTargets[MTLName].bIsDirty = true;
                 }
+                if (BatchRenderTargets[MTLName].bIsDirty)
+                {
+                    BatchRenderTargets[MTLName].StaticMeshes.Add({ i, element.element });
+                }
+                    
+                // Material의 변경, Transform의 변경, Culling에 의한 삭제에 따라 Targets 초기화 (BatchRenderTargets[MTLName].Empty();)
             }
         }
+
     });
     
     // for (auto iter : TObjectRange<UStaticMeshComponent>())

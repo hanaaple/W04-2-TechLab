@@ -85,11 +85,11 @@ public:
     inline FBoundingBox GetSceneBoundingBox() const { return SceneBoundingBox; }
     inline void SetSceneBoundingBox(const FBoundingBox& InBoundingBox) { SceneBoundingBox = InBoundingBox; }
 
-    inline FOctree<UPrimitiveComponent> GetOcTree() const { return OcTree; }
+    inline FOctree<UStaticMeshComponent> GetOcTree() const { return OcTree; }
 private:
     FBoundingBox SceneBoundingBox;
 
-    FOctree<UPrimitiveComponent> OcTree;
+    FOctree<UStaticMeshComponent> OcTree;
 };
 
 template <typename T>

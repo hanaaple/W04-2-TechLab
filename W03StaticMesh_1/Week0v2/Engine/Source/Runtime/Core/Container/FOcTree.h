@@ -29,7 +29,7 @@ struct FOctreeNode  : public std::enable_shared_from_this<FOctreeNode<T>>
 {
     FBoundingBox Bounds;                // 현재 노드의 영역
     TArray<FOctreeElement<T>> Elements;            // 이 노드에 속하는 요소들 (leaf인 경우)
-    std::shared_ptr<FOctreeNode> Children[8];            // 8개 자식 노드 (leaf가 아니라면 사용)
+    std::shared_ptr<FOctreeNode<T>> Children[8];            // 8개 자식 노드 (leaf가 아니라면 사용)
     bool IsLeaf;                        // leaf 여부
 
     FOctreeNode(const FBoundingBox& InBounds)
@@ -157,7 +157,7 @@ private:
         {
             // 현재 노드를 8개의 자식 노드로 분할합니다.
             Subdivide(Node);
-            TArray<T> RemainingElements;
+            TArray<FOctreeElement<T>> RemainingElements;
             // 기존 요소들을 재삽입합니다.
             for (const FOctreeElement<T> &existingElement : Node->Elements)
             {
@@ -274,7 +274,7 @@ private:
     
         if (Node->IsLeaf)
         {
-            for (const T &elem : Node->Elements)
+            for (const FOctreeElement<T> &elem : Node->Elements)
             {
                 if (frustum.IsBoxVisible(elem.Bounds))
                     Callback(elem);

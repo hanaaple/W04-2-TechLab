@@ -14,7 +14,7 @@
 
 
 UWorld::UWorld()
-    : OcTree(FOctree<UPrimitiveComponent>(FBoundingBox(FVector(-100.0f, -100.0f, -100.0f), FVector(100.0f, 100.0f, 100.0f))))
+    : OcTree(FOctree<UStaticMeshComponent>(FBoundingBox(FVector(-100.0f, -100.0f, -100.0f), FVector(100.0f, 100.0f, 100.0f))))
 {}
 
 void UWorld::Initialize()
@@ -45,9 +45,9 @@ void UWorld::Initialize()
     }
     
     SceneBoundingBox = FBoundingBox::ComputeSceneBoundingBox(ActorsArray);
-    OcTree = FOctree<UPrimitiveComponent>(SceneBoundingBox);
+    OcTree = FOctree<UStaticMeshComponent>(SceneBoundingBox);
 
-    for (const auto iter : TObjectRange<UPrimitiveComponent>())
+    for (const auto iter : TObjectRange<UStaticMeshComponent>())
     {
         if (iter->IsA<UGizmoBaseComponent>()) continue;
 
@@ -58,7 +58,7 @@ void UWorld::Initialize()
         );
 
         FBoundingBox localBoundingBox = iter->AABB;
-        FOctreeElement Element = FOctreeElement<UPrimitiveComponent>(
+        FOctreeElement Element = FOctreeElement<UStaticMeshComponent>(
 			FBoundingBox::TransformBy(
 				localBoundingBox,iter->GetWorldLocation(), 
 				Model
