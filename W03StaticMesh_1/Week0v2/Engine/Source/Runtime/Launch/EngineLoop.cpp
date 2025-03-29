@@ -193,20 +193,67 @@ void FEngineLoop::Tick()
         }
 
         Input();
+
+        uint64 startTime, endTime;
+
+        startTime = FPlatformTime::Cycles64();
         GWorld->Tick(elapsedTime);
+        endTime = FPlatformTime::Cycles64();
+        elapsedTimes.worldTickDuration = FWindowsPlatformTime::ToMilliseconds(endTime - startTime);
+
+        startTime = FPlatformTime::Cycles64();
         LevelEditor->Tick(elapsedTime);
+        endTime = FPlatformTime::Cycles64();
+        elapsedTimes.levelEditorDuration = FWindowsPlatformTime::ToMilliseconds(endTime - startTime);
+
+        startTime = FPlatformTime::Cycles64();
         Render();
+        endTime = FPlatformTime::Cycles64();
+        elapsedTimes.renderDuration = FWindowsPlatformTime::ToMilliseconds(endTime - startTime);
+
+
+        startTime = FPlatformTime::Cycles64();
         UIMgr->BeginFrame();
+        endTime = FPlatformTime::Cycles64();
+        elapsedTimes.UIBeginDuration = FWindowsPlatformTime::ToMilliseconds(endTime - startTime);
+
+        startTime = FPlatformTime::Cycles64();
         UnrealEditor->Render();
+        endTime = FPlatformTime::Cycles64();
+        elapsedTimes.UEDuration = FWindowsPlatformTime::ToMilliseconds(endTime - startTime);
 
+        startTime = FPlatformTime::Cycles64();
         Console::GetInstance().Draw();
+        endTime = FPlatformTime::Cycles64();
+        elapsedTimes.ConsoleDuration = FWindowsPlatformTime::ToMilliseconds(endTime - startTime);
 
+        ImGui::Begin("stat");
+        ImGui::Text("WorldTick:\t%fms", elapsedTimes.worldTickDuration);
+        ImGui::Text("LevelEditor:\t%fms", elapsedTimes.levelEditorDuration);
+        ImGui::Text("render:\t%fms", elapsedTimes.renderDuration);
+        ImGui::Text("UIBegin:\t%fms", elapsedTimes.UIBeginDuration);
+        ImGui::Text("UEditor:\t%fms", elapsedTimes.UEDuration);
+        ImGui::Text("Console:\t%fms", elapsedTimes.ConsoleDuration);
+        ImGui::Text("UIEnd:\t%fms", elapsedTimes.UIEndDuration);
+        ImGui::Text("PendingDestory:\t%fms", elapsedTimes.pendingDestroyTime);
+        ImGui::Text("SwapBuffer:\t%fms", elapsedTimes.swapBufferTime);
+        ImGui::End();
+
+        startTime = FPlatformTime::Cycles64();
         UIMgr->EndFrame();
+        endTime = FPlatformTime::Cycles64();
+        elapsedTimes.UIEndDuration = FWindowsPlatformTime::ToMilliseconds(endTime - startTime);
 
         // Pending 처리된 오브젝트 제거
+        startTime = FPlatformTime::Cycles64();
         GUObjectArray.ProcessPendingDestroyObjects();
+        endTime = FPlatformTime::Cycles64();
+        elapsedTimes.pendingDestroyTime = FWindowsPlatformTime::ToMilliseconds(endTime - startTime);
 
+        startTime = FPlatformTime::Cycles64();
         graphicDevice.SwapBuffer();
+        endTime = FPlatformTime::Cycles64();
+        elapsedTimes.swapBufferTime = FWindowsPlatformTime::ToMilliseconds(endTime - startTime);
         
         /*
         do
