@@ -168,6 +168,12 @@ void UPrimitiveBatch::RenderAABB(const FBoundingBox& localAABB, const FVector& c
     BoundingBox.max = max;
     BoundingBoxes.Add(BoundingBox);
 }
+
+void UPrimitiveBatch::RenderAABB(const FBoundingBox& worldAABB)
+{
+    BoundingBoxes.Add(worldAABB);
+}
+
 void UPrimitiveBatch::RenderOBB(const FBoundingBox& localAABB, const FVector& center, const FMatrix& modelMatrix)
 {
     // 1) 로컬 AABB의 8개 꼭짓점

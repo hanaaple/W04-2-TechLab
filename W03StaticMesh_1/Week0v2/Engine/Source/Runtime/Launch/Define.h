@@ -3,6 +3,7 @@
 #include <algorithm>
 #include "Core/Container/String.h"
 #include "Core/Container/Array.h"
+#include "Container/Set.h"
 #include "UObject/NameTypes.h"
 
 // 수학 관련
@@ -15,6 +16,7 @@
 
 #define _TCHAR_DEFINED
 #include <d3d11.h>
+
 
 #include "UserInterface/Console.h"
 
@@ -167,12 +169,15 @@ struct FPoint
 };
 struct FBoundingBox
 {
+public:
     FBoundingBox(){}
-    FBoundingBox(FVector _min, FVector _max) : min(_min), max(_max) {}
+    FBoundingBox(FVector _min, FVector _max);
+
 	FVector min; // Minimum extents
 	float pad;
 	FVector max; // Maximum extents
 	float pad1;
+    
     bool Intersect(const FVector& rayOrigin, const FVector& rayDir, float& outDistance)
     {
         float tmin = -FLT_MAX;
@@ -249,6 +254,52 @@ struct FBoundingBox
         return true;
     }
 
+    void ExpandToInclude(const FBoundingBox& Other);
+
+    static FBoundingBox ComputeSceneBoundingBox(const TSet<class AActor*>& SpawnedActors);
+
+    static FBoundingBox TransformBy(const FBoundingBox& localAABB, const FVector& center, const FMatrix& modelMatrix);
+
+    FVector GetCenter() const
+    {
+        return (max + min) * 0.5f;
+    }
+
+    FVector GetExtent() const
+    {
+        return (max - min) * 0.5f;
+    }
+
+    FBoundingBox Transform(const FMatrix& mat) const
+    {
+        FVector corners[8] = {
+            FVector(min.x, min.y, min.z),
+            FVector(max.x, min.y, min.z),
+            FVector(min.x, max.y, min.z),
+            FVector(max.x, max.y, min.z),
+            FVector(min.x, min.y, max.z),
+            FVector(max.x, min.y, max.z),
+            FVector(min.x, max.y, max.z),
+            FVector(max.x, max.y, max.z)
+        };
+
+        FVector transformedMin = mat.TransformPosition(corners[0]);
+        FVector transformedMax = transformedMin;
+
+        for (int i = 1; i < 8; ++i)
+        {
+            FVector p = mat.TransformPosition(corners[i]);
+            transformedMin.x = std::min(transformedMin.x, p.x);
+            transformedMin.y = std::min(transformedMin.y, p.y);
+            transformedMin.z = std::min(transformedMin.z, p.z);
+
+            transformedMax.x = std::max(transformedMax.x, p.x);
+            transformedMax.y = std::max(transformedMax.y, p.y);
+            transformedMax.z = std::max(transformedMax.z, p.z);
+        }
+
+        return FBoundingBox(transformedMin, transformedMax);
+    }
 };
 struct FCone
 {

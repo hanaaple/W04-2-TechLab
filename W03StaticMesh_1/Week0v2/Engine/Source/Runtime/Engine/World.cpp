@@ -6,10 +6,16 @@
 #include "LevelEditor/SLevelEditor.h"
 #include "Engine/FLoaderOBJ.h"
 #include "Classes/Components/StaticMeshComponent.h"
-#include "Engine/StaticMeshActor.h"
-#include "Components/SkySphereComponent.h"
+#include "Math/JungleMath.h"
 #include "UnrealEd/SceneMgr.h"
+#include "UObject/UObjectIterator.h"
 
+#include "Runtime\InteractiveToolsFramework\BaseGizmos\GizmoBaseComponent.h"
+
+
+UWorld::UWorld()
+    : OcTree(FOctree<FOctreeElement>(FBoundingBox(FVector(-100.0f, -100.0f, -100.0f), FVector(100.0f, 100.0f, 100.0f))))
+{}
 
 void UWorld::Initialize()
 {
@@ -37,6 +43,26 @@ void UWorld::Initialize()
         SpawnedActor->SetActorRotation(objectInfo.Value.Rotation);
         SpawnedActor->SetActorScale(objectInfo.Value.Scale);
     }
+    
+    SceneBoundingBox = FBoundingBox::ComputeSceneBoundingBox(ActorsArray);
+    OcTree = FOctree<FOctreeElement>(SceneBoundingBox);
+
+    for (const auto iter : TObjectRange<UPrimitiveComponent>())
+    {
+        if (iter->IsA<UGizmoBaseComponent>()) continue;
+
+        FMatrix Model = JungleMath::CreateModelMatrix(
+            iter->GetWorldLocation(),
+            iter->GetWorldRotation(),
+            iter->GetWorldScale()
+        );
+
+        FBoundingBox localBoundingBox = iter->AABB;
+        FOctreeElement Element = FOctreeElement(FBoundingBox::TransformBy(localBoundingBox,iter->GetWorldLocation(), Model), iter->GetUUID());
+        OcTree.Insert(Element, Element.Bounds);
+    }
+    
+    bisInitialized = true;
 }
 
 void UWorld::CreateBaseObject()
