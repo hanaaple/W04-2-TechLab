@@ -7,6 +7,14 @@ cbuffer MatrixConstants : register(b0)
     //bool isSelected;
     //float3 MatrixPad0;
 };
+cbuffer MatrixCameraConstants : register(b6)
+{
+    row_major float4x4 VP;
+    //row_major float4x4 MInverseTranspose;
+    //float4 UUID;
+    //bool isSelected;
+    //float3 MatrixPad0;
+};
 
 struct VS_INPUT
 {

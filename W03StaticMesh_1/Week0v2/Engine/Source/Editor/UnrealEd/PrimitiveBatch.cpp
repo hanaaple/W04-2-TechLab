@@ -33,7 +33,7 @@ void UPrimitiveBatch::GenerateGrid(float spacing, int gridCount)
     GridParam.gridOrigin = { 0,0,0 };
 }
 
-void UPrimitiveBatch::RenderBatch(const FMatrix& View, const FMatrix& Projection)
+void UPrimitiveBatch::RenderBatchLine(const FMatrix& View, const FMatrix& Projection)
 {
     FEngineLoop::renderer.PrepareLineShader();
 

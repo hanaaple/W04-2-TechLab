@@ -37,6 +37,7 @@ public:
     ID3D11Buffer* MaterialConstantBuffer = nullptr;
     ID3D11Buffer* SubMeshConstantBuffer = nullptr;
     ID3D11Buffer* TextureConstantBuffer = nullptr;
+    ID3D11Buffer* CameraConstantBuffer = nullptr;
 
     FLighting lightingData;
 
@@ -82,10 +83,11 @@ public:
     void UpdateLightConstantBuffer() const;
     //void UpdateConstant(const FMatrix& MVP, const FMatrix& NormalMatrix, FVector4 UUIDColor, bool IsSelected) const;
     void UpdateConstant(const FMatrix& MVP) const;
-    void UpdateMaterialConstantBuffer(const FObjMaterialInfo& MaterialInfo);
+    void UpdateMaterial(const FObjMaterialInfo& MaterialInfo);
     void UpdateLitUnlitConstant(int32 isLit);
     void UpdateSubMeshConstant(bool isSelected) const;
     void UpdateTextureConstant(float UOffset, float VOffset);
+    void UpdateCameraConstant(FEditorViewportClient* ActiveViewport) const;
 
 public://텍스쳐용 기능 추가
     ID3D11VertexShader* VertexTextureShader = nullptr;
@@ -116,7 +118,7 @@ public:
     ID3D11Buffer* CreateVertexBuffer(FVertexTexture* vertices, UINT byteWidth) const;
 
     void UpdateSubUVConstant(float _indexU, float _indexV) const;
-    void PrepareSubUVConstant() const;
+    void PrepareSubUVConstant();
 
 
 public: // line shader
@@ -134,6 +136,8 @@ public: // line shader
     ID3D11ShaderResourceView* CreateOBBSRV(ID3D11Buffer* pBoundingBoxBuffer, UINT numBoundingBoxes);
     ID3D11ShaderResourceView* CreateConeSRV(ID3D11Buffer* pConeBuffer, UINT numCones);
 
+    void CreateBatchRenderCache();
+    
     void UpdateBoundingBoxBuffer(ID3D11Buffer* pBoundingBoxBuffer, const TArray<FBoundingBox>& BoundingBoxes, int numBoundingBoxes) const;
     void UpdateOBBBuffer(ID3D11Buffer* pBoundingBoxBuffer, const TArray<FOBB>& BoundingBoxes, int numBoundingBoxes) const;
     void UpdateConesBuffer(ID3D11Buffer* pConeBuffer, const TArray<FCone>& Cones, int numCones) const;
@@ -149,11 +153,16 @@ public: // line shader
 
 private:
     void SetTopology(const D3D11_PRIMITIVE_TOPOLOGY InPrimitiveTopology);
-    void SetTextureSRV(uint32 StartSlot, uint32 NumViews, ID3D11ShaderResourceView** InSRV);
-    void SetSamplerState(uint32 StartSlot, uint32 NumSamplers, ID3D11SamplerState** InSamplerState);
+    void SetPSTextureSRV(uint32 StartSlot, uint32 NumViews, ID3D11ShaderResourceView* InSRV);
+    void SetPSSamplerState(uint32 StartSlot, uint32 NumSamplers, ID3D11SamplerState* InSamplerState);
     void SetVertexShader(ID3D11VertexShader* InVertexShader);
     void SetPixelShader(ID3D11PixelShader* InPixelShader);
     void SetInputLayout(ID3D11InputLayout* InInputLayout);
+    void SetVSConstantBuffers(uint32 StartSlot, uint32 NumBuffers, ID3D11Buffer* InConstantBufferPtr);
+    void SetPSConstantBuffers(uint32 StartSlot, uint32 NumBuffers, ID3D11Buffer* InConstantBufferPtr);
+
+private:
+    TArray<TPair<ID3D11Buffer*, TPair<uint32, ID3D11Buffer*>>> GetCachedBuffers(const FString& InMaterialName);
     
 private:
     TArray<UStaticMeshComponent*> StaticMeshObjs;
@@ -165,15 +174,17 @@ private:
         
     
     // Topology가 바뀔 일은 없고
-    struct RenderBatchTargetContext
+    struct BatchRenderTargetContext
     {
-        //TMap<Mesh, TArray<UStaticMeshComponent*>> StaticMeshes;
+        // SubMeshIndex
+        TArray<TPair<uint32, UStaticMeshComponent*>> StaticMeshes;
 
         // UISOO TODO: 버텍스 버퍼, 인덱스 버퍼 나누기도 생각
+        bool bIsDirty = true;
     };
 
     // 머티리얼 이름.
-    TMap<FString, RenderBatchTargetContext*> RenderBatchTargets;
+    TMap<FString, BatchRenderTargetContext> BatchRenderTargets;
     
 
 public:
@@ -190,10 +201,14 @@ private:
 
 private:
     D3D11_PRIMITIVE_TOPOLOGY CurrentPrimitiveTopology = D3D11_PRIMITIVE_TOPOLOGY_UNDEFINED;
-    TMap<uint32, ID3D11ShaderResourceView**> CurrentTextureSRV;
-    TMap<uint32, ID3D11SamplerState**> CurrentSamplerState;
+    TMap<uint32, TPair<uint32, ID3D11ShaderResourceView*>> CurrentTextureSRV;
+    TMap<uint32, TPair<uint32, ID3D11SamplerState*>> CurrentSamplerState;
     ID3D11VertexShader* CurrentVertexShader = nullptr;
     ID3D11PixelShader* CurrentPixelShader = nullptr;
     ID3D11InputLayout* CurrentInputLayout = nullptr;
-};
+    TMap<uint32, TPair<uint32, ID3D11Buffer*>> CurrentVSConstantBuffers;
+    TMap<uint32, TPair<uint32, ID3D11Buffer*>> CurrentPSConstantBuffers;
 
+    // Material
+    TMap<FString, TArray<TPair<ID3D11Buffer*, TPair<uint32, ID3D11Buffer*>>>> CachedBuffers; 
+};

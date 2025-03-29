@@ -99,13 +99,14 @@ void FRenderer::PrepareShader()
 
     if (ConstantBuffer)
     {
-        Graphics->DeviceContext->VSSetConstantBuffers(0, 1, &ConstantBuffer);
-        // Graphics->DeviceContext->PSSetConstantBuffers(0, 1, &ConstantBuffer);
-        Graphics->DeviceContext->PSSetConstantBuffers(1, 1, &MaterialConstantBuffer);
-        //Graphics->DeviceContext->PSSetConstantBuffers(2, 1, &LightingConstantBuffer);
-        //Graphics->DeviceContext->PSSetConstantBuffers(3, 1, &FlagConstantBuffer);
-        //Graphics->DeviceContext->PSSetConstantBuffers(4, 1, &SubMeshConstantBuffer);
-        //Graphics->DeviceContext->PSSetConstantBuffers(5, 1, &TextureConstantBuffer);
+        SetVSConstantBuffers(0, 1, ConstantBuffer);
+        // SetPSConstantBuffers(0, 1, ConstantBuffer);
+        SetPSConstantBuffers(1, 1, MaterialConstantBuffer);
+        //SetPSConstantBuffers(2, 1, LightingConstantBuffer);
+        //SetPSConstantBuffers(3, 1, FlagConstantBuffer);
+        //SetPSConstantBuffers(4, 1, SubMeshConstantBuffer);
+        //SetPSConstantBuffers(5, 1, TextureConstantBuffer);
+        SetVSConstantBuffers(6, 1, CameraConstantBuffer);
     }
 }
 
@@ -205,7 +206,7 @@ void FRenderer::RenderPrimitive(OBJ::FStaticMeshRenderData* renderData, TArray<F
         subMeshIndex == selectedSubMeshIndex ? UpdateSubMeshConstant(true) : UpdateSubMeshConstant(false);
 
         overrideMaterial[materialIndex] != nullptr ? 
-            UpdateMaterialConstantBuffer(overrideMaterial[materialIndex]->GetMaterialInfo()) : UpdateMaterialConstantBuffer(materials[materialIndex]->Material->GetMaterialInfo());
+            UpdateMaterial(overrideMaterial[materialIndex]->GetMaterialInfo()) : UpdateMaterial(materials[materialIndex]->Material->GetMaterialInfo());
 
 
         // 동일한 버퍼에 Sub Mesh의 IndexStart, IndexCount만 다르게 하고 있다.
@@ -235,8 +236,8 @@ void FRenderer::RenderTexturedModelPrimitive(
     Graphics->DeviceContext->IASetIndexBuffer(pIndexBuffer, DXGI_FORMAT_R32_UINT, 0);
 
     //Graphics->DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-    SetTextureSRV(0, 1, &InTextureSRV);
-    SetSamplerState(0 ,1, &InSamplerState);
+    SetPSTextureSRV(0, 1, InTextureSRV);
+    SetPSSamplerState(0 ,1, InSamplerState);
 
     Graphics->DeviceContext->DrawIndexed(numIndices, 0, 0);
 }
@@ -287,6 +288,8 @@ ID3D11Buffer* FRenderer::CreateIndexBuffer(uint32* indices, UINT byteWidth) cons
     indexbufferdesc.Usage = D3D11_USAGE_IMMUTABLE;       // immutable: gpu�� �б� �������� ������ �� �ִ�.
     indexbufferdesc.BindFlags = D3D11_BIND_INDEX_BUFFER; // index buffer�� ����ϰڴ�.
     indexbufferdesc.ByteWidth = byteWidth;               // buffer ũ�� ����
+    indexbufferdesc.CPUAccessFlags = 0;
+    indexbufferdesc.MiscFlags = 0;
 
     D3D11_SUBRESOURCE_DATA indexbufferSRD = {indices};
 
@@ -306,7 +309,9 @@ ID3D11Buffer* FRenderer::CreateIndexBuffer(const TArray<uint32>& indices, UINT b
     indexbufferdesc.Usage = D3D11_USAGE_IMMUTABLE;       // immutable: gpu�� �б� �������� ������ �� �ִ�.
     indexbufferdesc.BindFlags = D3D11_BIND_INDEX_BUFFER; // index buffer�� ����ϰڴ�.
     indexbufferdesc.ByteWidth = byteWidth;               // buffer ũ�� ����
-
+    indexbufferdesc.CPUAccessFlags = 0;
+    indexbufferdesc.MiscFlags = 0;
+    
     D3D11_SUBRESOURCE_DATA indexbufferSRD;
     indexbufferSRD.pSysMem = indices.GetData();
 
@@ -356,6 +361,9 @@ void FRenderer::CreateConstantBuffer()
 
     // constantbufferdesc.ByteWidth = sizeof(FTextureConstants) + 0xf & 0xfffffff0;
     // Graphics->Device->CreateBuffer(&constantbufferdesc, nullptr, &TextureConstantBuffer);
+
+    constantbufferdesc.ByteWidth = sizeof(FConstants) + 0xf & 0xfffffff0;
+    Graphics->Device->CreateBuffer(&constantbufferdesc, nullptr, &CameraConstantBuffer);
 }
 
 void FRenderer::CreateLightingConstantBuffer()
@@ -415,6 +423,12 @@ void FRenderer::ReleaseConstantBuffer()
         TextureConstantBuffer->Release();
         TextureConstantBuffer = nullptr;
     }
+
+    if (CameraConstantBuffer)
+    {
+        CameraConstantBuffer->Release();
+        CameraConstantBuffer = nullptr;
+    }
 }
 
 void FRenderer::UpdateLightConstantBuffer() const
@@ -469,7 +483,7 @@ void FRenderer::UpdateConstant(const FMatrix& MVP) const
     Graphics->DeviceContext->Unmap(ConstantBuffer, 0); // GPU�� �ٽ� ��밡���ϰ� �����
 }
 
-void FRenderer::UpdateMaterialConstantBuffer(const FObjMaterialInfo& MaterialInfo)
+void FRenderer::UpdateMaterial(const FObjMaterialInfo& MaterialInfo)
 {
     if (MaterialConstantBuffer)
     {
@@ -493,17 +507,13 @@ void FRenderer::UpdateMaterialConstantBuffer(const FObjMaterialInfo& MaterialInf
     {
         std::shared_ptr<FTexture> texture = FEngineLoop::resourceMgr.GetTexture(MaterialInfo.DiffuseTexturePath);
 
-        SetTextureSRV(0, 1, &texture->TextureSRV);
-        SetSamplerState(0, 1, &texture->SamplerState);
+        SetPSTextureSRV(0, 1, texture->TextureSRV);
+        SetPSSamplerState(0, 1, texture->SamplerState);
     }
     else
     {
-        // 메모리 문제 x
-        ID3D11ShaderResourceView* nullSRV[1] = {nullptr};
-        ID3D11SamplerState* nullSampler[1] = {nullptr};
-
-        SetTextureSRV(0, 1, nullSRV);
-        SetSamplerState(0, 1, nullSampler);
+        SetPSTextureSRV(0, 1, nullptr);
+        SetPSSamplerState(0, 1, nullptr);
     }
 }
 
@@ -551,6 +561,23 @@ void FRenderer::UpdateTextureConstant(float UOffset, float VOffset)
         }
         Graphics->DeviceContext->Unmap(TextureConstantBuffer, 0);
     }
+}
+
+void FRenderer::UpdateCameraConstant(FEditorViewportClient* ActiveViewport) const
+{
+    FMatrix VP = ActiveViewport->GetViewMatrix() * ActiveViewport->GetProjectionMatrix();
+    
+    if (CameraConstantBuffer == nullptr)
+        return;
+    
+    D3D11_MAPPED_SUBRESOURCE ConstantBufferMSR; // GPU�� �޸� �ּ� ����
+
+    Graphics->DeviceContext->Map(CameraConstantBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &ConstantBufferMSR); // update constant buffer every frame
+    {
+        FConstants* constants = static_cast<FConstants*>(ConstantBufferMSR.pData);
+        constants->MVP = VP;
+    }
+    Graphics->DeviceContext->Unmap(CameraConstantBuffer, 0); // GPU�� �ٽ� ��밡���ϰ� �����
 }
 
 void FRenderer::CreateTextureShader()
@@ -620,6 +647,12 @@ void FRenderer::ReleaseTextureShader()
         ConstantBuffer->Release();
         ConstantBuffer = nullptr;
     }
+
+    if (CameraConstantBuffer)
+    {
+        CameraConstantBuffer->Release();
+        CameraConstantBuffer = nullptr;
+    }
 }
 
 void FRenderer::PrepareTextureShader()
@@ -631,7 +664,7 @@ void FRenderer::PrepareTextureShader()
     //�ؽ��Ŀ� ConstantBuffer �߰��ʿ��Ҽ���
     if (ConstantBuffer)
     {
-        Graphics->DeviceContext->VSSetConstantBuffers(0, 1, &ConstantBuffer);
+        SetVSConstantBuffers(0, 1, ConstantBuffer);
     }
 }
 
@@ -693,8 +726,8 @@ void FRenderer::RenderTexturePrimitive(
 
     SetTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-    SetTextureSRV(0, 1, &_TextureSRV);
-    SetSamplerState(0, 1, &_SamplerState);
+    SetPSTextureSRV(0, 1, _TextureSRV);
+    SetPSSamplerState(0, 1, _SamplerState);
 
     Graphics->DeviceContext->DrawIndexed(numIndices, 0, 0);
 }
@@ -712,8 +745,8 @@ void FRenderer::RenderTextPrimitive(
     Graphics->DeviceContext->IASetVertexBuffers(0, 1, &pVertexBuffer, &TextureStride, &offset);
 
     SetTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-    SetTextureSRV(0, 1, &_TextureSRV);
-    SetSamplerState(0, 1, &_SamplerState);
+    SetPSTextureSRV(0, 1, _TextureSRV);
+    SetPSSamplerState(0, 1, _SamplerState);
     
 
     // ��ο� ȣ�� (6���� �ε��� ���)
@@ -757,12 +790,12 @@ void FRenderer::UpdateSubUVConstant(float _indexU, float _indexV) const
     }
 }
 
-void FRenderer::PrepareSubUVConstant() const
+void FRenderer::PrepareSubUVConstant()
 {
     if (SubUVConstantBuffer)
     {
-        Graphics->DeviceContext->VSSetConstantBuffers(1, 1, &SubUVConstantBuffer);
-        Graphics->DeviceContext->PSSetConstantBuffers(1, 1, &SubUVConstantBuffer);
+        SetVSConstantBuffers(1, 1, SubUVConstantBuffer);
+        SetPSConstantBuffers(1, 1, SubUVConstantBuffer);
     }
 }
 
@@ -778,10 +811,10 @@ void FRenderer::PrepareLineShader()
     // - GridConstantBuffer�� register(b1)��, Vertex�� Pixel Shader�� ���ε� (�ȼ� ���̴��� �ʿ信 ����)
     if (ConstantBuffer && GridConstantBuffer)
     {
-        Graphics->DeviceContext->VSSetConstantBuffers(0, 1, &ConstantBuffer);     // MatrixBuffer (b0)
-        Graphics->DeviceContext->VSSetConstantBuffers(1, 1, &GridConstantBuffer); // GridParameters (b1)
-        Graphics->DeviceContext->PSSetConstantBuffers(1, 1, &GridConstantBuffer);
-        Graphics->DeviceContext->VSSetConstantBuffers(3, 1, &LinePrimitiveBuffer);
+        SetVSConstantBuffers(0, 1, ConstantBuffer);     // MatrixBuffer (b0)
+        SetVSConstantBuffers(1, 1, GridConstantBuffer); // GridParameters (b1)
+        SetPSConstantBuffers(1, 1, GridConstantBuffer);
+        SetVSConstantBuffers(3, 1, LinePrimitiveBuffer);
         Graphics->DeviceContext->VSSetShaderResources(2, 1, &pBBSRV);
         Graphics->DeviceContext->VSSetShaderResources(3, 1, &pConeSRV);
         Graphics->DeviceContext->VSSetShaderResources(4, 1, &pOBBSRV);
@@ -919,6 +952,70 @@ ID3D11ShaderResourceView* FRenderer::CreateConeSRV(ID3D11Buffer* pConeBuffer, UI
     return pConeSRV;
 }
 
+void FRenderer::CreateBatchRenderCache()
+{
+    for (auto& [MaterialName, BatchRenderTargetContext] : BatchRenderTargets)
+    {
+        if(!BatchRenderTargetContext.bIsDirty)
+            return;
+
+        if (!CachedBuffers.Contains(MaterialName))
+            CachedBuffers.Add(MaterialName, TArray<TPair<ID3D11Buffer*, TPair<uint32, ID3D11Buffer*>>>());
+        
+        CachedBuffers[MaterialName].Empty();
+        
+        BatchRenderTargetContext.bIsDirty = false;
+
+        uint32 VertexOffset = 0;
+        TArray<FVertexSimple> VertexData;
+        TArray<uint32> IndexData;
+        
+        for (const auto& [SubMeshIndex, StaticMeshComponent] : BatchRenderTargetContext.StaticMeshes)
+        {
+            OBJ::FStaticMeshRenderData* renderData = StaticMeshComponent->GetStaticMesh()->GetRenderData();
+            uint32 IndexBufferStartIndex = renderData->MaterialSubsets[SubMeshIndex].IndexStart;
+            uint32 IndexCount = renderData->MaterialSubsets[SubMeshIndex].IndexCount;
+
+            TArray<FVertexSimple> Vertices;
+            const auto& OriginVertices = renderData->Vertices;
+            for (const auto& OriginVertex : OriginVertices)
+            {
+                FVertexSimple Vertex;
+
+                FMatrix Model = JungleMath::CreateModelMatrix(StaticMeshComponent->GetWorldLocation(), StaticMeshComponent->GetWorldRotation(), StaticMeshComponent->GetWorldScale());
+                    
+                FVector Pos = Model.TransformPosition({OriginVertex.x, OriginVertex.y, OriginVertex.z});
+
+                Vertex.x = Pos.x;
+                Vertex.y = Pos.y;
+                Vertex.z = Pos.z;
+                Vertex.u = OriginVertex.u;
+                Vertex.v = OriginVertex.v;
+                Vertices.Add(Vertex);
+            } 
+
+            // UISOO TODO: 사용하지 않는 Vertex 없애고 Indexing 당기기
+            VertexData.Append(Vertices);
+
+            const TArray<uint32>& Indices = renderData->Indices;
+            for (int i = IndexBufferStartIndex; i < IndexBufferStartIndex + IndexCount; i++)
+            {
+                IndexData.Add(Indices[i] + VertexOffset);                    
+            }
+                
+            VertexOffset += Vertices.Num();
+        }
+
+        uint32 VertexDataSize = sizeof(FVertexSimple) * VertexData.Num();
+        ID3D11Buffer* VertexBuffer = CreateVertexBuffer(VertexData.GetData(), VertexDataSize);
+        
+        uint32 IndexDataSize = sizeof(uint32) * IndexData.Num();
+        ID3D11Buffer* IndexBuffer = CreateIndexBuffer(IndexData.GetData(), IndexDataSize);
+        
+        CachedBuffers[MaterialName].Add({VertexBuffer, {IndexDataSize, IndexBuffer}});
+    }
+}
+
 void FRenderer::UpdateBoundingBoxBuffer(ID3D11Buffer* pBoundingBoxBuffer, const TArray<FBoundingBox>& BoundingBoxes, int numBoundingBoxes) const
 {
     if (!pBoundingBoxBuffer) return;
@@ -1007,7 +1104,26 @@ void FRenderer::PrepareRender()
         if (UStaticMeshComponent* pStaticMeshComp = Cast<UStaticMeshComponent>(iter))
         {
             if (!Cast<UGizmoBaseComponent>(iter))
-                StaticMeshObjs.Add(pStaticMeshComp);
+            {
+                // StaticMeshObjs.Add(pStaticMeshComp);
+                
+                for (uint32 i = 0; i < pStaticMeshComp->GetNumMaterials(); i++)
+                {
+                    auto Material = pStaticMeshComp->GetMaterial(i);
+                    auto MTLName = Material->GetMaterialInfo().MTLName;
+                    if (!BatchRenderTargets.Contains(MTLName))
+                    {
+                        BatchRenderTargets.Add(MTLName, BatchRenderTargetContext());
+                        BatchRenderTargets[MTLName].bIsDirty = true;
+                    }
+                    if (BatchRenderTargets[MTLName].bIsDirty)
+                    {
+                        BatchRenderTargets[MTLName].StaticMeshes.Add({ i, pStaticMeshComp });
+                    }
+                    
+                    // Material의 변경, Transform의 변경, Culling에 의한 삭제에 따라 Targets 초기화 (BatchRenderTargets[MTLName].Empty();)
+                }
+            }
         }
         if (UGizmoBaseComponent* pGizmoComp = Cast<UGizmoBaseComponent>(iter))
         {
@@ -1022,6 +1138,8 @@ void FRenderer::PrepareRender()
             LightObjs.Add(pLightComp);
         }
     }
+    
+    CreateBatchRenderCache();
 }
 
 void FRenderer::ClearRenderArr()
@@ -1040,7 +1158,7 @@ void FRenderer::Render(UWorld* World, const std::shared_ptr<FEditorViewportClien
     //UpdateLightBuffer();
 
     // UISOO TODO: 여기 Set LineShader
-    UPrimitiveBatch::GetInstance().RenderBatch(ActiveViewport->GetViewMatrix(), ActiveViewport->GetProjectionMatrix());
+    UPrimitiveBatch::GetInstance().RenderBatchLine(ActiveViewport->GetViewMatrix(), ActiveViewport->GetProjectionMatrix());
 
     // UISOO TODO: 여기 Set StaticMeshShader
     if (ActiveViewport->GetShowFlag() & static_cast<uint64>(EEngineShowFlags::SF_Primitives))
@@ -1059,116 +1177,109 @@ void FRenderer::Render(UWorld* World, const std::shared_ptr<FEditorViewportClien
 }
 
 void FRenderer::RenderStaticMeshes(UWorld* World, std::shared_ptr<FEditorViewportClient> ActiveViewport)
-{
+{    
+    // TODO: 리팩토링 - Shader는 Material에 종속되어야됨.
     PrepareShader();
-    for (UStaticMeshComponent* StaticMeshComp : StaticMeshObjs)
+    // for (UStaticMeshComponent* StaticMeshComp : StaticMeshObjs)
+    // {
+    //     FMatrix Model = JungleMath::CreateModelMatrix(
+    //         StaticMeshComp->GetWorldLocation(),
+    //         StaticMeshComp->GetWorldRotation(),
+    //         StaticMeshComp->GetWorldScale()
+    //     );
+    //     // 최종 MVP 행렬
+    //     FMatrix MVP = Model * ActiveViewport->GetViewMatrix() * ActiveViewport->GetProjectionMatrix();
+    //     // 노말 회전시 필요 행렬
+    //     // FMatrix NormalMatrix = FMatrix::Transpose(FMatrix::Inverse(Model));
+    //     // FVector4 UUIDColor = StaticMeshComp->EncodeUUID() / 255.0f;
+    //
+    //     // bool bIsSelected = World->GetSelectedActor() == StaticMeshComp->GetOwner();
+    //     // UpdateConstant(MVP, NormalMatrix, UUIDColor, bIsSelected);
+    //     UpdateConstant(MVP);
+    //
+    //     // if (USkySphereComponent* skysphere = Cast<USkySphereComponent>(StaticMeshComp))
+    //     // {
+    //     //     UpdateTextureConstant(skysphere->UOffset, skysphere->VOffset);
+    //     // }
+    //     // else
+    //     // {
+    //     //     UpdateTextureConstant(0, 0);
+    //     // }
+    //
+    //     // if (ActiveViewport->GetShowFlag() & static_cast<uint64>(EEngineShowFlags::SF_AABB))
+    //     // {
+    //     //     UPrimitiveBatch::GetInstance().RenderAABB(
+    //     //         StaticMeshComp->GetBoundingBox(),
+    //     //         StaticMeshComp->GetWorldLocation(),
+    //     //         Model
+    //     //     );
+    //     // }
+    //
+    //     if (!StaticMeshComp->GetStaticMesh()) continue;
+    //
+    //     OBJ::FStaticMeshRenderData* renderData = StaticMeshComp->GetStaticMesh()->GetRenderData();
+    //     if (renderData == nullptr) continue;
+    //
+    //     RenderPrimitive(renderData, StaticMeshComp->GetStaticMesh()->GetMaterials(), StaticMeshComp->GetOverrideMaterials(), StaticMeshComp->GetselectedSubMeshIndex());
+    // } 
+
+    // TODO: 일반 개별 렌더링 다시 사용할 경우 이거 없애주면 됨.
+    if (MaterialConstantBuffer)
     {
-        FMatrix Model = JungleMath::CreateModelMatrix(
-            StaticMeshComp->GetWorldLocation(),
-            StaticMeshComp->GetWorldRotation(),
-            StaticMeshComp->GetWorldScale()
-        );
-        // 최종 MVP 행렬
-        FMatrix MVP = Model * ActiveViewport->GetViewMatrix() * ActiveViewport->GetProjectionMatrix();
-        // 노말 회전시 필요 행렬
-        // FMatrix NormalMatrix = FMatrix::Transpose(FMatrix::Inverse(Model));
-        // FVector4 UUIDColor = StaticMeshComp->EncodeUUID() / 255.0f;
+        D3D11_MAPPED_SUBRESOURCE ConstantBufferMSR; // GPU�� �޸� �ּ� ����
 
-        // bool bIsSelected = World->GetSelectedActor() == StaticMeshComp->GetOwner();
-        // UpdateConstant(MVP, NormalMatrix, UUIDColor, bIsSelected);
-        UpdateConstant(MVP);
-
-        // if (USkySphereComponent* skysphere = Cast<USkySphereComponent>(StaticMeshComp))
-        // {
-        //     UpdateTextureConstant(skysphere->UOffset, skysphere->VOffset);
-        // }
-        // else
-        // {
-        //     UpdateTextureConstant(0, 0);
-        // }
-
-        if (ActiveViewport->GetShowFlag() & static_cast<uint64>(EEngineShowFlags::SF_AABB))
+        Graphics->DeviceContext->Map(MaterialConstantBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &ConstantBufferMSR); // update constant buffer every frame
         {
-            UPrimitiveBatch::GetInstance().RenderAABB(
-                StaticMeshComp->GetBoundingBox(),
-                StaticMeshComp->GetWorldLocation(),
-                Model
-            );
+            FMaterialConstants* constants = static_cast<FMaterialConstants*>(ConstantBufferMSR.pData);
+            constants->DiffuseColor = {0, 0, 0};
+            // constants->TransparencyScalar = MaterialInfo.TransparencyScalar;
+            // constants->AmbientColor = MaterialInfo.Ambient;
+            // constants->DensityScalar = MaterialInfo.DensityScalar;
+            // constants->SpecularColor = MaterialInfo.Specular;
+            // constants->SpecularScalar = MaterialInfo.SpecularScalar;
+            // constants->EmmisiveColor = MaterialInfo.Emissive;
         }
-
-        if (!StaticMeshComp->GetStaticMesh()) continue;
-
-        OBJ::FStaticMeshRenderData* renderData = StaticMeshComp->GetStaticMesh()->GetRenderData();
-        if (renderData == nullptr) continue;
-
-        RenderPrimitive(renderData, StaticMeshComp->GetStaticMesh()->GetMaterials(), StaticMeshComp->GetOverrideMaterials(), StaticMeshComp->GetselectedSubMeshIndex());
+        Graphics->DeviceContext->Unmap(MaterialConstantBuffer, 0); // GPU�� �ٽ� ��밡���ϰ� �����
     }
-
-    // 0. Set Shader
     
-    for (const auto& [MaterialName, RenderContext] : RenderBatchTargets)
+    for (const auto& [MaterialName, _] : BatchRenderTargets)
     {
         // OBJ::FStaticMeshRenderData* renderData = StaticMeshComp->GetStaticMesh()->GetRenderData();
         UMaterial* Material = FManagerOBJ::GetMaterial(MaterialName);
 
-        // 1. Bind Texture
-        UpdateMaterialConstantBuffer(Material->GetMaterialInfo());      // Material에서 Material Constant Buffer 없애서 Texture만 Binding 해줌.
+        // 1. Bind Texture - Clear
+        const auto& MaterialInfo = Material->GetMaterialInfo();
+        if (MaterialInfo.bHasTexture == true)
+        {
+            std::shared_ptr<FTexture> texture = FEngineLoop::resourceMgr.GetTexture(MaterialInfo.DiffuseTexturePath);
 
+            SetPSTextureSRV(0, 1, texture->TextureSRV);
+            SetPSSamplerState(0, 1, texture->SamplerState);
+        }
+        else
+        {
+            SetPSTextureSRV(0, 1, nullptr);
+            SetPSSamplerState(0, 1, nullptr);
+        }        
 
-        // 2. Update ConstantBuffer (VP, ...)
-        FMatrix VP = ActiveViewport->GetViewMatrix() * ActiveViewport->GetProjectionMatrix();
-        UpdateConstant(VP);        
-        
-    //     if (ActiveViewport->GetShowFlag() & static_cast<uint64>(EEngineShowFlags::SF_AABB))
-    //     {
-    //         UPrimitiveBatch::GetInstance().RenderAABB(
-    //             StaticMeshComp->GetBoundingBox(),
-    //             StaticMeshComp->GetWorldLocation(),
-    //             Model
-    //         );
-    //     }
-    //
-        
-        // 3. SetVertexBuffer, SetIndexBuffer
-        
-        // UINT offset = 0;
-        // UINT stride = sizeof(VertexSimpleeee);
-        // ID3D11Buffer* VertexBuffer;
-        // ID3D11Buffer* IndexBuffer = nullptr;
-        // DXGI_FORMAT IndexBufferFormat = DXGI_FORMAT_R32_UINT;
-        // uint32 IndexCount = 0;
-        //
-        // Graphics->DeviceContext->IASetVertexBuffers(0, 1, &VertexBuffer, &stride, &offset);
-        // Graphics->DeviceContext->IASetIndexBuffer(IndexBuffer, IndexBufferFormat, 0);
+        // 3. Draw - Clear
+        UINT offset = 0;
+        UINT stride = sizeof(FVertexSimple);
 
-        // 버텍스 버퍼에 여러 서브 메시 인덱스 버퍼
-        
-        
-    
-        // 4. Draw)
-        //if (vertexBuffer == nullptr || IndexBuffer == nullptr)        
-        // Graphics->DeviceContext->DrawIndexed(IndexCount, 0, 0);
-        
-        
-        
+        const auto Buffers = GetCachedBuffers(MaterialName);
 
-    //     for (int subMeshIndex = 0; subMeshIndex < renderData->MaterialSubsets.Num(); subMeshIndex++)
-    //     {
-    //         int materialIndex = renderData->MaterialSubsets[subMeshIndex].MaterialIndex;
-    //
-    //         subMeshIndex == selectedSubMeshIndex ? UpdateSubMeshConstant(true) : UpdateSubMeshConstant(false);
-    //
-    //         overrideMaterial[materialIndex] != nullptr ? 
-    //             UpdateMaterialConstantBuffer(overrideMaterial[materialIndex]->GetMaterialInfo()) : UpdateMaterialConstantBuffer(materials[materialIndex]->Material->GetMaterialInfo());
-    //
-    //
-    //         // 동일한 버퍼에 Sub Mesh의 IndexStart, IndexCount만 다르게 하고 있다.
-    //     
-    //         // index draw
-    //         uint64 startIndex = renderData->MaterialSubsets[subMeshIndex].IndexStart;
-    //         uint64 indexCount = renderData->MaterialSubsets[subMeshIndex].IndexCount;
-    //         Graphics->DeviceContext->DrawIndexed(indexCount, startIndex, 0);
-    //     }
+        for (const auto& [VertexBuffer, IndexBufferInfo] : Buffers)
+        {
+            if (VertexBuffer == nullptr || IndexBufferInfo.Key == 0 || IndexBufferInfo.Value == nullptr)
+                continue;
+            
+            DXGI_FORMAT IndexBufferFormat = DXGI_FORMAT_R32_UINT;
+            uint32 IndexCount = IndexBufferInfo.Key;
+            ID3D11Buffer* IndexBuffer = IndexBufferInfo.Value;
+            Graphics->DeviceContext->IASetVertexBuffers(0, 1, &VertexBuffer, &stride, &offset);
+            Graphics->DeviceContext->IASetIndexBuffer(IndexBuffer, IndexBufferFormat, 0);
+            Graphics->DeviceContext->DrawIndexed(IndexCount, 0, 0);
+        }
     }
 }
 
@@ -1238,6 +1349,8 @@ void FRenderer::RenderGizmos(const UWorld* World, const std::shared_ptr<FEditorV
 
 void FRenderer::RenderBillboards(UWorld* World, std::shared_ptr<FEditorViewportClient> ActiveViewport)
 {
+    if (BillboardObjs.Num() == 0)
+        return;
     PrepareTextureShader();
     PrepareSubUVConstant();
     for (auto BillboardComp : BillboardObjs)
@@ -1292,36 +1405,57 @@ void FRenderer::SetTopology(const D3D11_PRIMITIVE_TOPOLOGY InPrimitiveTopology)
     Graphics->DeviceContext->IASetPrimitiveTopology(CurrentPrimitiveTopology);
 }
 
-void FRenderer::SetTextureSRV(uint32 StartSlot, uint32 NumViews, ID3D11ShaderResourceView** InSRV)
+void FRenderer::SetPSTextureSRV(uint32 StartSlot, uint32 NumViews, ID3D11ShaderResourceView* InSRV)
 {
     if (!CurrentTextureSRV.Contains(StartSlot))
     {
-        CurrentTextureSRV.Add(StartSlot, nullptr);
+        CurrentTextureSRV.Add(StartSlot, {0, nullptr});
     }
     
-    if (CurrentTextureSRV[StartSlot] == InSRV)
+    if (CurrentTextureSRV[StartSlot].Value == InSRV && CurrentTextureSRV[StartSlot].Key == NumViews)
     {
         return;
     }
-    
-    CurrentTextureSRV[StartSlot] = InSRV;
-    Graphics->DeviceContext->PSSetShaderResources(StartSlot, NumViews, InSRV);
+
+    CurrentTextureSRV[StartSlot].Key = NumViews;
+    CurrentTextureSRV[StartSlot].Value = InSRV;
+
+    if (InSRV == nullptr)
+    {
+        ID3D11ShaderResourceView* nullSRV[1] = {nullptr};
+        Graphics->DeviceContext->PSSetShaderResources(StartSlot, NumViews, nullSRV);
+    }
+    else
+    {
+        
+        Graphics->DeviceContext->PSSetShaderResources(StartSlot, NumViews, &InSRV);
+    }
 }
 
-void FRenderer::SetSamplerState(uint32 StartSlot, uint32 NumSamplers, ID3D11SamplerState** InSamplerState)
+void FRenderer::SetPSSamplerState(uint32 StartSlot, uint32 NumSamplers, ID3D11SamplerState* InSamplerState)
 {
     if (!CurrentSamplerState.Contains(StartSlot))
     {
-        CurrentSamplerState.Add(StartSlot, nullptr);
+        CurrentSamplerState.Add(StartSlot, {0, nullptr});
     }
     
-    if (CurrentSamplerState[StartSlot] == InSamplerState)
+    if (CurrentSamplerState[StartSlot].Value == InSamplerState && CurrentSamplerState[StartSlot].Key == NumSamplers)
     {
         return;
     }
-    
-    CurrentSamplerState[StartSlot] = InSamplerState;
-    Graphics->DeviceContext->PSSetSamplers(StartSlot, NumSamplers, InSamplerState);
+
+    CurrentSamplerState[StartSlot].Key = NumSamplers;
+    CurrentSamplerState[StartSlot].Value = InSamplerState;
+
+    if (InSamplerState == nullptr)
+    {
+        ID3D11SamplerState* nullSampler[1] = {nullptr};
+        Graphics->DeviceContext->PSSetSamplers(StartSlot, NumSamplers, nullSampler);
+    }
+    else
+    {
+        Graphics->DeviceContext->PSSetSamplers(StartSlot, NumSamplers, &InSamplerState);
+    }
 }
 
 void FRenderer::SetVertexShader(ID3D11VertexShader* InVertexShader)
@@ -1352,6 +1486,45 @@ void FRenderer::SetInputLayout(ID3D11InputLayout* InInputLayout)
     CurrentInputLayout = InInputLayout;
     
     Graphics->DeviceContext->IASetInputLayout(InInputLayout);
+}
+
+void FRenderer::SetVSConstantBuffers(uint32 StartSlot, uint32 NumBuffers, ID3D11Buffer* InConstantBufferPtr)
+{
+    if (!CurrentVSConstantBuffers.Contains(StartSlot))
+    {
+        CurrentVSConstantBuffers.Add(StartSlot, {0, nullptr});
+    }
+    
+    if (CurrentVSConstantBuffers[StartSlot].Value == InConstantBufferPtr && CurrentVSConstantBuffers[StartSlot].Key == NumBuffers)
+    {
+        return;
+    }
+
+    CurrentVSConstantBuffers[StartSlot].Key = NumBuffers;
+    CurrentVSConstantBuffers[StartSlot].Value = InConstantBufferPtr;
+    Graphics->DeviceContext->VSSetConstantBuffers(StartSlot, NumBuffers, &InConstantBufferPtr);
+}
+
+void FRenderer::SetPSConstantBuffers(uint32 StartSlot, uint32 NumBuffers, ID3D11Buffer* InConstantBufferPtr)
+{
+    if (!CurrentPSConstantBuffers.Contains(StartSlot))
+    {
+        CurrentPSConstantBuffers.Add(StartSlot, {0, nullptr});
+    }
+    
+    if (CurrentPSConstantBuffers[StartSlot].Value == InConstantBufferPtr && CurrentPSConstantBuffers[StartSlot].Key == NumBuffers)
+    {
+        return;
+    }
+
+    CurrentPSConstantBuffers[StartSlot].Key = NumBuffers;
+    CurrentPSConstantBuffers[StartSlot].Value = InConstantBufferPtr;
+    Graphics->DeviceContext->PSSetConstantBuffers(StartSlot, NumBuffers, &InConstantBufferPtr);
+}
+
+TArray<TPair<ID3D11Buffer*, TPair<uint32, ID3D11Buffer*>>> FRenderer::GetCachedBuffers(const FString& InMaterialName)
+{
+    return CachedBuffers[InMaterialName];
 }
 
 void FRenderer::RenderLight(UWorld* World, std::shared_ptr<FEditorViewportClient> ActiveViewport)
