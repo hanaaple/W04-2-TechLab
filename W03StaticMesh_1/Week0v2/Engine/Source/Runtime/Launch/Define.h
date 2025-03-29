@@ -130,6 +130,14 @@ namespace OBJ
         FVector BoundingBoxMin;
         FVector BoundingBoxMax;
     };
+
+    // 별도의 LOD 데이터 전담 구조체
+    //
+    struct FStaticMeshLODData
+    {
+        // LODLevels[0]: 기본(고해상도) 메시, [1]: 중간, [2]: 저해상도 등
+        TArray<OBJ::FStaticMeshRenderData*> LODLevels;
+    };
 }
 
 struct FVertexTexture
