@@ -239,6 +239,7 @@
     <ClCompile Include="Engine\Source\Editor\PropertyEditor\FPSEditorPanel.cpp" />
     <ClCompile Include="Engine\Source\Runtime\Core\Stats\ScopeCycleCounter.cpp" />
     <ClCompile Include="Engine\Source\Runtime\Renderer\Frustum.cpp" />
+    <ClCompile Include="Engine\Source\Runtime\Renderer\OcclusionRenderer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Engine\Source\Runtime\Core\Container\FOcTree.h" />
@@ -352,6 +353,7 @@
     <ClInclude Include="Engine\Source\Runtime\Engine\World.h" />
     <ClInclude Include="Engine\Source\Editor\PropertyEditor\FPSEditorPanel.h" />
     <ClInclude Include="Engine\Source\Runtime\Core\Stats\ScopeCycleCounter.h" />
+    <ClInclude Include="Engine\Source\Runtime\Renderer\OcclusionRenderer.h" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Shaders\StaticMeshPixelShader.hlsl">
