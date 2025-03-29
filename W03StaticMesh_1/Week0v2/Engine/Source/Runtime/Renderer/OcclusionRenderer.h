@@ -1,4 +1,5 @@
 #pragma once
+#include "UnrealEd/EditorViewportClient.h"
 class FRenderer;
 class FGraphicsDevice;
 class ID3D11VertexShader;
@@ -13,8 +14,8 @@ class FOcclusionRenderer
 public:
     void Initialize(FGraphicsDevice* graphics);
     void Prepare(FRenderer* Renderer);
-    void IssueQueries(FRenderer* Renderer);
-    void IssueQuery(const FBoundingBox& box, const FMatrix& M, const FOcclusionQuery& query);
+    void IssueQueries(FRenderer* Renderer, const std::shared_ptr<FEditorViewportClient>& ActiveViewport);
+    void IssueQuery(const FBoundingBox& box, const FMatrix& MVP, const FOcclusionQuery& query);
     void ResolveQueries();
     void Release();
 
@@ -34,7 +35,7 @@ private:
         float pad0 = 0;
         FVector Max;
         float pad1 = 0;
-        FMatrix M;
+        FMatrix MVP;
     };
 
 private:

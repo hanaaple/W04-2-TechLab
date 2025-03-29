@@ -960,62 +960,74 @@ void FRenderer::CreateBatchRenderCache()
     {
         if(!BatchRenderTargetContext.bIsDirty)
             return;
+        BatchRenderTargetContext.bIsDirty = false;
 
         if (!CachedBuffers.Contains(MaterialName))
             CachedBuffers.Add(MaterialName, TArray<TPair<ID3D11Buffer*, TPair<uint32, ID3D11Buffer*>>>());
         
         CachedBuffers[MaterialName].Empty();
-        
-        BatchRenderTargetContext.bIsDirty = false;
 
-        uint32 VertexOffset = 0;
-        TArray<FVertexSimple> VertexData;
-        TArray<uint32> IndexData;
-        
-        for (const auto& [SubMeshIndex, StaticMeshComponent] : BatchRenderTargetContext.StaticMeshes)
+        int MeshIndex = 0;
+        while (BatchRenderTargetContext.StaticMeshes.Num() > MeshIndex)
         {
-            OBJ::FStaticMeshRenderData* renderData = StaticMeshComponent->GetStaticMesh()->GetRenderData();
-            uint32 IndexBufferStartIndex = renderData->MaterialSubsets[SubMeshIndex].IndexStart;
-            uint32 IndexCount = renderData->MaterialSubsets[SubMeshIndex].IndexCount;
+            uint32 VertexOffset = 0;
+            TArray<FVertexSimple> VertexData;
+            TArray<uint32> IndexData;
 
-            TArray<FVertexSimple> Vertices;
-            const auto& OriginVertices = renderData->Vertices;
-            for (const auto& OriginVertex : OriginVertices)
+            for (; MeshIndex < BatchRenderTargetContext.StaticMeshes.Num(); MeshIndex++)
             {
-                FVertexSimple Vertex;
+                UStaticMeshComponent* StaticMeshComponent = BatchRenderTargetContext.StaticMeshes[MeshIndex].Value;
+                const uint32 SubMeshIndex = BatchRenderTargetContext.StaticMeshes[MeshIndex].Key;
+                const OBJ::FStaticMeshRenderData* renderData = StaticMeshComponent->GetStaticMesh()->GetRenderData();
+                const uint32 IndexBufferStartIndex = renderData->MaterialSubsets[SubMeshIndex].IndexStart;
+                const uint32 IndexCount = renderData->MaterialSubsets[SubMeshIndex].IndexCount;
 
-                FMatrix Model = JungleMath::CreateModelMatrix(StaticMeshComponent->GetWorldLocation(), StaticMeshComponent->GetWorldRotation(), StaticMeshComponent->GetWorldScale());
-                    
-                FVector Pos = Model.TransformPosition({OriginVertex.x, OriginVertex.y, OriginVertex.z});
+                TArray<FVertexSimple> Vertices = StaticMeshComponent->Vertices;
 
-                Vertex.x = Pos.x;
-                Vertex.y = Pos.y;
-                Vertex.z = Pos.z;
-                Vertex.u = OriginVertex.u;
-                Vertex.v = OriginVertex.v;
-                Vertices.Add(Vertex);
-            } 
+                // UISOO TODO: 사용하지 않는 Vertex 없애고 Indexing 당기기
+                VertexData.Append(Vertices);
 
-            // UISOO TODO: 사용하지 않는 Vertex 없애고 Indexing 당기기
-            VertexData.Append(Vertices);
-
-            const TArray<uint32>& Indices = renderData->Indices;
-            for (int i = IndexBufferStartIndex; i < IndexBufferStartIndex + IndexCount; i++)
-            {
-                IndexData.Add(Indices[i] + VertexOffset);                    
-            }
+                const TArray<uint32>& Indices = renderData->Indices;
+                for (int i = IndexBufferStartIndex; i < IndexBufferStartIndex + IndexCount; i++)
+                {
+                    IndexData.Add(Indices[i] + VertexOffset);                    
+                }
                 
-            VertexOffset += Vertices.Num();
-        }
+                VertexOffset += Vertices.Num();
 
-        uint32 VertexDataSize = sizeof(FVertexSimple) * VertexData.Num();
-        ID3D11Buffer* VertexBuffer = CreateVertexBuffer(VertexData.GetData(), VertexDataSize);
+                static const uint32 MaxVertexBufferSize = 16 * 1024 * 1024;
+                //static const uint32 MaxIndexBufferSize = 2 * 1024 * 1024;
+                //uint32 IndexByte = IndexData.Num() * sizeof(uint32);
+                uint32 VertexByte = VertexOffset * sizeof(FVertexSimple);
+                if (VertexByte > MaxVertexBufferSize
+                    //|| IndexByte > MaxIndexBufferSize
+                    )
+                    break;
+            }
+
+            uint32 VertexDataSize = sizeof(FVertexSimple) * VertexData.Num();
+            ID3D11Buffer* VertexBuffer = CreateVertexBuffer(VertexData.GetData(), VertexDataSize);
+            //ID3D11Buffer* VertexBuffer = UpdateOrCreateVertexBuffer(MaterialName, MeshIndex, VertexData.GetData(), VertexDataSize);
         
-        uint32 IndexDataSize = sizeof(uint32) * IndexData.Num();
-        ID3D11Buffer* IndexBuffer = CreateIndexBuffer(IndexData.GetData(), IndexDataSize);
+            uint32 IndexDataSize = sizeof(uint32) * IndexData.Num();
+            ID3D11Buffer* IndexBuffer = CreateIndexBuffer(IndexData.GetData(), IndexDataSize);
+            //ID3D11Buffer* IndexBuffer = UpdateOrCreateIndexBuffer(MaterialName, MeshIndex, IndexData.GetData(), IndexDataSize);
         
-        CachedBuffers[MaterialName].Add({VertexBuffer, {IndexDataSize, IndexBuffer}});
+            CachedBuffers[MaterialName].Add({VertexBuffer, {IndexDataSize, IndexBuffer}});
+
+            MeshIndex++;
+        }
     }
+}
+
+ID3D11Buffer* FRenderer::UpdateOrCreateVertexBuffer(const FString& MaterialName, uint32 MeshIndex, FVertexSimple* Data, uint32 VertexDataSize)
+{
+    
+}
+
+ID3D11Buffer* FRenderer::UpdateOrCreateIndexBuffer(const FString& MaterialName, uint32 MeshIndex, void* Data, uint32 IndexDataSize)
+{
+    
 }
 
 void FRenderer::UpdateBoundingBoxBuffer(ID3D11Buffer* pBoundingBoxBuffer, const TArray<FBoundingBox>& BoundingBoxes, int numBoundingBoxes) const
@@ -1099,41 +1111,8 @@ void FRenderer::RenderBatch(
 }
 
 // UISOO TODO: 매 프레임 순회하며 넣어주고 있음. 변경사항 있는 거만 체크
-void FRenderer::PrepareRender(std::shared_ptr<FEditorViewportClient> ActiveViewport)
+void FRenderer::PrepareRender()
 {
-    //const FFrustum Frustum(ActiveViewport->GetViewMatrix(), ActiveViewport->GetProjectionMatrix());
-    
-    // 전역적으로 관리되는 UObject 배열에서 TMap으로 변경된 매핑을 가져옵니다.
-    //TMap<uint32, UObject*> ObjectMap = GUObjectArray.GetObjectItemArrayUnsafe();
-    
-    // Octree의 FrustumCull을 호출하여, 프러스텀 내에 있는 요소들에 대해 처리합니다.
-    //const auto ocTree =  GEngineLoop.GetWorld()->GetOcTree();;
-    //ocTree.FrustumCull(Frustum, [&](const FOctreeElement<UStaticMeshComponent>& element)
-    {
-        for ( auto a : TObjectRange<UStaticMeshComponent>() ) 
-        {
-            
-                if ( Cast<UGizmoBaseComponent>(a) )
-                    continue;
-                // StaticMeshObjs.Add(pStaticMeshComp);
-
-                for ( uint32 i = 0; i < a->GetNumMaterials(); i++ ) {
-                    auto Material = a->GetMaterial(i);
-                    auto MTLName = Material->GetMaterialInfo().MTLName;
-                    if ( !BatchRenderTargets.Contains(MTLName) ) {
-                        BatchRenderTargets.Add(MTLName, BatchRenderTargetContext());
-                        BatchRenderTargets[MTLName].bIsDirty = true;
-                    }
-                    if ( BatchRenderTargets[MTLName].bIsDirty ) {
-                        BatchRenderTargets[MTLName].StaticMeshes.Add({ i, a });
-                    }
-
-                    // Material의 변경, Transform의 변경, Culling에 의한 삭제에 따라 Targets 초기화 (BatchRenderTargets[MTLName].Empty();)
-                }
-            
-        }
-    };
-    
     // for (auto iter : TObjectRange<UStaticMeshComponent>())
     // {
     //     FMatrix Model = JungleMath::CreateModelMatrix(
@@ -1189,7 +1168,7 @@ void FRenderer::Render(UWorld* World, const std::shared_ptr<FEditorViewportClien
     
     // UISOO TODO: 여기 Set LineShader
     UPrimitiveBatch::GetInstance().RenderBatchLine(ActiveViewport->GetViewMatrix(), ActiveViewport->GetProjectionMatrix());
-
+    
     // UISOO TODO: 여기 Set StaticMeshShader
     if (ActiveViewport->GetShowFlag() & static_cast<uint64>(EEngineShowFlags::SF_Primitives))
         RenderStaticMeshes(World, ActiveViewport);
@@ -1205,7 +1184,7 @@ void FRenderer::Render(UWorld* World, const std::shared_ptr<FEditorViewportClien
 
     if (GetAsyncKeyState(VK_RBUTTON) & 0x8000) 
     {
-        IssueOcclusionQueries();
+        IssueOcclusionQueries(ActiveViewport);
     }
     
     ClearRenderArr();
@@ -1429,6 +1408,47 @@ void FRenderer::RenderBillboards(UWorld* World, std::shared_ptr<FEditorViewportC
     PrepareShader();
 }
 
+void FRenderer::UpdateBatchRenderTarget(std::shared_ptr<FEditorViewportClient> ActiveViewport)
+{
+    if (GEngineLoop.GetWorld() == nullptr)
+        return;
+    
+    // LevelEditor->GetActiveViewportClient()
+
+    BatchRenderTargets.Empty();
+    
+    const FFrustum Frustum(ActiveViewport->GetViewMatrix(), ActiveViewport->GetProjectionMatrix());
+
+    // Octree의 FrustumCull을 호출하여, 프러스텀 내에 있는 요소들에 대해 처리합니다.
+    const auto ocTree =  GEngineLoop.GetWorld()->GetOcTree();
+    ocTree.FrustumCull(Frustum, [&](const FOctreeElement<UStaticMeshComponent>& element)
+    {
+        UStaticMeshComponent* pStaticMeshComp = element.element;
+        if (!pStaticMeshComp->bIsVisible)
+            return;
+        if (Cast<UGizmoBaseComponent>(pStaticMeshComp))
+            return;
+        // StaticMeshObjs.Add(pStaticMeshComp);
+                
+        for (uint32 i = 0; i < pStaticMeshComp->GetNumMaterials(); i++)
+        {
+            auto Material = pStaticMeshComp->GetMaterial(i);
+            auto MTLName = Material->GetMaterialInfo().MTLName;
+            if (!BatchRenderTargets.Contains(MTLName))
+            {
+                BatchRenderTargets.Add(MTLName, BatchRenderTargetContext());
+                BatchRenderTargets[MTLName].bIsDirty = true;
+            }
+            if (BatchRenderTargets[MTLName].bIsDirty)
+            {
+                BatchRenderTargets[MTLName].StaticMeshes.Add({ i, pStaticMeshComp });
+            }
+            
+            // Material의 변경, Transform의 변경, Culling에 의한 삭제에 따라 Targets 초기화 (BatchRenderTargets[MTLName].Empty();
+        }
+    });
+}
+
 void FRenderer::SetTopology(const D3D11_PRIMITIVE_TOPOLOGY InPrimitiveTopology)
 {
     if (CurrentPrimitiveTopology == InPrimitiveTopology)
@@ -1562,9 +1582,9 @@ TArray<TPair<ID3D11Buffer*, TPair<uint32, ID3D11Buffer*>>> FRenderer::GetCachedB
 }
 
 
-void FRenderer::IssueOcclusionQueries()
+void FRenderer::IssueOcclusionQueries(const std::shared_ptr<FEditorViewportClient>& ActiveViewport)
 {
-    OcclusionRenderer->IssueQueries(this);
+    OcclusionRenderer->IssueQueries(this, ActiveViewport);
 }
 
 void FRenderer::ResolveOcclusionQueries()

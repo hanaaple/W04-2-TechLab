@@ -53,19 +53,19 @@ FVector USceneComponent::GetUpVector()
 void USceneComponent::AddLocation(FVector _added)
 {
 	RelativeLocation = RelativeLocation + _added;
-
+    OnTransformation();
 }
 
 void USceneComponent::AddRotation(FVector _added)
 {
 	RelativeRotation = RelativeRotation + _added;
-
+    OnTransformation();
 }
 
 void USceneComponent::AddScale(FVector _added)
 {
 	RelativeScale3D = RelativeScale3D + _added;
-
+    OnTransformation();
 }
 
 FVector USceneComponent::GetWorldRotation()
@@ -107,6 +107,7 @@ void USceneComponent::SetRotation(FVector _newRot)
 {
 	RelativeRotation = _newRot;
 	QuatRotation = JungleMath::EulerToQuaternion(_newRot);
+    OnTransformation();
 }
 
 void USceneComponent::SetupAttachment(USceneComponent* InParent)

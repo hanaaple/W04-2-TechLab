@@ -138,13 +138,15 @@ public: // line shader
     ID3D11ShaderResourceView* CreateConeSRV(ID3D11Buffer* pConeBuffer, UINT numCones);
 
     void CreateBatchRenderCache();
+    ID3D11Buffer* UpdateOrCreateVertexBuffer(const FString& MaterialName, uint32 MeshIndex, FVertexSimple* Data, uint32 VertexDataSize);
+    ID3D11Buffer* UpdateOrCreateIndexBuffer(const FString& MaterialName, uint32 MeshIndex, void* Data, uint32 IndexDataSize);
     
     void UpdateBoundingBoxBuffer(ID3D11Buffer* pBoundingBoxBuffer, const TArray<FBoundingBox>& BoundingBoxes, int numBoundingBoxes) const;
     void UpdateOBBBuffer(ID3D11Buffer* pBoundingBoxBuffer, const TArray<FOBB>& BoundingBoxes, int numBoundingBoxes) const;
     void UpdateConesBuffer(ID3D11Buffer* pConeBuffer, const TArray<FCone>& Cones, int numCones) const;
 
     //Render Pass Demo
-    void PrepareRender(std::shared_ptr<FEditorViewportClient> ActiveViewport);
+    void PrepareRender();
     void ClearRenderArr();
     void Render(UWorld* World, const std::shared_ptr<FEditorViewportClient>& ActiveViewport);
     void RenderStaticMeshes(UWorld* World, std::shared_ptr<FEditorViewportClient> ActiveViewport);
@@ -153,6 +155,8 @@ public: // line shader
     void RenderBillboards(UWorld* World,std::shared_ptr<FEditorViewportClient> ActiveViewport);
 
 public:
+    void UpdateBatchRenderTarget(std::shared_ptr<FEditorViewportClient> ActiveViewport);
+    
 public:
     void SetTopology(const D3D11_PRIMITIVE_TOPOLOGY InPrimitiveTopology);
     void SetPSTextureSRV(uint32 StartSlot, uint32 NumViews, ID3D11ShaderResourceView* InSRV);
@@ -212,10 +216,10 @@ private:
     TMap<uint32, TPair<uint32, ID3D11Buffer*>> CurrentPSConstantBuffers;
 
     // Material
-    TMap<FString, TArray<TPair<ID3D11Buffer*, TPair<uint32, ID3D11Buffer*>>>> CachedBuffers; 
-
+    TMap<FString, TArray<TPair<ID3D11Buffer*, TPair<uint32, ID3D11Buffer*>>>> CachedBuffers;
+    
 public:
-    void IssueOcclusionQueries();
+    void IssueOcclusionQueries(const std::shared_ptr<FEditorViewportClient>& ActiveViewport);
     void ResolveOcclusionQueries();
 private:
     FOcclusionRenderer* OcclusionRenderer = nullptr;

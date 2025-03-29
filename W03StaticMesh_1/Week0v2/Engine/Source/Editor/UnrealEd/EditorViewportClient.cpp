@@ -48,6 +48,18 @@ void FEditorViewportClient::Tick(float DeltaTime)
     UpdateViewMatrix();
     UpdateProjectionMatrix();
 
+    if (ViewTransformPerspective.bIsTranslated)
+    {
+        if (ViewTransformPerspective.timer > 0)
+        {
+            ViewTransformPerspective.timer -= DeltaTime;
+            return;
+        }
+        ViewTransformPerspective.timer = ViewTransformPerspective.totalTimer;
+        ViewTransformPerspective.bIsTranslated = false;
+        GEngineLoop.renderer.UpdateCameraConstant(GEngineLoop.GetLevelEditor()->GetActiveViewportClient().get());
+        GEngineLoop.renderer.UpdateBatchRenderTarget(GEngineLoop.GetLevelEditor()->GetActiveViewportClient());
+    }
 }
 
 void FEditorViewportClient::Release()
@@ -56,8 +68,6 @@ void FEditorViewportClient::Release()
         delete Viewport;
  
 }
-
-
 
 void FEditorViewportClient::Input()
 {

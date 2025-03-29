@@ -151,14 +151,14 @@ void FEngineLoop::Render()
         for (int i = 0; i < 4; ++i)
         {
             LevelEditor->SetViewportClient(i);
-            renderer.PrepareRender(viewportClient);
+            renderer.PrepareRender();
             renderer.Render(GetWorld(),LevelEditor->GetActiveViewportClient());
         }
         GetLevelEditor()->SetViewportClient(viewportClient);
     }
     else
     {
-        renderer.PrepareRender(LevelEditor->GetActiveViewportClient());  // UISOO TODO: 바꿔야됨.
+        renderer.PrepareRender();  // UISOO TODO: 바꿔야됨.
         renderer.Render(GetWorld(),LevelEditor->GetActiveViewportClient());
     }
 }

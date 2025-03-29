@@ -21,10 +21,10 @@ void FOcclusionRenderer::Prepare(FRenderer* Renderer)
     Renderer->SetVertexShader(OcclusionVertexShader);
     Renderer->SetPixelShader(nullptr);
     Renderer->SetInputLayout(nullptr);
-    Renderer->SetVSConstantBuffers(0, 1, BoxConstantBuffer);
+    Renderer->SetVSConstantBuffers(7, 1, BoxConstantBuffer);
 }
 
-void FOcclusionRenderer::IssueQueries(FRenderer* Renderer)
+void FOcclusionRenderer::IssueQueries(FRenderer* Renderer, const std::shared_ptr<FEditorViewportClient>& ActiveViewport)
 {
     Prepare(Renderer);
     for (auto StaticMeshComp : TObjectRange<UStaticMeshComponent>())
@@ -34,18 +34,19 @@ void FOcclusionRenderer::IssueQueries(FRenderer* Renderer)
             StaticMeshComp->GetWorldRotation(),
             StaticMeshComp->GetWorldScale()
         );
+        FMatrix MVP = Model * ActiveViewport->GetViewMatrix() * ActiveViewport->GetProjectionMatrix();
 
         const FBoundingBox& LocalBounds = StaticMeshComp->GetBoundingBox();
 
-        IssueQuery(LocalBounds, Model, StaticMeshComp->query);
+        IssueQuery(LocalBounds, MVP, StaticMeshComp->query);
     }
 }
 
-void FOcclusionRenderer::IssueQuery(const FBoundingBox& box, const FMatrix& M, const FOcclusionQuery& query)
+void FOcclusionRenderer::IssueQuery(const FBoundingBox& box, const FMatrix& MVP, const FOcclusionQuery& query)
 {
     if (query.Get() == nullptr) return;
     Graphics->DeviceContext->Begin(query.Get());
-    UpdateBoxConstantBuffer(box, M);
+    UpdateBoxConstantBuffer(box, MVP);
     Rendering(box);
     Graphics->DeviceContext->End(query.Get());
 }
@@ -85,10 +86,10 @@ void FOcclusionRenderer::Release()
     if (DummyVertexBuffer) DummyVertexBuffer->Release();
 }
 
-void FOcclusionRenderer::UpdateBoxConstantBuffer(const FBoundingBox& box,const FMatrix& m)
+void FOcclusionRenderer::UpdateBoxConstantBuffer(const FBoundingBox& box,const FMatrix& MVP)
 {
     FBoxConstantBuffer cb;
-    cb.M = m;
+    cb.MVP = MVP;
     cb.Min = box.min;
     cb.Max = box.max;
 
