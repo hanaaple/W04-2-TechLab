@@ -73,6 +73,8 @@ public:
     void SetPickedActor(AActor* InActor)
     {
         SelectedActor = InActor;
+
+        // Update Constant Buffer?
     }
 
     UObject* GetWorldGizmo() const { return worldGizmo; }

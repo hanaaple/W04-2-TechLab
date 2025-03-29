@@ -143,20 +143,22 @@ int32 FEngineLoop::Init(HINSTANCE hInstance)
 void FEngineLoop::Render()
 {
     graphicDevice.Prepare();
+
+    // 신경 안써도 됨.
     if (LevelEditor->IsMultiViewport())
     {
         std::shared_ptr<FEditorViewportClient> viewportClient = GetLevelEditor()->GetActiveViewportClient();
         for (int i = 0; i < 4; ++i)
         {
             LevelEditor->SetViewportClient(i);
-            renderer.PrepareRender();
+            renderer.PrepareRender(viewportClient);
             renderer.Render(GetWorld(),LevelEditor->GetActiveViewportClient());
         }
         GetLevelEditor()->SetViewportClient(viewportClient);
     }
     else
     {
-        renderer.PrepareRender();
+        renderer.PrepareRender(LevelEditor->GetActiveViewportClient());  // UISOO TODO: 바꿔야됨.
         renderer.Render(GetWorld(),LevelEditor->GetActiveViewportClient());
     }
 }
