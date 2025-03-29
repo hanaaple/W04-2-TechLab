@@ -1,4 +1,5 @@
 #pragma once
+class FRenderer;
 class FGraphicsDevice;
 class ID3D11VertexShader;
 class ID3D11InputLayout;
@@ -11,10 +12,10 @@ class FOcclusionRenderer
 {
 public:
     void Initialize(FGraphicsDevice* graphics);
-    void Prepare();
-    void IssueQueries(TArray<UStaticMeshComponent*>& StaticMeshObjs, const FMatrix& VP);
-    void IssueQuery(const FBoundingBox& box, const FMatrix& MVP, const FOcclusionQuery& query);
-    void ResolveQueries(const TArray<UStaticMeshComponent*>& StaticMeshObjs);
+    void Prepare(FRenderer* Renderer);
+    void IssueQueries(FRenderer* Renderer);
+    void IssueQuery(const FBoundingBox& box, const FMatrix& M, const FOcclusionQuery& query);
+    void ResolveQueries();
     void Release();
 
 private:
@@ -33,7 +34,7 @@ private:
         float pad0 = 0;
         FVector Max;
         float pad1 = 0;
-        FMatrix MVP;
+        FMatrix M;
     };
 
 private:

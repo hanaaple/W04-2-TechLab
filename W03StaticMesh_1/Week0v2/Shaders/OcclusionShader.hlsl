@@ -4,7 +4,12 @@ cbuffer BoxCB : register(b0)
     float _pad0;
     float3 Max;
     float _pad1;
-    row_major float4x4 MVP;
+    row_major float4x4 M;
+}
+
+cbuffer VPConstant : register(b6)
+{
+    row_major float4x4 VP;
 }
 
 static const float3 UnitCubeVertices[8] =
@@ -27,5 +32,5 @@ struct VS_INPUT
 float4 main(VS_INPUT input) : SV_POSITION
 {
     float3 posLocal = lerp(Min, Max, UnitCubeVertices[input.vertexId]);
-    return mul(float4(posLocal, 1.0f), MVP);
+    return mul(mul(float4(posLocal, 1.0f), M), VP);
 }

@@ -1,11 +1,12 @@
 #include "Launch/Define.h"
 #include "OcclusionRenderer.h"
-#include "Engine/ResourceMgr.h"
 #include "OcclusionQuery.h"
 #include "Components/StaticMeshComponent.h"
 #include "Math/JungleMath.h"
 #include <d3d11.h>
 #include <d3dcompiler.h>
+
+#include "UObject/UObjectIterator.h"
 
 void FOcclusionRenderer::Initialize(FGraphicsDevice* graphics)
 {
@@ -15,20 +16,18 @@ void FOcclusionRenderer::Initialize(FGraphicsDevice* graphics)
     CreateVertexBuffer();
 }
 
-void FOcclusionRenderer::Prepare()
+void FOcclusionRenderer::Prepare(FRenderer* Renderer)
 {
-    ID3D11DeviceContext* context = Graphics->DeviceContext;
-
-    context->VSSetShader(OcclusionVertexShader, nullptr, 0);
-    context->PSSetShader(nullptr, nullptr, 0);
-    context->IASetInputLayout(nullptr);
-    context->VSSetConstantBuffers(0, 1, &BoxConstantBuffer);
+    Renderer->SetVertexShader(OcclusionVertexShader);
+    Renderer->SetPixelShader(nullptr);
+    Renderer->SetInputLayout(nullptr);
+    Renderer->SetVSConstantBuffers(0, 1, BoxConstantBuffer);
 }
 
-void FOcclusionRenderer::IssueQueries(TArray<UStaticMeshComponent*>& StaticMeshObjs, const FMatrix& VP)
+void FOcclusionRenderer::IssueQueries(FRenderer* Renderer)
 {
-    Prepare();
-    for (UStaticMeshComponent* StaticMeshComp : StaticMeshObjs)
+    Prepare(Renderer);
+    for (auto StaticMeshComp : TObjectRange<UStaticMeshComponent>())
     {
         FMatrix Model = JungleMath::CreateModelMatrix(
             StaticMeshComp->GetWorldLocation(),
@@ -36,28 +35,25 @@ void FOcclusionRenderer::IssueQueries(TArray<UStaticMeshComponent*>& StaticMeshO
             StaticMeshComp->GetWorldScale()
         );
 
-        FMatrix MVP = Model * VP;
         const FBoundingBox& LocalBounds = StaticMeshComp->GetBoundingBox();
 
-        IssueQuery(LocalBounds, MVP,StaticMeshComp->query);
-
+        IssueQuery(LocalBounds, Model, StaticMeshComp->query);
     }
 }
 
-void FOcclusionRenderer::IssueQuery(const FBoundingBox& box, const FMatrix& MVP, const FOcclusionQuery& query)
+void FOcclusionRenderer::IssueQuery(const FBoundingBox& box, const FMatrix& M, const FOcclusionQuery& query)
 {
     if (query.Get() == nullptr) return;
     Graphics->DeviceContext->Begin(query.Get());
-    UpdateBoxConstantBuffer(box, MVP);
+    UpdateBoxConstantBuffer(box, M);
     Rendering(box);
     Graphics->DeviceContext->End(query.Get());
 }
 
-void FOcclusionRenderer::ResolveQueries(const TArray<UStaticMeshComponent*>& StaticMeshObjs)
+void FOcclusionRenderer::ResolveQueries()
 {
     ID3D11DeviceContext* context = Graphics->DeviceContext;
-
-    for (UStaticMeshComponent* StaticMeshComp : StaticMeshObjs)
+    for (auto StaticMeshComp : TObjectRange<UStaticMeshComponent>())
     {
         ID3D11Query* query = StaticMeshComp->query.Get();
 
@@ -89,10 +85,10 @@ void FOcclusionRenderer::Release()
     if (DummyVertexBuffer) DummyVertexBuffer->Release();
 }
 
-void FOcclusionRenderer::UpdateBoxConstantBuffer(const FBoundingBox& box,const FMatrix& mvp)
+void FOcclusionRenderer::UpdateBoxConstantBuffer(const FBoundingBox& box,const FMatrix& m)
 {
     FBoxConstantBuffer cb;
-    cb.MVP = mvp;
+    cb.M = m;
     cb.Min = box.min;
     cb.Max = box.max;
 
@@ -100,7 +96,6 @@ void FOcclusionRenderer::UpdateBoxConstantBuffer(const FBoundingBox& box,const F
     Graphics->DeviceContext->Map(BoxConstantBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped);
     memcpy(mapped.pData, &cb, sizeof(cb));
     Graphics->DeviceContext->Unmap(BoxConstantBuffer,0);
-
 }
 
 void FOcclusionRenderer::Rendering(const FBoundingBox& box)
