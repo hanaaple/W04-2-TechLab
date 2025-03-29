@@ -152,7 +152,8 @@ public: // line shader
     void RenderLight(UWorld* World, std::shared_ptr<FEditorViewportClient> ActiveViewport);
     void RenderBillboards(UWorld* World,std::shared_ptr<FEditorViewportClient> ActiveViewport);
 
-private:
+public:
+public:
     void SetTopology(const D3D11_PRIMITIVE_TOPOLOGY InPrimitiveTopology);
     void SetPSTextureSRV(uint32 StartSlot, uint32 NumViews, ID3D11ShaderResourceView* InSRV);
     void SetPSSamplerState(uint32 StartSlot, uint32 NumSamplers, ID3D11SamplerState* InSamplerState);
@@ -215,7 +216,7 @@ private:
 };
 
 public:
-    void IssueOcclusionQueries(std::shared_ptr<FEditorViewportClient> ActiveViewport);
+    void IssueOcclusionQueries();
     void ResolveOcclusionQueries();
 private:
     FOcclusionRenderer* OcclusionRenderer = nullptr;

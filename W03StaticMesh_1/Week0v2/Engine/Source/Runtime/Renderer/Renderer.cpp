@@ -1182,6 +1182,11 @@ void FRenderer::Render(UWorld* World, const std::shared_ptr<FEditorViewportClien
     ChangeViewMode(ActiveViewport->GetViewMode());  // 완료 - Lit 없앰, Current 비교하여 ConstantBuffer Update X, 연산 짧음.
     //UpdateLightBuffer();
 
+    if (GetAsyncKeyState(VK_RBUTTON) & 0x8000) 
+    {
+        ResolveOcclusionQueries();
+    }
+    
     // UISOO TODO: 여기 Set LineShader
     UPrimitiveBatch::GetInstance().RenderBatchLine(ActiveViewport->GetViewMatrix(), ActiveViewport->GetProjectionMatrix());
 
@@ -1197,16 +1202,17 @@ void FRenderer::Render(UWorld* World, const std::shared_ptr<FEditorViewportClien
         RenderBillboards(World, ActiveViewport);
     
     //RenderLight(World, ActiveViewport);
+
+    if (GetAsyncKeyState(VK_RBUTTON) & 0x8000) 
+    {
+        IssueOcclusionQueries();
+    }
     
     ClearRenderArr();
 }
 
 void FRenderer::RenderStaticMeshes(UWorld* World, std::shared_ptr<FEditorViewportClient> ActiveViewport)
-{
-    if (GetAsyncKeyState(VK_RBUTTON) & 0x8000) 
-    {
-        //ResolveOcclusionQueries();
-    }
+{    
     PrepareShader();
     // for (UStaticMeshComponent* StaticMeshComp : StaticMeshObjs)
     // {
@@ -1308,11 +1314,6 @@ void FRenderer::RenderStaticMeshes(UWorld* World, std::shared_ptr<FEditorViewpor
             Graphics->DeviceContext->IASetIndexBuffer(IndexBuffer, IndexBufferFormat, 0);
             Graphics->DeviceContext->DrawIndexed(IndexCount, 0, 0);
         }
-    }
-
-    if (GetAsyncKeyState(VK_RBUTTON) & 0x8000)
-    {
-        //IssueOcclusionQueries(ActiveViewport);
     }
 }
 
@@ -1558,6 +1559,17 @@ void FRenderer::SetPSConstantBuffers(uint32 StartSlot, uint32 NumBuffers, ID3D11
 TArray<TPair<ID3D11Buffer*, TPair<uint32, ID3D11Buffer*>>> FRenderer::GetCachedBuffers(const FString& InMaterialName)
 {
     return CachedBuffers[InMaterialName];
+}
+
+
+void FRenderer::IssueOcclusionQueries()
+{
+    OcclusionRenderer->IssueQueries(this);
+}
+
+void FRenderer::ResolveOcclusionQueries()
+{
+    OcclusionRenderer->ResolveQueries();
 }
 
 void FRenderer::RenderLight(UWorld* World, std::shared_ptr<FEditorViewportClient> ActiveViewport)
