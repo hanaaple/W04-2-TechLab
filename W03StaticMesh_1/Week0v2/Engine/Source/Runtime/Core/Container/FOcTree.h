@@ -86,6 +86,11 @@ public:
         FrustumCullRecursive(Root, frustum, Callback);
     }
 
+    template<typename Fn>
+    void OcclusionCull(const FVector& cameraPos, Fn Callback) const {
+        QueryOcclusion(Root, cameraPos, Callback);
+    }
+
     // Octree 클래스 내에 public 인터페이스로 추가
     TArray<FBoundingBox> GetAncestorBoundingBoxes(uint32 TargetUUID) const
     {
@@ -335,5 +340,64 @@ private:
                 if ( Node->Children[i] )
                     QueryCollisionRay(Node->Children[i], origin, direction, Callback);
         }
+    }
+
+    // Occlusion되지 않으면 Callback 실행.
+    void QueryOcclusion(
+        const std::shared_ptr<FOctreeNode<T>> Node,
+        const FVector& cameraPos,
+        std::function<void(const FOctreeElement<T>&)> Callback
+    ) const {
+
+        if ( Node->IsLeaf ) {
+            for ( const FOctreeElement<T>& elem : Node->Elements ) {
+                Callback(elem);
+            }
+            return;
+        }
+
+        // InOccludee의 AABB의 각 점과 카메라를 이은 선이 InOccluder와 모두 부딪힐 때만 true.
+        auto IsOcclusion = [&cameraPos](FBoundingBox InOccluder, FBoundingBox InOccludee)->bool {
+            FVector& max = InOccludee.max;
+            FVector& min = InOccludee.min;
+            FVector occludeePoints[8] = {
+                FVector(max.x, max.y, max.z),
+                FVector(min.x, max.y, max.z),
+                FVector(max.x, min.y, max.z),
+                FVector(min.x, min.y, max.z),
+                FVector(max.x, max.y, min.z),
+                FVector(min.x, max.y, min.z),
+                FVector(max.x, min.y, min.z),
+                FVector(min.x, min.y, min.z),
+            };
+
+            for ( int i = 0; i < 8; ++i ) {
+                FVector dir = (occludeePoints[i] - cameraPos).Normalize();
+                float hitDistance;
+                if ( !InOccluder.Intersect(cameraPos, dir, hitDistance) )
+                    return false;
+            }
+            return true;
+        };
+
+        TArray<std::shared_ptr<FOctreeNode<T>>> notOcclusions = {};
+        for ( int i = 0; i < 8; ++i ) {
+            bool isOcclusion = false;
+            for ( int j = 0; j < 8; ++j ) {
+                // Node->Children[i]
+                if ( i == j )
+                    continue;
+                if (IsOcclusion(Node->Children[j]->Bounds, Node->Children[i]->Bounds)) {
+                    isOcclusion = true;
+                    break;
+                }
+            }
+            if (isOcclusion == false)
+                notOcclusions.Add(Node->Children[i]);
+        }
+
+        //for ( int i = 0; i < notOcclusions.Num(); ++i ) {
+        //    QueryOcclusion(notOcclusions[i], cameraPos, Callback);
+        //}
     }
 };

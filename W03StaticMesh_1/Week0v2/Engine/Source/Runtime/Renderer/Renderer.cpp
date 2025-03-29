@@ -1023,12 +1023,12 @@ void FRenderer::CreateBatchRenderCache()
 
 ID3D11Buffer* FRenderer::UpdateOrCreateVertexBuffer(const FString& MaterialName, uint32 MeshIndex, FVertexSimple* Data, uint32 VertexDataSize)
 {
-    
+    return nullptr;
 }
 
 ID3D11Buffer* FRenderer::UpdateOrCreateIndexBuffer(const FString& MaterialName, uint32 MeshIndex, void* Data, uint32 IndexDataSize)
 {
-    
+    return nullptr;
 }
 
 void FRenderer::UpdateBoundingBoxBuffer(ID3D11Buffer* pBoundingBoxBuffer, const TArray<FBoundingBox>& BoundingBoxes, int numBoundingBoxes) const
@@ -1167,7 +1167,7 @@ void FRenderer::Render(UWorld* World, const std::shared_ptr<FEditorViewportClien
     startTime = FPlatformTime::Cycles64();
     if (GetAsyncKeyState(VK_RBUTTON) & 0x8000) 
     {
-        ResolveOcclusionQueries();
+        //ResolveOcclusionQueries();
     }
     endTime = FPlatformTime::Cycles64();
     FWindowsPlatformTime::GElapsedMap["resolveOcclusion"] = FWindowsPlatformTime::ToMilliseconds(endTime - startTime);
@@ -1194,7 +1194,7 @@ void FRenderer::Render(UWorld* World, const std::shared_ptr<FEditorViewportClien
     startTime = FPlatformTime::Cycles64();
     if (GetAsyncKeyState(VK_RBUTTON) & 0x8000) 
     {
-        IssueOcclusionQueries(ActiveViewport);
+        //IssueOcclusionQueries(ActiveViewport);
     }
     endTime = FPlatformTime::Cycles64();
     FWindowsPlatformTime::GElapsedMap["issueOcclusion"] = FWindowsPlatformTime::ToMilliseconds(endTime - startTime);
@@ -1433,30 +1433,51 @@ void FRenderer::UpdateBatchRenderTarget(std::shared_ptr<FEditorViewportClient> A
 
     // Octree의 FrustumCull을 호출하여, 프러스텀 내에 있는 요소들에 대해 처리합니다.
     const auto ocTree =  GEngineLoop.GetWorld()->GetOcTree();
-    ocTree.FrustumCull(Frustum, [&](const FOctreeElement<UStaticMeshComponent>& element)
-    {
+    //ocTree.FrustumCull(Frustum, [&](const FOctreeElement<UStaticMeshComponent>& element)
+    //{
+    //    UStaticMeshComponent* pStaticMeshComp = element.element;
+    //    if (!pStaticMeshComp->bIsVisible)
+    //        return;
+    //    if (Cast<UGizmoBaseComponent>(pStaticMeshComp))
+    //        return;
+    //    // StaticMeshObjs.Add(pStaticMeshComp);
+    //            
+    //    for (uint32 i = 0; i < pStaticMeshComp->GetNumMaterials(); i++)
+    //    {
+    //        auto Material = pStaticMeshComp->GetMaterial(i);
+    //        auto MTLName = Material->GetMaterialInfo().MTLName;
+    //        if (!BatchRenderTargets.Contains(MTLName))
+    //        {
+    //            BatchRenderTargets.Add(MTLName, BatchRenderTargetContext());
+    //            BatchRenderTargets[MTLName].bIsDirty = true;
+    //        }
+    //        if (BatchRenderTargets[MTLName].bIsDirty)
+    //        {
+    //            BatchRenderTargets[MTLName].StaticMeshes.Add({ i, pStaticMeshComp });
+    //        }
+    //        
+    //        // Material의 변경, Transform의 변경, Culling에 의한 삭제에 따라 Targets 초기화 (BatchRenderTargets[MTLName].Empty();
+    //    }
+    //});
+
+    FVector cameraPos = ActiveViewport->ViewTransformPerspective.GetLocation();
+    ocTree.OcclusionCull(cameraPos, [&](const FOctreeElement<UStaticMeshComponent>& element) {
         UStaticMeshComponent* pStaticMeshComp = element.element;
-        if (!pStaticMeshComp->bIsVisible)
+        if ( !pStaticMeshComp->bIsVisible )
             return;
-        if (Cast<UGizmoBaseComponent>(pStaticMeshComp))
+        if ( Cast<UGizmoBaseComponent>(pStaticMeshComp) )
             return;
-        // StaticMeshObjs.Add(pStaticMeshComp);
-                
-        for (uint32 i = 0; i < pStaticMeshComp->GetNumMaterials(); i++)
-        {
+
+        for ( uint32 i = 0; i < pStaticMeshComp->GetNumMaterials(); i++ ) {
             auto Material = pStaticMeshComp->GetMaterial(i);
             auto MTLName = Material->GetMaterialInfo().MTLName;
-            if (!BatchRenderTargets.Contains(MTLName))
-            {
+            if ( !BatchRenderTargets.Contains(MTLName) ) {
                 BatchRenderTargets.Add(MTLName, BatchRenderTargetContext());
                 BatchRenderTargets[MTLName].bIsDirty = true;
             }
-            if (BatchRenderTargets[MTLName].bIsDirty)
-            {
+            if ( BatchRenderTargets[MTLName].bIsDirty ) {
                 BatchRenderTargets[MTLName].StaticMeshes.Add({ i, pStaticMeshComp });
             }
-            
-            // Material의 변경, Transform의 변경, Culling에 의한 삭제에 따라 Targets 초기화 (BatchRenderTargets[MTLName].Empty();
         }
     });
 }

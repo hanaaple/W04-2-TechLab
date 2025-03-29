@@ -15,6 +15,69 @@
       "Scale": [1.000000, 1.000000, 1.000000],
       "Type": "StaticMeshComp"
     },
+    "11": {
+      "Location": [-24.000000, -18.000000, 0.000000],
+      "ObjStaticMeshAsset": "Data/apple_mid.obj",
+      "Rotation": [0.000000, 0.000000, 0.000000],
+      "Scale": [1.000000, 1.000000, 1.000000],
+      "Type": "StaticMeshComp"
+    },
+    "12": {
+      "Location": [-23.000000, -18.000000, 0.000000],
+      "ObjStaticMeshAsset": "Data/apple_mid.obj",
+      "Rotation": [0.000000, 0.000000, 0.000000],
+      "Scale": [1.000000, 1.000000, 1.000000],
+      "Type": "StaticMeshComp"
+    },
+    "13": {
+      "Location": [-22.000000, -18.000000, 0.000000],
+      "ObjStaticMeshAsset": "Data/apple_mid.obj",
+      "Rotation": [0.000000, 0.000000, 0.000000],
+      "Scale": [1.000000, 1.000000, 1.000000],
+      "Type": "StaticMeshComp"
+    },
+    "14": {
+      "Location": [-21.000000, -18.000000, 0.000000],
+      "ObjStaticMeshAsset": "Data/apple_mid.obj",
+      "Rotation": [0.000000, 0.000000, 0.000000],
+      "Scale": [1.000000, 1.000000, 1.000000],
+      "Type": "StaticMeshComp"
+    },
+    "15": {
+      "Location": [-20.000000, -18.000000, 0.000000],
+      "ObjStaticMeshAsset": "Data/apple_mid.obj",
+      "Rotation": [0.000000, 0.000000, 0.000000],
+      "Scale": [1.000000, 1.000000, 1.000000],
+      "Type": "StaticMeshComp"
+    },
+    "16": {
+      "Location": [-19.000000, -18.000000, 0.000000],
+      "ObjStaticMeshAsset": "Data/apple_mid.obj",
+      "Rotation": [0.000000, 0.000000, 0.000000],
+      "Scale": [1.000000, 1.000000, 1.000000],
+      "Type": "StaticMeshComp"
+    },
+    "17": {
+      "Location": [-18.000000, -18.000000, 0.000000],
+      "ObjStaticMeshAsset": "Data/apple_mid.obj",
+      "Rotation": [0.000000, 0.000000, 0.000000],
+      "Scale": [1.000000, 1.000000, 1.000000],
+      "Type": "StaticMeshComp"
+    },
+    "18": {
+      "Location": [-17.000000, -18.000000, 0.000000],
+      "ObjStaticMeshAsset": "Data/apple_mid.obj",
+      "Rotation": [0.000000, 0.000000, 0.000000],
+      "Scale": [1.000000, 1.000000, 1.000000],
+      "Type": "StaticMeshComp"
+    },
+    "19": {
+      "Location": [-16.000000, -18.000000, 0.000000],
+      "ObjStaticMeshAsset": "Data/apple_mid.obj",
+      "Rotation": [0.000000, 0.000000, 0.000000],
+      "Scale": [1.000000, 1.000000, 1.000000],
+      "Type": "StaticMeshComp"
+    },
     "10001": {
       "Location": [24.000000, 23.000000, 3.000000],
       "ObjStaticMeshAsset": "Data/bitten_apple_mid.obj",
