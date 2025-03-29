@@ -240,6 +240,7 @@
     <ClCompile Include="Engine\Source\Runtime\Core\Stats\ScopeCycleCounter.cpp" />
     <ClCompile Include="Engine\Source\Runtime\Renderer\Frustum.cpp" />
     <ClCompile Include="Engine\Source\Runtime\Renderer\OcclusionRenderer.cpp" />
+    <ClCompile Include="Engine\Source\Runtime\Renderer\OcclusionQuery.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Engine\Source\Runtime\Core\Container\FOcTree.h" />
@@ -294,6 +295,7 @@
     <ClInclude Include="Engine\Source\ThirdParty\DirectXTK\Include\DDSTextureLoader.h" />
     <ClInclude Include="Engine\Source\ThirdParty\tinyfiledialogs\tinyfiledialogs.h" />
     <ClInclude Include="Engine\Source\Runtime\Renderer\Frustum.h" />
+    <ClInclude Include="Engine\Source\Runtime\Renderer\OcclusionQuery.h" />
     <ClInclude Include="Font\IconDefs.h" />
     <ClInclude Include="Font\RawFonts.h" />
     <ClInclude Include="Engine\Source\Runtime\InteractiveToolsFramework\BaseGizmos\GizmoBaseComponent.h" />

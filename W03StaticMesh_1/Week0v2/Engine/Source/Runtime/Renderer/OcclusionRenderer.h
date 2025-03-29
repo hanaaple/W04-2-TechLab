@@ -1,30 +1,37 @@
 #pragma once
-#include "Math/Vector.h"
-#include "Math/Matrix.h"
 class FGraphicsDevice;
 class ID3D11VertexShader;
-class ID3D11PixelShader;
 class ID3D11InputLayout;
 class ID3D11Buffer;
 class FBoundingBox;
+class FOcclusionQuery;
+
 class FOcclusionRenderer
 {
 public:
     void Initialize(FGraphicsDevice* graphics);
     void Prepare();
     void IssueQueries(const FBoundingBox& box, const FMatrix& MVP);
+    void IssueQuery(const FBoundingBox& box, const FMatrix& MVP, const FOcclusionQuery& query);
     void ResolveQueries();
     void Release();
 
 private:
     void CreateShader();
     void CreateConstantBuffer();
-    void UpdateMVPConstantBuffer(const FMatrix& mvp);
+    void CreateVertexBuffer();
+    void UpdateMVPConstantBuffer(const FBoundingBox& box, const FMatrix& mvp);
+    void Rendering(const FBoundingBox& box);
     ID3D11VertexShader* OcclusionVertexShader = nullptr;
-    ID3D11InputLayout* InputLayout = nullptr;
-    ID3D11Buffer* MVPConstantBuffer = nullptr;
+    ID3D11Buffer* BoxConstantBuffer = nullptr;
+    ID3D11Buffer* DummyVertexBuffer = nullptr;
 
-    struct MVPConstant {
+    struct alignas(16) FBoxConstantBuffer
+    {
+        FVector Min;
+        float pad0 = 0;
+        FVector Max;
+        float pad1 = 0;
         FMatrix MVP;
     };
 
