@@ -200,6 +200,10 @@ public:
 
     FBoundingBox Transform(const FMatrix& mat) const;
 
+    // 메시의 바운딩 박스가 차지하는 화면 비율을 계산하는 함수
+    // 입력: 메시의 바운딩 박스의 최소, 최대 좌표, 카메라의 뷰/프로젝션 행렬, 뷰포트 크기
+    // 반환: 0~1 사이의 값으로 화면 전체에서 차지하는 비율
+    // 화면 비율이 50% 이상이면 LOD 0 (고해상도), 10% 이상이면 LOD 1, 그보다 작으면 LOD 2로 쓰면 될 듯
     static float ComputeBoundingBoxScreenCoverage(const FVector& min, const FVector& max, const FMatrix& view, const FMatrix& projection, float viewportWidth, float viewportHeight);
 };
 struct FCone
