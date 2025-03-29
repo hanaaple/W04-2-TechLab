@@ -252,7 +252,6 @@ void AEditorPlayer::PickActor(const FVector& pickOrigin, const FVector& pickDire
     //    {
     //        continue;
     //    }
-
     //    if (pObj && !pObj->IsA<UGizmoBaseComponent>())
     //    {
     //        float Distance = 0.0f;
@@ -276,7 +275,6 @@ void AEditorPlayer::PickActor(const FVector& pickOrigin, const FVector& pickDire
 
     // travese octree
     FOctree octreeManager = GetWorld()->GetOcTree();
-    
     auto callback = [&Possible, &minDistance](const FOctreeElement<UPrimitiveComponent>& e, float hitDistance )-> void {
         if (minDistance > hitDistance) {
             minDistance = hitDistance;
