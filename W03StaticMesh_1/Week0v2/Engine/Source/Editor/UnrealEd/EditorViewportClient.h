@@ -7,6 +7,7 @@
 #include "ViewportClient.h"
 #include "EngineLoop.h"
 #include "EngineBaseTypes.h"
+#include "LevelEditor/SLevelEditor.h"
 
 #define MIN_ORTHOZOOM				1.0							/* 2D ortho viewport zoom >= MIN_ORTHOZOOM */
 #define MAX_ORTHOZOOM				1e25	
@@ -30,18 +31,24 @@ public:
     void SetLocation(const FVector& Position)
     {
         ViewLocation = Position;
+        UE_LOG(LogLevel::Display, "On Move!");
+        OnTransformation();
     }
 
     /** Sets the transform's rotation */
     void SetRotation(const FVector& Rotation)
     {
         ViewRotation = Rotation;
+        UE_LOG(LogLevel::Display, "On Rotate!");
+        OnTransformation();
     }
 
     /** Sets the location to look at during orbit */
     void SetLookAt(const FVector& InLookAt)
     {
         LookAt = InLookAt;
+        UE_LOG(LogLevel::Display, "On LookAt!");
+        OnTransformation();
     }
 
     /** Set the ortho zoom amount */
@@ -49,6 +56,8 @@ public:
     {
         assert(InOrthoZoom >= MIN_ORTHOZOOM && InOrthoZoom <= MAX_ORTHOZOOM);
         OrthoZoom = InOrthoZoom;
+        UE_LOG(LogLevel::Display, "On Zoom!");
+        OnTransformation();
     }
 
     /** Check if transition curve is playing. */
@@ -66,7 +75,13 @@ public:
     /** @return The ortho zoom amount */
     FORCEINLINE float GetOrthoZoom() const { return OrthoZoom; }
 
-public:
+private:
+    void OnTransformation()
+    {
+        GEngineLoop.renderer.UpdateCameraConstant(GEngineLoop.GetLevelEditor()->GetActiveViewportClient().get());
+    }
+    
+private:
     /** Current viewport Position. */
     FVector	ViewLocation;
     /** Current Viewport orientation; valid only for perspective projections. */
@@ -129,6 +144,10 @@ public:
     uint64 ShowFlag;
     EViewModeIndex ViewMode;
 
+private:
+    void SetViewMatrix(FMatrix InView);
+    void SetProjectionMatrix(FMatrix InProjection);
+    
     FMatrix View;
     FMatrix Projection;
 public: //Camera Movement
