@@ -21,6 +21,7 @@
 #include "Components/SkySphereComponent.h"
 #include "Engine/FLoaderOBJ.h"
 
+#include "Stats/ScopeCycleCounter.h"
 #include "OcclusionRenderer.h"
 void FRenderer::Initialize(FGraphicsDevice* graphics)
 {
@@ -1161,17 +1162,25 @@ void FRenderer::Render(UWorld* World, const std::shared_ptr<FEditorViewportClien
     ChangeViewMode(ActiveViewport->GetViewMode());  // 완료 - Lit 없앰, Current 비교하여 ConstantBuffer Update X, 연산 짧음.
     //UpdateLightBuffer();
 
+    uint64 startTime, endTime;
+
+    startTime = FPlatformTime::Cycles64();
     if (GetAsyncKeyState(VK_RBUTTON) & 0x8000) 
     {
         ResolveOcclusionQueries();
     }
+    endTime = FPlatformTime::Cycles64();
+    FWindowsPlatformTime::GElapsedMap["resolveOcclusion"] = FWindowsPlatformTime::ToMilliseconds(endTime - startTime);
     
     // UISOO TODO: 여기 Set LineShader
     UPrimitiveBatch::GetInstance().RenderBatchLine(ActiveViewport->GetViewMatrix(), ActiveViewport->GetProjectionMatrix());
     
+    startTime = FPlatformTime::Cycles64();
     // UISOO TODO: 여기 Set StaticMeshShader
     if (ActiveViewport->GetShowFlag() & static_cast<uint64>(EEngineShowFlags::SF_Primitives))
         RenderStaticMeshes(World, ActiveViewport);
+    endTime = FPlatformTime::Cycles64();
+    FWindowsPlatformTime::GElapsedMap["renderStaticMesh"] = FWindowsPlatformTime::ToMilliseconds(endTime - startTime);
 
     // UISOO TODO: Depth Stencil 바인딩 중
     RenderGizmos(World, ActiveViewport);
@@ -1182,10 +1191,13 @@ void FRenderer::Render(UWorld* World, const std::shared_ptr<FEditorViewportClien
     
     //RenderLight(World, ActiveViewport);
 
+    startTime = FPlatformTime::Cycles64();
     if (GetAsyncKeyState(VK_RBUTTON) & 0x8000) 
     {
         IssueOcclusionQueries(ActiveViewport);
     }
+    endTime = FPlatformTime::Cycles64();
+    FWindowsPlatformTime::GElapsedMap["issueOcclusion"] = FWindowsPlatformTime::ToMilliseconds(endTime - startTime);
     
     ClearRenderArr();
 }

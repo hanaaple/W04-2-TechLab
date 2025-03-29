@@ -2,6 +2,7 @@
 
 double FWindowsPlatformTime::GSecondsPerCycle = 0; // 0
 bool FWindowsPlatformTime:: bInitialized = false; // false
+TMap<FString, double> FWindowsPlatformTime::GElapsedMap = TMap<FString, double>();
 
 void FWindowsPlatformTime::InitTiming()
 {

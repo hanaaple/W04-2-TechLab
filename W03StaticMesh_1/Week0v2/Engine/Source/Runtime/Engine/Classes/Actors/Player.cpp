@@ -341,7 +341,7 @@ void AEditorPlayer::PickActor(const FVector& pickOrigin, const FVector& pickDire
 
     if (Possible)
     {
-        uint64 CycleDiff = counter.Finish();;
+        uint64 CycleDiff = counter.Finish();
         double elapsedTime = FWindowsPlatformTime::ToMilliseconds(CycleDiff);
         FPSEditorPanel::SetPickElapsedTime(elapsedTime);
         GetWorld()->SetPickedActor(Possible->GetOwner());

@@ -199,61 +199,60 @@ void FEngineLoop::Tick()
         startTime = FPlatformTime::Cycles64();
         GWorld->Tick(elapsedTime);
         endTime = FPlatformTime::Cycles64();
-        elapsedTimes.worldTickDuration = FWindowsPlatformTime::ToMilliseconds(endTime - startTime);
+        //elapsedTimes.worldTickDuration = FWindowsPlatformTime::ToMilliseconds(endTime - startTime);
+        FWindowsPlatformTime::GElapsedMap["worldTick"] = FWindowsPlatformTime::ToMilliseconds(endTime - startTime);
 
         startTime = FPlatformTime::Cycles64();
         LevelEditor->Tick(elapsedTime);
         endTime = FPlatformTime::Cycles64();
-        elapsedTimes.levelEditorDuration = FWindowsPlatformTime::ToMilliseconds(endTime - startTime);
+        //elapsedTimes.levelEditorDuration = FWindowsPlatformTime::ToMilliseconds(endTime - startTime);
+        FWindowsPlatformTime::GElapsedMap["levelEdit"] = FWindowsPlatformTime::ToMilliseconds(endTime - startTime);
 
         startTime = FPlatformTime::Cycles64();
         Render();
         endTime = FPlatformTime::Cycles64();
-        elapsedTimes.renderDuration = FWindowsPlatformTime::ToMilliseconds(endTime - startTime);
+        //elapsedTimes.renderDuration = FWindowsPlatformTime::ToMilliseconds(endTime - startTime);
+        FWindowsPlatformTime::GElapsedMap["Render"] = FWindowsPlatformTime::ToMilliseconds(endTime - startTime);
 
 
         startTime = FPlatformTime::Cycles64();
         UIMgr->BeginFrame();
         endTime = FPlatformTime::Cycles64();
-        elapsedTimes.UIBeginDuration = FWindowsPlatformTime::ToMilliseconds(endTime - startTime);
+        //elapsedTimes.UIBeginDuration = FWindowsPlatformTime::ToMilliseconds(endTime - startTime);
+
 
         startTime = FPlatformTime::Cycles64();
         UnrealEditor->Render();
         endTime = FPlatformTime::Cycles64();
-        elapsedTimes.UEDuration = FWindowsPlatformTime::ToMilliseconds(endTime - startTime);
+        //elapsedTimes.UEDuration = FWindowsPlatformTime::ToMilliseconds(endTime - startTime);
 
         startTime = FPlatformTime::Cycles64();
         Console::GetInstance().Draw();
         endTime = FPlatformTime::Cycles64();
-        elapsedTimes.ConsoleDuration = FWindowsPlatformTime::ToMilliseconds(endTime - startTime);
+        //elapsedTimes.ConsoleDuration = FWindowsPlatformTime::ToMilliseconds(endTime - startTime);
 
         ImGui::Begin("stat");
-        ImGui::Text("WorldTick:\t%fms", elapsedTimes.worldTickDuration);
-        ImGui::Text("LevelEditor:\t%fms", elapsedTimes.levelEditorDuration);
-        ImGui::Text("render:\t%fms", elapsedTimes.renderDuration);
-        ImGui::Text("UIBegin:\t%fms", elapsedTimes.UIBeginDuration);
-        ImGui::Text("UEditor:\t%fms", elapsedTimes.UEDuration);
-        ImGui::Text("Console:\t%fms", elapsedTimes.ConsoleDuration);
-        ImGui::Text("UIEnd:\t%fms", elapsedTimes.UIEndDuration);
-        ImGui::Text("PendingDestory:\t%fms", elapsedTimes.pendingDestroyTime);
-        ImGui::Text("SwapBuffer:\t%fms", elapsedTimes.swapBufferTime);
+        for(auto& [name, elapsed]: FPlatformTime::GElapsedMap) {
+            ImGui::Text("%s: %fms", name, elapsed);
+        }
         ImGui::End();
 
         startTime = FPlatformTime::Cycles64();
         UIMgr->EndFrame();
         endTime = FPlatformTime::Cycles64();
-        elapsedTimes.UIEndDuration = FWindowsPlatformTime::ToMilliseconds(endTime - startTime);
+        //elapsedTimes.UIEndDuration = FWindowsPlatformTime::ToMilliseconds(endTime - startTime);
 
         // Pending 처리된 오브젝트 제거
         startTime = FPlatformTime::Cycles64();
         GUObjectArray.ProcessPendingDestroyObjects();
         endTime = FPlatformTime::Cycles64();
-        elapsedTimes.pendingDestroyTime = FWindowsPlatformTime::ToMilliseconds(endTime - startTime);
+        //elapsedTimes.pendingDestroyTime = FWindowsPlatformTime::ToMilliseconds(endTime - startTime);
 
         startTime = FPlatformTime::Cycles64();
         graphicDevice.SwapBuffer();
         endTime = FPlatformTime::Cycles64();
-        elapsedTimes.swapBufferTime = FWindowsPlatformTime::ToMilliseconds(endTime - startTime);
+        //elapsedTimes.swapBufferTime = FWindowsPlatformTime::ToMilliseconds(endTime - startTime);
+        FWindowsPlatformTime::GElapsedMap["swapBuffer"] = FWindowsPlatformTime::ToMilliseconds(endTime - startTime);
         
         /*
         do
