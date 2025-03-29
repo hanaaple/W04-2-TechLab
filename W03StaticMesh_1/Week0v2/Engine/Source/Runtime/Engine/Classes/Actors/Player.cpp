@@ -284,6 +284,35 @@ void AEditorPlayer::PickActor(const FVector& pickOrigin, const FVector& pickDire
         //    //Possible = e.element;
         //}
     };
+
+    // reference : https://m.blog.naver.com/hermet/68084286
+    auto CheckRayWithSphere = [](
+        const FVector& InRayOrigin,
+        const FVector& InRayDirection,
+        const FVector& InSphereCenter,
+        const float InSphereRadius,
+        float& OutHitDistance
+        ) -> bool {
+        FVector l = InSphereCenter - InRayOrigin;
+        double s = l.Dot(InRayDirection);
+        double l2 = l.Dot(l);
+        double r2 = InSphereRadius * InSphereRadius;
+        if ( s < 0 && l2 > r2 )
+            return false;
+
+        double m2 = l2 - s*s;
+        if ( m2 > r2 ) 
+            return false;
+
+        double q = sqrt(r2 - m2);
+
+        if ( l2 > r2 ) 
+            OutHitDistance = s - q;
+        else
+            OutHitDistance = s + q;
+        return true;
+    };
+
     octreeManager.QueryRay(pickOrigin, pickDirection, callback);
     if (PossibleList.Num() > 0) {
         for (UStaticMeshComponent* e : PossibleList) {
@@ -297,8 +326,10 @@ void AEditorPlayer::PickActor(const FVector& pickOrigin, const FVector& pickDire
 
             FVector rayOrigin = inverseWorldMat.TransformPosition(pickOrigin);
             FVector rayDirection = FMatrix::TransformVector(pickDirection, inverseWorldMat);
-
-            if ( e->CheckRayIntersection(rayOrigin, rayDirection, hitDistance) > 0 ) {
+            FVector sphereCenter = e->GetWorldLocation();
+            float sphereRadius = 1.f;
+            //if ( e->CheckRayIntersection(rayOrigin, rayDirection, hitDistance) > 0 ) {
+            if ( CheckRayWithSphere(pickOrigin, pickDirection, sphereCenter, sphereRadius, hitDistance) ) {
                 if (minDistance > hitDistance) {
                     minDistance = hitDistance;
                     Possible = e;
