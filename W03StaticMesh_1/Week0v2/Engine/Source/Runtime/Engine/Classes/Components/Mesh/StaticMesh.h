@@ -1,8 +1,10 @@
 #pragma once
 #include "UObject/Object.h"
 #include "UObject/ObjectMacros.h"
-#include "Components/Material/Material.h"
-#include "Define.h"
+#include "Core/Container/Array.h"
+
+struct OBJ::FStaticMeshRenderData;
+struct FStaticMaterial;
 
 class UStaticMesh : public UObject
 {
@@ -20,5 +22,6 @@ public:
 
 private:
     OBJ::FStaticMeshRenderData* staticMeshRenderData = nullptr;
+    TArray<OBJ::FStaticMeshRenderData*> LODData;
     TArray<FStaticMaterial*> materials;
 };
