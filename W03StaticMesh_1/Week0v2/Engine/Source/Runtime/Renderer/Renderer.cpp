@@ -969,27 +969,57 @@ void FRenderer::RenderBatch(
     Graphics->DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 }
 
-void FRenderer::PrepareRender()
+void FRenderer::PrepareRender(std::shared_ptr<FEditorViewportClient> ActiveViewport)
 {
-    for (const auto iter : TObjectRange<USceneComponent>())
+    const FFrustum Frustum(ActiveViewport->GetViewMatrix(), ActiveViewport->GetProjectionMatrix());
+    
+    // 전역적으로 관리되는 UObject 배열에서 TMap으로 변경된 매핑을 가져옵니다.
+    TMap<uint32, UObject*> ObjectMap = GUObjectArray.GetObjectItemArrayUnsafe();
+    
+    // Octree의 FrustumCull을 호출하여, 프러스텀 내에 있는 요소들에 대해 처리합니다.
+    const auto ocTree =  GEngineLoop.GetWorld()->GetOcTree();;
+    ocTree.FrustumCull(Frustum, [&](const FOctreeElement& element)
     {
-        if (UStaticMeshComponent* pStaticMeshComp = Cast<UStaticMeshComponent>(iter))
+        // TMap에서 element.Id를 키로 UObject*를 조회합니다.
+        UObject** FoundObj = ObjectMap.Find(element.Id);
+        if (FoundObj)
         {
-            if (!Cast<UGizmoBaseComponent>(iter))
-                StaticMeshObjs.Add(pStaticMeshComp);
+             // UObject*를 UStaticMeshComponent*로 캐스팅합니다.
+             if (UStaticMeshComponent* pMesh = dynamic_cast<UStaticMeshComponent*>(*FoundObj))
+             {
+                  StaticMeshObjs.Add(pMesh);
+             }
         }
-        if (UGizmoBaseComponent* pGizmoComp = Cast<UGizmoBaseComponent>(iter))
-        {
-            GizmoObjs.Add(pGizmoComp);
-        }
-        if (UBillboardComponent* pBillboardComp = Cast<UBillboardComponent>(iter))
-        {
-            BillboardObjs.Add(pBillboardComp);
-        }
-        if (ULightComponentBase* pLightComp = Cast<ULightComponentBase>(iter))
-        {
-            LightObjs.Add(pLightComp);
-        }
+    });
+    
+    // for (auto iter : TObjectRange<UStaticMeshComponent>())
+    // {
+    //     FMatrix Model = JungleMath::CreateModelMatrix(
+    //         iter->GetWorldLocation(),
+    //         iter->GetWorldRotation(),
+    //         iter->GetWorldScale()
+    //         );
+    //
+    //     FBoundingBox localBoundingBox = iter->AABB;
+    //     if (Frustum.IsBoxVisible(FBoundingBox::TransformBy(localBoundingBox,iter->GetWorldLocation(), Model)))
+    //     {
+    //         StaticMeshObjs.Add(iter);
+    //     }
+    // }
+    
+    for (const auto iter : TObjectRange<UGizmoBaseComponent>())
+    {
+        GizmoObjs.Add(iter);
+    }
+
+    for (const auto iter : TObjectRange<UBillboardComponent>())
+    {
+        BillboardObjs.Add(iter);
+    }
+
+    for (const auto iter : TObjectRange<ULightComponentBase>())
+    {
+        LightObjs.Add(iter);
     }
 }
 

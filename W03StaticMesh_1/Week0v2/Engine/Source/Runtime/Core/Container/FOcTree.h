@@ -5,15 +5,17 @@
 #include <algorithm>
 
 #include "Define.h"
+#include "Renderer/Frustum.h"
 
+class FFrustum;
 
 // Octree에 저장할 요소. 각 요소는 자신의 BoundingBox와 고유 ID를 가지고 있습니다.
 struct FOctreeElement
 {
     FBoundingBox Bounds;
-    uint32_t Id; // 예: UUID
+    uint32 Id; // 예: UUID
 
-    FOctreeElement(const FBoundingBox& InBounds, uint32_t InId)
+    FOctreeElement(const FBoundingBox& InBounds, uint32 InId)
         : Bounds(InBounds), Id(InId)
     {}
 };
@@ -48,8 +50,8 @@ class FOctree
 {
 public:
     // 생성자: 루트 영역과 노드 당 최대 요소 수, 최대 깊이 설정
-    explicit FOctree(const FBoundingBox& InBounds, size_t InMaxElementsPerLeaf = 8, int InMaxDepth = 8)
-        : Root(std::make_shared<FOctreeNode<T>>(InBounds)), MaxElementsPerLeaf(InMaxElementsPerLeaf), MaxDepth(InMaxDepth)
+    explicit FOctree(const FBoundingBox& InBounds, const size_t InMaxElementsPerLeaf = 8, const int InMaxDepth = 8, const float InLooseFactor = 1.2f)
+        : Root(std::make_shared<FOctreeNode<T>>(InBounds)), MaxElementsPerLeaf(InMaxElementsPerLeaf), MaxDepth(InMaxDepth), LooseFactor(InLooseFactor)
     {}
 
     ~FOctree() { Root.reset(); }
@@ -61,9 +63,16 @@ public:
     }
 
     // 쿼리 함수: 주어진 영역과 교차하는 요소들에 대해 callback 함수를 호출합니다.
-    void Query(const FBoundingBox &QueryBounds, std::function<void(const T&)> Callback) const
+    template<typename Fn>
+    void Query(const FBoundingBox &QueryBounds, Fn Callback) const
     {
         QueryRecursive(Root, QueryBounds, Callback);
+    }
+
+    template<typename Fn>
+    void FrustumCull(const FFrustum& frustum, Fn Callback) const
+    {
+        FrustumCullRecursive(Root, frustum, Callback);
     }
 
     // Octree 클래스 내에 public 인터페이스로 추가
@@ -83,10 +92,10 @@ private:
     std::shared_ptr<FOctreeNode<T>> Root;
     size_t MaxElementsPerLeaf;
     int MaxDepth;
+    float LooseFactor; // 자식 노드의 BoundingBox를 확장하는 계수 (예: 1.1)
 
     // 재귀적으로 노드를 탐색하여, TargetUUID를 가진 요소가 포함된 경로(leaf부터 루트까지)를 찾습니다.
     // 찾으면 true를 반환하고, OutPath에 해당 노드의 BoundingBox를 push_back 합니다.
-    template<typename T>
     bool FindPathToUUID(const  std::shared_ptr<FOctreeNode<T>> Node, uint32 TargetUUID, TArray<FBoundingBox>& OutPath) const
     {
         if (!Node)
@@ -135,23 +144,27 @@ private:
         // 만약 leaf이면서 분할이 필요한 경우, 자식 노드로 분할합니다.
         if (Node->IsLeaf)
         {
+            // 현재 노드를 8개의 자식 노드로 분할합니다.
             Subdivide(Node);
-            // 기존 요소들을 재삽입합니다.
+
+            // 재삽입 과정에서 자식에 완전히 포함되지 않는 요소들을 임시 컨테이너에 저장합니다.
+            TArray<T> RemainingElements;
             for (const T &existingElement : Node->Elements)
             {
                 // 기존 요소의 바운딩 박스는 existingElement.Bounds로 가정
                 int ChildIndex = GetChildIndex(Node->Bounds, existingElement.Bounds);
                 if (ChildIndex >= 0)
                 {
-                    InsertRecursive(Node->Children[ChildIndex], existingElement, existingElement.Bounds, Depth+1);
+                    InsertRecursive(Node->Children[ChildIndex], existingElement, existingElement.Bounds, Depth + 1);
                 }
                 else
                 {
-                    // 자식에 완전히 포함되지 않으면 그대로 현재 노드에 남깁니다.
-                    // (실제 구현에서는 별도로 처리)
+                    // 자식에 완전히 포함되지 않으면 현재 노드에 그대로 남깁니다.
+                    RemainingElements.Add(existingElement);
                 }
             }
-            Node->Elements.Empty();
+            // 재삽입 후, 자식으로 이동하지 못한 요소들을 현재 노드에 보관합니다.
+            Node->Elements = RemainingElements;
             Node->IsLeaf = false;
         }
 
@@ -159,11 +172,11 @@ private:
         int ChildIndex = GetChildIndex(Node->Bounds, ElementBounds);
         if (ChildIndex >= 0)
         {
-            InsertRecursive(Node->Children[ChildIndex], element, ElementBounds, Depth+1);
+            InsertRecursive(Node->Children[ChildIndex], element, ElementBounds, Depth + 1);
         }
         else
         {
-            // 자식에 완전히 포함되지 않으면 현재 노드에 추가
+            // 새 요소가 자식 영역에 완전히 포함되지 않으면, 현재 노드에 추가합니다.
             Node->Elements.Add(element);
         }
     }
@@ -196,19 +209,79 @@ private:
     // 만약 완전히 포함되지 않으면 -1을 반환합니다.
     int GetChildIndex(const FBoundingBox &ParentBox, const FBoundingBox &ElementBox)
     {
-        // 간단화: 요소의 중심을 기준으로 결정합니다.
-        FVector elementCenter = ElementBox.GetCenter();
+        // FVector parentCenter = ParentBox.GetCenter();
+        // // 우선, 요소의 중심을 기준으로 자식 인덱스 후보를 결정합니다.
+        // FVector elementCenter = ElementBox.GetCenter();
+        // int index = 0;
+        // if (elementCenter.x >= parentCenter.x) index |= 1;
+        // if (elementCenter.y >= parentCenter.y) index |= 2;
+        // if (elementCenter.z >= parentCenter.z) index |= 4;
+        //
+        // // 후보 인덱스에 해당하는 자식 노드의 BoundingBox를 계산합니다.
+        // FVector childMin, childMax;
+        // childMin.x = (index & 1) ? parentCenter.x : ParentBox.min.x;
+        // childMax.x = (index & 1) ? ParentBox.max.x : parentCenter.x;
+        // childMin.y = (index & 2) ? parentCenter.y : ParentBox.min.y;
+        // childMax.y = (index & 2) ? ParentBox.max.y : parentCenter.y;
+        // childMin.z = (index & 4) ? parentCenter.z : ParentBox.min.z;
+        // childMax.z = (index & 4) ? ParentBox.max.z : parentCenter.z;
+        //
+        // // 자식의 중심과 절반 크기 계산
+        // const FVector childCenter = (childMin + childMax) * 0.5f;
+        // const FVector childHalfExtents = (childMax - childMin) * 0.5f;
+        // // LooseFactor를 적용한 확장된 절반 크기
+        // const FVector looseHalfExtents = childHalfExtents * LooseFactor;
+        // // 확장된(Loose) 자식의 BoundingBox 계산
+        // const FVector looseMin = childCenter - looseHalfExtents;
+        // const FVector looseMax = childCenter + looseHalfExtents;
+        //
+        // // 요소의 BoundingBox가 확장된 자식 영역에 완전히 포함되는지 검사합니다.
+        // if (ElementBox.min.x >= looseMin.x && ElementBox.max.x <= looseMax.x &&
+        //     ElementBox.min.y >= looseMin.y && ElementBox.max.y <= looseMax.y &&
+        //     ElementBox.min.z >= looseMin.z && ElementBox.max.z <= looseMax.z)
+        // {
+        //     return index;
+        // }
+        // else
+        // {
+        //     return -1;
+        // }
+
         FVector parentCenter = ParentBox.GetCenter();
+        FVector elementCenter = ElementBox.GetCenter();
         int index = 0;
         if (elementCenter.x >= parentCenter.x) index |= 1;
         if (elementCenter.y >= parentCenter.y) index |= 2;
         if (elementCenter.z >= parentCenter.z) index |= 4;
-        // (실제 구현에서는 요소가 자식 영역에 완전히 포함되는지 여부를 검사해야 합니다.)
         return index;
     }
 
+    template<typename Fn>
+    void FrustumCullRecursive(const std::shared_ptr<FOctreeNode<T>>& Node, const FFrustum &frustum, Fn Callback) const
+    {
+        if (!frustum.IsBoxVisible(Node->Bounds))
+            return;
+    
+        if (Node->IsLeaf)
+        {
+            for (const T &elem : Node->Elements)
+            {
+                if (frustum.IsBoxVisible(elem.Bounds))
+                    Callback(elem);
+            }
+            return;
+        }
+    
+        for (int i = 0; i < 8; ++i)
+        {
+            if (Node->Children[i])
+                FrustumCullRecursive(Node->Children[i], frustum, Callback);
+        }
+    }
+
     // 재귀 쿼리 함수: 현재 노드의 영역이 QueryBounds와 교차하면 요소들을 Callback에 전달합니다.
-    void QueryRecursive(const std::shared_ptr<FOctreeNode<T>> Node, const FBoundingBox &QueryBounds, std::function<void(const T&)> Callback) const
+    template<typename Fn>
+    void QueryRecursive(const std::shared_ptr<FOctreeNode<T>> Node, const FBoundingBox &QueryBounds, Fn Callback) const
     {
         if (!Node->Bounds.Intersects(QueryBounds))
             return;

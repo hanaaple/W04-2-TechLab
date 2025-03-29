@@ -5,13 +5,13 @@
 
 void FUObjectArray::AddObject(UObject* Object)
 {
-    ObjObjects.Add(Object);
+    ObjObjects.Add(Object->GetUUID(), Object);
     AddToClassMap(Object);
 }
 
 void FUObjectArray::MarkRemoveObject(UObject* Object)
 {
-    ObjObjects.Remove(Object);
+    ObjObjects.Remove(Object->GetUUID());
     RemoveFromClassMap(Object);  // UObjectHashTable에서 Object를 제외
     PendingDestroyObjects.AddUnique(Object);
 }
