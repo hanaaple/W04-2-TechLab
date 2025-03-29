@@ -44,15 +44,8 @@ void UStaticMesh::SetData(OBJ::FStaticMeshRenderData* renderData)
 {
     staticMeshRenderData = renderData;
 
-    uint32 verticeNum = staticMeshRenderData->Vertices.Num();
-    if (verticeNum <= 0) return;
-    staticMeshRenderData->VertexBuffer = GetEngine().renderer.CreateVertexBuffer(staticMeshRenderData->Vertices, verticeNum * sizeof(FVertexSimple));
-
-    uint32 indexNum = staticMeshRenderData->Indices.Num();
-    if (indexNum > 0)
-        staticMeshRenderData->IndexBuffer = GetEngine().renderer.CreateIndexBuffer(staticMeshRenderData->Indices, indexNum * sizeof(uint32));
-
-    for (int materialIndex = 0; materialIndex < staticMeshRenderData->Materials.Num(); materialIndex++) {
+    for (int materialIndex = 0; materialIndex < staticMeshRenderData->Materials.Num(); materialIndex++)
+    {
         FStaticMaterial* newMaterialSlot = new FStaticMaterial();
         UMaterial* newMaterial = FManagerOBJ::CreateMaterial(staticMeshRenderData->Materials[materialIndex]);
 
@@ -60,5 +53,27 @@ void UStaticMesh::SetData(OBJ::FStaticMeshRenderData* renderData)
         newMaterialSlot->MaterialSlotName = staticMeshRenderData->Materials[materialIndex].MTLName;
 
         materials.Add(newMaterialSlot);
+    }
+
+    // LOD 데이터를 별도 구조체에 생성 (예: 두 단계 LOD 생성)
+    // 기본 메시는 LODLevels[0]
+    LODData.Add(renderData);
+    
+    // 예제: reductionFactor 0.5로 중간 해상도, 0.25로 저해상도 생성
+    OBJ::FStaticMeshRenderData* LOD1 = FLoaderOBJ::CreateSimpleLOD(renderData, 0.5f);
+    OBJ::FStaticMeshRenderData* LOD2 = FLoaderOBJ::CreateSimpleLOD(renderData, 0.25f);
+    if (LOD1)
+        LODData.Add(LOD1);
+    if (LOD2)
+        LODData.Add(LOD2);
+    
+    for (const auto lod : LODData)
+    {
+        const uint32 numVerts = lod->Vertices.Num();
+        if (numVerts > 0)
+            lod->VertexBuffer = GetEngine().renderer.CreateVertexBuffer(lod->Vertices, numVerts * sizeof(FVertexSimple));
+        const uint32 numIndices = lod->Indices.Num();
+        if (numIndices > 0)
+            lod->IndexBuffer = GetEngine().renderer.CreateIndexBuffer(lod->Indices, numIndices * sizeof(uint32));
     }
 }

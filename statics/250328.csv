@@ -1,0 +1,68 @@
+﻿API Call Summary
+Call Type, Call Count
+Draws:,50023
+Multi Draws:,0
+Dispatches:,0
+Clears:,3
+Blits:,0
+Presents:,1
+Command List Executes:,0
+Misc. Data Update:,0
+Non-API:,1
+Other:,600199
+Total:,650227
+
+
+
+
+API Call Details
+API Call,Count,Avg CPU ms,Σ CPU ms,Avg GPU ms,Σ GPU ms
+Map(),200018,<0.01,43.09,0.00,0.00
+Unmap(),200018,<0.01,58.42,0.00,0.00
+PSSetShaderResources(),50023,<0.01,27.15,0.00,0.00
+DrawIndexed(),50022,<0.01,199.50,<0.01,149.11
+IASetVertexBuffers(),50006,<0.01,25.98,0.00,0.00
+IASetIndexBuffer(),50005,<0.01,16.69,0.00,0.00
+PSSetSamplers(),50005,<0.01,10.30,0.00,0.00
+PSSetConstantBuffers(),20,<0.01,<0.01,0.00,0.00
+RSSetScissorRects(),20,<0.01,<0.01,0.00,0.00
+VSSetConstantBuffers(),10,<0.01,<0.01,0.00,0.00
+VSSetShader(),7,<0.01,<0.01,0.00,0.00
+PSSetShader(),7,<0.01,<0.01,0.00,0.00
+RSSetState(),6,<0.01,<0.01,0.00,0.00
+IASetInputLayout(),6,<0.01,<0.01,0.00,0.00
+IASetPrimitiveTopology(),5,<0.01,<0.01,0.00,0.00
+OMSetDepthStencilState(),5,<0.01,<0.01,0.00,0.00
+OMSetBlendState(),3,<0.01,<0.01,0.00,0.00
+RSSetViewports(),3,<0.01,<0.01,0.00,0.00
+VSSetShaderResources(),3,<0.01,<0.01,0.00,0.00
+Release(),3,0.00,0.00,0.00,0.00
+ClearRenderTargetView(),2,<0.01,<0.01,0.00,0.00
+GSSetShader(),2,<0.01,<0.01,0.00,0.00
+ClearDepthStencilView(),1,<0.01,<0.01,0.00,0.00
+OMSetRenderTargets(),1,<0.01,<0.01,0.00,0.00
+DrawInstanced(),1,0.04,0.04,0.26,0.26
+RSGetScissorRects(),1,<0.01,<0.01,0.00,0.00
+RSGetViewports(),1,<0.01,<0.01,0.00,0.00
+RSGetState(),1,<0.01,<0.01,0.00,0.00
+OMGetBlendState(),1,<0.01,<0.01,0.00,0.00
+OMGetDepthStencilState(),1,<0.01,<0.01,0.00,0.00
+PSGetShaderResources(),1,<0.01,<0.01,0.00,0.00
+PSGetSamplers(),1,<0.01,<0.01,0.00,0.00
+PSGetShader(),1,<0.01,<0.01,0.00,0.00
+VSGetShader(),1,<0.01,<0.01,0.00,0.00
+VSGetConstantBuffers(),1,<0.01,<0.01,0.00,0.00
+GSGetShader(),1,<0.01,<0.01,0.00,0.00
+IAGetPrimitiveTopology(),1,<0.01,<0.01,0.00,0.00
+IAGetIndexBuffer(),1,<0.01,<0.01,0.00,0.00
+IAGetVertexBuffers(),1,<0.01,<0.01,0.00,0.00
+IAGetInputLayout(),1,<0.01,<0.01,0.00,0.00
+HSSetShader(),1,<0.01,<0.01,0.00,0.00
+DSSetShader(),1,<0.01,<0.01,0.00,0.00
+CSSetShader(),1,<0.01,<0.01,0.00,0.00
+Release(),1,0.00,0.00,0.00,0.00
+Release(),1,<0.01,<0.01,0.00,0.00
+Release(),1,0.00,0.00,0.00,0.00
+Release(),1,<0.01,<0.01,0.00,0.00
+Release(),1,<0.01,<0.01,0.00,0.00
+Present(),1,0.05,0.05,0.00,0.00

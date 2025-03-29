@@ -427,6 +427,7 @@
     <ClCompile Include="Engine\Source\Runtime\Engine\Classes\GameFramework\Actor.cpp" />
     <ClInclude Include="Engine\Source\Runtime\Renderer\Frustum.h" />
     <ClInclude Include="Engine\Source\Runtime\Core\Container\FOcTree.h" />
+    <ClInclude Include="Engine\Source\Runtime\Core\Container\FOcTree.h" />
     <ClInclude Include="Engine\Source\Runtime\Renderer\OcclusionRenderer.h" />
     <ClInclude Include="Engine\Source\Runtime\Renderer\OcclusionQuery.h" />
   </ItemGroup>
@@ -526,5 +527,6 @@
     <ClCompile Include="Engine\Source\Runtime\Core\Container\FOcTree.cpp" />
     <ClCompile Include="Engine\Source\Runtime\Renderer\OcclusionRenderer.cpp" />
     <ClCompile Include="Engine\Source\Runtime\Renderer\OcclusionQuery.cpp" />
+    <ClCompile Include="Engine\Source\Runtime\Core\Container\FOcTree.cpp" />
   </ItemGroup>
 </Project>

@@ -14,10 +14,7 @@ const FMatrix FMatrix::Identity = FMatrix(
 );
 
 inline FMatrix::FMatrix() noexcept {
-    M[0][0] = 0.0f; M[1][0] = 0.0f; M[2][0] = 0.0f; M[3][0] = 0.0f;
-    M[0][1] = 0.0f; M[1][1] = 0.0f; M[2][1] = 0.0f; M[3][1] = 0.0f;
-    M[0][2] = 0.0f; M[1][2] = 0.0f; M[2][2] = 0.0f; M[3][2] = 0.0f;
-    M[0][3] = 0.0f; M[1][3] = 0.0f; M[2][3] = 0.0f; M[3][3] = 0.0f;
+    memset(M, 0, sizeof(float) * 16);
 }
 
 inline constexpr FMatrix::FMatrix(
@@ -212,7 +209,7 @@ FMatrix FMatrix::Transpose(const FMatrix& Mat) {
 
 // 행렬식 계산.
 float FMatrix::Determinant(const FMatrix& mat) {
-#if defined(_XM_SSE_INTRINSICS_)
+#if not defined(_XM_SSE_INTRINSICS_)
     static const __m128 Sign = _mm_set_ps(1.f, -1.f, 1.f, -1.f);
 
     const float* R0 = mat.row[0].m128_f32;
@@ -507,6 +504,18 @@ FMatrix FMatrix::CreateTranslationMatrix(const FVector& position)
     return translationMatrix;
 }
 
+FMatrix FMatrix::CreateInverseMatrixWithSRT(
+    const FVector& scale, 
+    const FVector& rotation, 
+    const FVector& position
+) {
+    FMatrix invScaleMatrix = FMatrix::CreateScale(1 / scale.x, 1 / scale.y, 1 / scale.z);
+    FMatrix invRotationMatrix = FMatrix::Transpose(FMatrix::CreateRotation(rotation.x, rotation.y, rotation.z));
+    FMatrix invPositionMatrix = FMatrix::CreateTranslationMatrix(position * -1.f);
+
+    return invPositionMatrix * invRotationMatrix * invScaleMatrix;
+}
+
 // 행렬을 사용하여 벡터 변환 (W = 1으로 가정)
 FVector FMatrix::TransformPosition(const FVector& vector) const {
 #if defined(__AVX2__)
@@ -610,8 +619,8 @@ FVector4 FMatrix::TransformVector(const FVector4& v, const FMatrix& m)
 #if defined(__AVX2__)
     FMatrix MT = FMatrix::Transpose(m);
     __m256 vec = _mm256_set_ps(
-        0.f, v.z, v.y, v.x,
-        0.f, v.z, v.y, v.x
+        v.a, v.z, v.y, v.x,
+        v.a, v.z, v.y, v.x
     );
     float* xy = _mm256_mul_ps(vec, _mm256_loadu_ps(MT.M[0])).m256_f32;
     float* zw = _mm256_mul_ps(vec, _mm256_loadu_ps(MT.M[2])).m256_f32;
@@ -624,7 +633,7 @@ FVector4 FMatrix::TransformVector(const FVector4& v, const FMatrix& m)
 #elif defined(_XM_SSE_INTRINSICS_)
     FMatrix MT = FMatrix::Transpose(m);
 
-    __m128 vec = _mm_set_ps(0.f, v.z, v.y, v.x);
+    __m128 vec = _mm_set_ps(v.a, v.z, v.y, v.x);
     float* xx = _mm_mul_ps(vec, MT.row[0]).m128_f32;
     float* yy = _mm_mul_ps(vec, MT.row[1]).m128_f32;
     float* zz = _mm_mul_ps(vec, MT.row[2]).m128_f32;
@@ -647,6 +656,72 @@ FVector4 FMatrix::TransformVector(const FVector4& v, const FMatrix& m)
 
 FBoundingBox::FBoundingBox(FVector _min, FVector _max): min(_min), max(_max)
 {}
+
+bool FBoundingBox::Intersect(const FVector& rayOrigin, const FVector& rayDir, float& outDistance) const {
+    float tmin = -FLT_MAX;
+    float tmax = FLT_MAX;
+    const float epsilon = 1e-6f;
+
+    // X축 처리
+    if ( fabs(rayDir.x) < epsilon ) {
+        // 레이가 X축 방향으로 거의 평행한 경우,
+        // 원점의 x가 박스 [min.x, max.x] 범위 밖이면 교차 없음
+        if ( rayOrigin.x < min.x || rayOrigin.x > max.x )
+            return false;
+    } else {
+        float t1 = (min.x - rayOrigin.x) / rayDir.x;
+        float t2 = (max.x - rayOrigin.x) / rayDir.x;
+        if ( t1 > t2 )  std::swap(t1, t2);
+
+        // tmin은 "현재까지의 교차 구간 중 가장 큰 min"
+        tmin = (t1 > tmin) ? t1 : tmin;
+        // tmax는 "현재까지의 교차 구간 중 가장 작은 max"
+        tmax = (t2 < tmax) ? t2 : tmax;
+        if ( tmin > tmax )
+            return false;
+    }
+
+    // Y축 처리
+    if ( fabs(rayDir.y) < epsilon ) {
+        if ( rayOrigin.y < min.y || rayOrigin.y > max.y )
+            return false;
+    } else {
+        float t1 = (min.y - rayOrigin.y) / rayDir.y;
+        float t2 = (max.y - rayOrigin.y) / rayDir.y;
+        if ( t1 > t2 )  std::swap(t1, t2);
+
+        tmin = (t1 > tmin) ? t1 : tmin;
+        tmax = (t2 < tmax) ? t2 : tmax;
+        if ( tmin > tmax )
+            return false;
+    }
+
+    // Z축 처리
+    if ( fabs(rayDir.z) < epsilon ) {
+        if ( rayOrigin.z < min.z || rayOrigin.z > max.z )
+            return false;
+    } else {
+        float t1 = (min.z - rayOrigin.z) / rayDir.z;
+        float t2 = (max.z - rayOrigin.z) / rayDir.z;
+        if ( t1 > t2 )  std::swap(t1, t2);
+
+        tmin = (t1 > tmin) ? t1 : tmin;
+        tmax = (t2 < tmax) ? t2 : tmax;
+        if ( tmin > tmax )
+            return false;
+    }
+
+    // 여기까지 왔으면 교차 구간 [tmin, tmax]가 유효하다.
+    // tmax < 0 이면, 레이가 박스 뒤쪽에서 교차하므로 화면상 보기엔 교차 안 한다고 볼 수 있음
+    if ( tmax < 0.0f )
+        return false;
+
+    // outDistance = tmin이 0보다 크면 그게 레이가 처음으로 박스를 만나는 지점
+    // 만약 tmin < 0 이면, 레이의 시작점이 박스 내부에 있다는 의미이므로, 거리를 0으로 처리해도 됨.
+    outDistance = (tmin >= 0.0f) ? tmin : 0.0f;
+
+    return true;
+}
 
 void FBoundingBox::ExpandToInclude(const FBoundingBox& Other)
 {

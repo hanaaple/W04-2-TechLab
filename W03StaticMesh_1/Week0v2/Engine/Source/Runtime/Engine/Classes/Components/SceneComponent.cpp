@@ -22,8 +22,7 @@ void USceneComponent::TickComponent(float DeltaTime)
 	Super::TickComponent(DeltaTime);
 }
 
-
-int USceneComponent::CheckRayIntersection(FVector& rayOrigin, FVector& rayDirection, float& pfNearHitDistance)
+int USceneComponent::CheckRayIntersection(const FVector& rayOrigin, const FVector& rayDirection, float& pfNearHitDistance)
 {
     int nIntersections = 0;
     return nIntersections;

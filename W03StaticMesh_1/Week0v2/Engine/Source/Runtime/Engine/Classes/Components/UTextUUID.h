@@ -10,8 +10,8 @@ public:
     virtual ~UTextUUID() override;
 
     virtual int CheckRayIntersection(
-        FVector& rayOrigin,
-        FVector& rayDirection, float& pfNearHitDistance
+        const FVector& rayOrigin,
+        const FVector& rayDirection, float& pfNearHitDistance
     ) override;
     void SetUUID(uint32 UUID);
 };

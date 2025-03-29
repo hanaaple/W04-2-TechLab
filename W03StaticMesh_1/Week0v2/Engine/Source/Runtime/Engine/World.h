@@ -13,6 +13,7 @@ class UCameraComponent;
 class AEditorPlayer;
 class USceneComponent;
 class UTransformGizmo;
+class UPrimitiveComponent;
 
 
 class UWorld : public UObject
@@ -72,6 +73,8 @@ public:
     void SetPickedActor(AActor* InActor)
     {
         SelectedActor = InActor;
+
+        // Update Constant Buffer?
     }
 
     UObject* GetWorldGizmo() const { return worldGizmo; }
@@ -82,11 +85,11 @@ public:
     inline FBoundingBox GetSceneBoundingBox() const { return SceneBoundingBox; }
     inline void SetSceneBoundingBox(const FBoundingBox& InBoundingBox) { SceneBoundingBox = InBoundingBox; }
 
-    inline FOctree<FOctreeElement> GetOcTree() const { return OcTree; }
+    inline FOctree<UStaticMeshComponent> GetOcTree() const { return OcTree; }
 private:
     FBoundingBox SceneBoundingBox;
 
-    FOctree<FOctreeElement> OcTree;
+    FOctree<UStaticMeshComponent> OcTree;
 };
 
 template <typename T>

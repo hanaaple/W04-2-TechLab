@@ -113,8 +113,8 @@ int32 FEngineLoop::Init(HINSTANCE hInstance)
 {
     if (FSceneMgr::LoadSceneData(TEXT("Default.scene")) == false)
         assert(false, TEXT("Can't Load Default Scene"));
-    // if (FSceneMgr::LoadSceneData(TEXT("Test.scene")) == false)
-    //     assert(false, TEXT("Can't Load Test Scene"));
+    //if (FSceneMgr::LoadSceneData(TEXT("Test.scene")) == false)
+    //    assert(false, TEXT("Can't Load Test Scene"));
     
     FWindowsPlatformTime::InitTiming();
 
@@ -143,6 +143,8 @@ int32 FEngineLoop::Init(HINSTANCE hInstance)
 void FEngineLoop::Render()
 {
     graphicDevice.Prepare();
+
+    // 신경 안써도 됨.
     if (LevelEditor->IsMultiViewport())
     {
         std::shared_ptr<FEditorViewportClient> viewportClient = GetLevelEditor()->GetActiveViewportClient();
@@ -156,7 +158,7 @@ void FEngineLoop::Render()
     }
     else
     {
-        renderer.PrepareRender(LevelEditor->GetActiveViewportClient());
+        renderer.PrepareRender(LevelEditor->GetActiveViewportClient());  // UISOO TODO: 바꿔야됨.
         renderer.Render(GetWorld(),LevelEditor->GetActiveViewportClient());
     }
 }
@@ -230,23 +232,23 @@ float FEngineLoop::GetAspectRatio(IDXGISwapChain* swapChain) const
 
 void FEngineLoop::Input()
 {
-    if (GetAsyncKeyState('M') & 0x8000)
-    {
-        if (!bTestInput)
-        {
-            bTestInput = true;
-            if (LevelEditor->IsMultiViewport())
-            {
-                LevelEditor->OffMultiViewport();
-            }
-            else
-                LevelEditor->OnMultiViewport();
-        }
-    }
-    else
-    {
-        bTestInput = false;
-    }
+    //if (GetAsyncKeyState('M') & 0x8000)
+    //{
+    //    if (!bTestInput)
+    //    {
+    //        bTestInput = true;
+    //        if (LevelEditor->IsMultiViewport())
+    //        {
+    //            LevelEditor->OffMultiViewport();
+    //        }
+    //        else
+    //            LevelEditor->OnMultiViewport();
+    //    }
+    //}
+    //else
+    //{
+    //    bTestInput = false;
+    //}
 }
 
 void FEngineLoop::Exit()

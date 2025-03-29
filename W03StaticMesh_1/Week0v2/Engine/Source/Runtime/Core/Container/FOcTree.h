@@ -10,10 +10,13 @@
 class FFrustum;
 
 // Octree에 저장할 요소. 각 요소는 자신의 BoundingBox와 고유 ID를 가지고 있습니다.
+template <typename T>
 struct FOctreeElement
 {
     FBoundingBox Bounds;
     uint32 Id; // 예: UUID
+    T* element;
+
 
     FOctreeElement(const FBoundingBox& InBounds, uint32 InId)
         : Bounds(InBounds), Id(InId)
@@ -25,8 +28,8 @@ template<typename T>
 struct FOctreeNode  : public std::enable_shared_from_this<FOctreeNode<T>>
 {
     FBoundingBox Bounds;                // 현재 노드의 영역
-    TArray<T> Elements;            // 이 노드에 속하는 요소들 (leaf인 경우)
-    std::shared_ptr<FOctreeNode> Children[8];            // 8개 자식 노드 (leaf가 아니라면 사용)
+    TArray<FOctreeElement<T>> Elements;            // 이 노드에 속하는 요소들 (leaf인 경우)
+    std::shared_ptr<FOctreeNode<T>> Children[8];            // 8개 자식 노드 (leaf가 아니라면 사용)
     bool IsLeaf;                        // leaf 여부
 
     FOctreeNode(const FBoundingBox& InBounds)
@@ -57,7 +60,7 @@ public:
     ~FOctree() { Root.reset(); }
 
     // 요소 삽입 함수: element와 해당 요소의 BoundingBox를 입력받습니다.
-    void Insert(const T &element, const FBoundingBox& ElementBounds)
+    void Insert(const FOctreeElement<T> &element, const FBoundingBox& ElementBounds)
     {
         InsertRecursive(Root, element, ElementBounds, 0);
     }
@@ -66,7 +69,15 @@ public:
     template<typename Fn>
     void Query(const FBoundingBox &QueryBounds, Fn Callback) const
     {
-        QueryRecursive(Root, QueryBounds, Callback);
+        QueryCollisionBox(Root, QueryBounds, Callback);
+    }
+
+    void QueryRay(
+        const FVector& origin, 
+        const FVector &direction, 
+        std::function<void(const FOctreeElement<T>&, float)> Callback
+    ) const {
+        QueryCollisionRay(Root, origin, direction, Callback);
     }
 
     template<typename Fn>
@@ -104,7 +115,7 @@ private:
         // Leaf인 경우: 요소 배열에서 해당 UUID를 검색
         if (Node->IsLeaf)
         {
-            for (const T &elem : Node->Elements)
+            for (const FOctreeElement<T> &elem : Node->Elements)
             {
                 if (elem.Id == TargetUUID)
                 {
@@ -132,7 +143,7 @@ private:
     }
 
     // 재귀적으로 요소를 삽입하는 함수
-    void InsertRecursive(std::shared_ptr<FOctreeNode<T>> Node, const T &element, const FBoundingBox &ElementBounds, int Depth)
+    void InsertRecursive(std::shared_ptr<FOctreeNode<T>> Node, const FOctreeElement<T> &element, const FBoundingBox &ElementBounds, int Depth)
     {
         // 만약 현재 노드가 leaf이고, 요소 수가 충분하거나 최대 깊이에 도달했다면 현재 노드에 추가합니다.
         if (Node->IsLeaf && (Node->Elements.Num() < MaxElementsPerLeaf || Depth >= MaxDepth))
@@ -146,10 +157,9 @@ private:
         {
             // 현재 노드를 8개의 자식 노드로 분할합니다.
             Subdivide(Node);
-
-            // 재삽입 과정에서 자식에 완전히 포함되지 않는 요소들을 임시 컨테이너에 저장합니다.
-            TArray<T> RemainingElements;
-            for (const T &existingElement : Node->Elements)
+            TArray<FOctreeElement<T>> RemainingElements;
+            // 기존 요소들을 재삽입합니다.
+            for (const FOctreeElement<T> &existingElement : Node->Elements)
             {
                 // 기존 요소의 바운딩 박스는 existingElement.Bounds로 가정
                 int ChildIndex = GetChildIndex(Node->Bounds, existingElement.Bounds);
@@ -264,7 +274,7 @@ private:
     
         if (Node->IsLeaf)
         {
-            for (const T &elem : Node->Elements)
+            for (const FOctreeElement<T> &elem : Node->Elements)
             {
                 if (frustum.IsBoxVisible(elem.Bounds))
                     Callback(elem);
@@ -280,9 +290,9 @@ private:
     }
 
     // 재귀 쿼리 함수: 현재 노드의 영역이 QueryBounds와 교차하면 요소들을 Callback에 전달합니다.
-    template<typename Fn>
-    void QueryRecursive(const std::shared_ptr<FOctreeNode<T>> Node, const FBoundingBox &QueryBounds, Fn Callback) const
+    void QueryCollisionBox(const std::shared_ptr<FOctreeNode<T>> Node, const FBoundingBox &QueryBounds, std::function<void(const T&)> Callback) const
     {
+        // TODO: Bounds.IntersectWithAABB 만들기
         if (!Node->Bounds.Intersects(QueryBounds))
             return;
 
@@ -297,7 +307,33 @@ private:
         {
             for (int i = 0; i < 8; ++i)
                 if (Node->Children[i])
-                    QueryRecursive(Node->Children[i], QueryBounds, Callback);
+                    QueryCollisionBox(Node->Children[i], QueryBounds, Callback);
+        }
+    }
+
+    // 재귀 쿼리 함수: 현재 노드의 영역이 Ray와 교차하면 요소들을 Callback에 전달합니다.
+    void QueryCollisionRay(
+        const std::shared_ptr<FOctreeNode<T>> Node, 
+        const FVector& origin, 
+        const FVector& direction, 
+        std::function<void(const FOctreeElement<T>&, float)> Callback
+    ) const {
+        float hitDistance = FLT_MAX;
+        if ( !Node->Bounds.Intersect(origin, direction, hitDistance) )
+            return;
+
+        // 현재 노드의 요소 검사
+        for ( const FOctreeElement<T>& elem : Node->Elements ) {
+            if ( elem.Bounds.Intersect(origin, direction, hitDistance) ) {
+                Callback(elem, hitDistance);
+            }
+            
+        }
+        // 자식 노드 탐색
+        if ( !Node->IsLeaf ) {
+            for ( int i = 0; i < 8; ++i )
+                if ( Node->Children[i] )
+                    QueryCollisionRay(Node->Children[i], origin, direction, Callback);
         }
     }
 };

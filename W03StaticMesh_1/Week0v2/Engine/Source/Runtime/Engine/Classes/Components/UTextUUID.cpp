@@ -10,7 +10,7 @@ UTextUUID::~UTextUUID()
 {
 }
 
-int UTextUUID::CheckRayIntersection(FVector& rayOrigin, FVector& rayDirection, float& pfNearHitDistance)
+int UTextUUID::CheckRayIntersection(const FVector& rayOrigin, const FVector& rayDirection, float& pfNearHitDistance)
 {
     return 0;
 }
