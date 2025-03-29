@@ -5,22 +5,23 @@ class ID3D11InputLayout;
 class ID3D11Buffer;
 class FBoundingBox;
 class FOcclusionQuery;
+class UStaticMeshComponent;
 
 class FOcclusionRenderer
 {
 public:
     void Initialize(FGraphicsDevice* graphics);
     void Prepare();
-    void IssueQueries(const FBoundingBox& box, const FMatrix& MVP);
+    void IssueQueries(TArray<UStaticMeshComponent*>& StaticMeshObjs, const FMatrix& VP);
     void IssueQuery(const FBoundingBox& box, const FMatrix& MVP, const FOcclusionQuery& query);
-    void ResolveQueries();
+    void ResolveQueries(const TArray<UStaticMeshComponent*>& StaticMeshObjs);
     void Release();
 
 private:
     void CreateShader();
     void CreateConstantBuffer();
     void CreateVertexBuffer();
-    void UpdateMVPConstantBuffer(const FBoundingBox& box, const FMatrix& mvp);
+    void UpdateBoxConstantBuffer(const FBoundingBox& box, const FMatrix& mvp);
     void Rendering(const FBoundingBox& box);
     ID3D11VertexShader* OcclusionVertexShader = nullptr;
     ID3D11Buffer* BoxConstantBuffer = nullptr;

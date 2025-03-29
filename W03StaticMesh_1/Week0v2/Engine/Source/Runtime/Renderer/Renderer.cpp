@@ -20,7 +20,7 @@
 #include "PropertyEditor/ShowFlags.h"
 #include "UObject/UObjectIterator.h"
 #include "Components/SkySphereComponent.h"
-
+#include "OcclusionRenderer.h"
 void FRenderer::Initialize(FGraphicsDevice* graphics)
 {
     Graphics = graphics;
@@ -31,6 +31,8 @@ void FRenderer::Initialize(FGraphicsDevice* graphics)
     CreateLightingBuffer();
     CreateLitUnlitBuffer();
     UpdateLitUnlitConstant(1);
+    OcclusionRenderer = new FOcclusionRenderer();
+    OcclusionRenderer->Initialize(graphics);
 }
 
 void FRenderer::Release()
@@ -39,6 +41,7 @@ void FRenderer::Release()
     ReleaseTextureShader();
     ReleaseLineShader();
     ReleaseConstantBuffer();
+    delete OcclusionRenderer;
 }
 
 void FRenderer::CreateShader()
@@ -1051,6 +1054,10 @@ void FRenderer::Render(UWorld* World, std::shared_ptr<FEditorViewportClient> Act
 
 void FRenderer::RenderStaticMeshes(UWorld* World, std::shared_ptr<FEditorViewportClient> ActiveViewport)
 {
+    if (GetAsyncKeyState(VK_RBUTTON) & 0x8000) 
+    {
+        //ResolveOcclusionQueries();
+    }
     PrepareShader();
 
     // if (ActiveViewport->GetShowFlag() & static_cast<uint64>(EEngineShowFlags::SF_AABB))
@@ -1060,6 +1067,7 @@ void FRenderer::RenderStaticMeshes(UWorld* World, std::shared_ptr<FEditorViewpor
     
     for (UStaticMeshComponent* StaticMeshComp : StaticMeshObjs)
     {
+        if (StaticMeshComp->bIsVisible == false) continue;
         FMatrix Model = JungleMath::CreateModelMatrix(
             StaticMeshComp->GetWorldLocation(),
             StaticMeshComp->GetWorldRotation(),
@@ -1117,6 +1125,11 @@ void FRenderer::RenderStaticMeshes(UWorld* World, std::shared_ptr<FEditorViewpor
         if (renderData == nullptr) continue;
 
         RenderPrimitive(renderData, StaticMeshComp->GetStaticMesh()->GetMaterials(), StaticMeshComp->GetOverrideMaterials(), StaticMeshComp->GetselectedSubMeshIndex());
+    }
+
+    if (GetAsyncKeyState(VK_RBUTTON) & 0x8000)
+    {
+        //IssueOcclusionQueries(ActiveViewport);
     }
 }
 
@@ -1225,6 +1238,17 @@ void FRenderer::RenderBillboards(UWorld* World, std::shared_ptr<FEditorViewportC
         }
     }
     PrepareShader();
+}
+
+void FRenderer::IssueOcclusionQueries(std::shared_ptr<FEditorViewportClient> ActiveViewport)
+{
+    FMatrix VP = ActiveViewport->GetViewMatrix() * ActiveViewport->GetProjectionMatrix();
+    OcclusionRenderer->IssueQueries(StaticMeshObjs,VP);
+}
+
+void FRenderer::ResolveOcclusionQueries()
+{
+    OcclusionRenderer->ResolveQueries(StaticMeshObjs);
 }
 
 void FRenderer::RenderLight(UWorld* World, std::shared_ptr<FEditorViewportClient> ActiveViewport)

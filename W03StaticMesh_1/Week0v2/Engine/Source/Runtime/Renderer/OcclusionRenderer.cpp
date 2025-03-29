@@ -2,11 +2,10 @@
 #include "OcclusionRenderer.h"
 #include "Engine/ResourceMgr.h"
 #include "OcclusionQuery.h"
+#include "Components/StaticMeshComponent.h"
+#include "Math/JungleMath.h"
 #include <d3d11.h>
 #include <d3dcompiler.h>
-
-
-
 
 void FOcclusionRenderer::Initialize(FGraphicsDevice* graphics)
 {
@@ -26,22 +25,61 @@ void FOcclusionRenderer::Prepare()
     context->VSSetConstantBuffers(0, 1, &BoxConstantBuffer);
 }
 
-void FOcclusionRenderer::IssueQueries(const FBoundingBox& box, const FMatrix& MVP)
+void FOcclusionRenderer::IssueQueries(TArray<UStaticMeshComponent*>& StaticMeshObjs, const FMatrix& VP)
 {
+    Prepare();
+    for (UStaticMeshComponent* StaticMeshComp : StaticMeshObjs)
+    {
+        FMatrix Model = JungleMath::CreateModelMatrix(
+            StaticMeshComp->GetWorldLocation(),
+            StaticMeshComp->GetWorldRotation(),
+            StaticMeshComp->GetWorldScale()
+        );
 
+        FMatrix MVP = Model * VP;
+        const FBoundingBox& LocalBounds = StaticMeshComp->GetBoundingBox();
+
+        IssueQuery(LocalBounds, MVP,StaticMeshComp->query);
+
+    }
 }
 
 void FOcclusionRenderer::IssueQuery(const FBoundingBox& box, const FMatrix& MVP, const FOcclusionQuery& query)
 {
+    if (query.Get() == nullptr) return;
     Graphics->DeviceContext->Begin(query.Get());
-    UpdateMVPConstantBuffer(box, MVP);
+    UpdateBoxConstantBuffer(box, MVP);
     Rendering(box);
     Graphics->DeviceContext->End(query.Get());
 }
 
-void FOcclusionRenderer::ResolveQueries()
+void FOcclusionRenderer::ResolveQueries(const TArray<UStaticMeshComponent*>& StaticMeshObjs)
 {
+    ID3D11DeviceContext* context = Graphics->DeviceContext;
 
+    for (UStaticMeshComponent* StaticMeshComp : StaticMeshObjs)
+    {
+        ID3D11Query* query = StaticMeshComp->query.Get();
+
+        if (query == nullptr)
+        {
+            StaticMeshComp->bIsVisible = true; // 쿼리가 없으면 기본 true 처리
+            continue;
+        }
+
+        UINT64 pixelCount = 0;
+        HRESULT hr = context->GetData(query, &pixelCount, sizeof(UINT64), 0);
+
+        if (hr == S_OK)
+        {
+            StaticMeshComp->bIsVisible = (pixelCount > 0);
+        }
+        else
+        {
+            // 결과가 아직 GPU에서 안 나왔거나 실패했으면 conservative fallback
+            StaticMeshComp->bIsVisible = true;
+        }
+    }
 }
 
 void FOcclusionRenderer::Release()
@@ -51,7 +89,7 @@ void FOcclusionRenderer::Release()
     if (DummyVertexBuffer) DummyVertexBuffer->Release();
 }
 
-void FOcclusionRenderer::UpdateMVPConstantBuffer(const FBoundingBox& box,const FMatrix& mvp)
+void FOcclusionRenderer::UpdateBoxConstantBuffer(const FBoundingBox& box,const FMatrix& mvp)
 {
     FBoxConstantBuffer cb;
     cb.MVP = mvp;
@@ -99,7 +137,7 @@ void FOcclusionRenderer::CreateConstantBuffer()
 {
     D3D11_BUFFER_DESC desc = {};
     desc.Usage = D3D11_USAGE_DYNAMIC;
-    desc.ByteWidth = sizeof(BoxConstantBuffer);
+    desc.ByteWidth = sizeof(FBoxConstantBuffer);
     desc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
     desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 

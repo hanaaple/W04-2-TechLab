@@ -19,6 +19,7 @@ class FEditorViewportClient;
 class UBillboardComponent;
 class UStaticMeshComponent;
 class UGizmoBaseComponent;
+class FOcclusionRenderer;
 class FRenderer 
 {
 
@@ -157,5 +158,12 @@ public:
     ID3D11ShaderResourceView* pBBSRV = nullptr;
     ID3D11ShaderResourceView* pConeSRV = nullptr;
     ID3D11ShaderResourceView* pOBBSRV = nullptr;
+
+public:
+    void IssueOcclusionQueries(std::shared_ptr<FEditorViewportClient> ActiveViewport);
+    void ResolveOcclusionQueries();
+private:
+    FOcclusionRenderer* OcclusionRenderer = nullptr;
+
 };
 
