@@ -209,7 +209,7 @@ FMatrix FMatrix::Transpose(const FMatrix& Mat) {
 
 // 행렬식 계산.
 float FMatrix::Determinant(const FMatrix& mat) {
-#if not defined(_XM_SSE_INTRINSICS_)
+#if false
     static const __m128 Sign = _mm_set_ps(1.f, -1.f, 1.f, -1.f);
 
     const float* R0 = mat.row[0].m128_f32;
