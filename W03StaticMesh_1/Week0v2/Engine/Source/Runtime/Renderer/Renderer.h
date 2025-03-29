@@ -20,6 +20,7 @@ class FEditorViewportClient;
 class UBillboardComponent;
 class UStaticMeshComponent;
 class UGizmoBaseComponent;
+class FOcclusionRenderer;
 class FRenderer 
 {
 
@@ -212,3 +213,12 @@ private:
     // Material
     TMap<FString, TArray<TPair<ID3D11Buffer*, TPair<uint32, ID3D11Buffer*>>>> CachedBuffers; 
 };
+
+public:
+    void IssueOcclusionQueries(std::shared_ptr<FEditorViewportClient> ActiveViewport);
+    void ResolveOcclusionQueries();
+private:
+    FOcclusionRenderer* OcclusionRenderer = nullptr;
+
+};
+

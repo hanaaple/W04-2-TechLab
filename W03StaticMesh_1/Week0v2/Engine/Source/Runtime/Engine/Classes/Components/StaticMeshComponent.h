@@ -1,7 +1,7 @@
 #pragma once
 #include "Components/MeshComponent.h"
 #include "Mesh/StaticMesh.h"
-
+#include "Renderer/OcclusionQuery.h"
 class UStaticMeshComponent : public UMeshComponent
 {
     DECLARE_CLASS(UStaticMeshComponent, UMeshComponent)
@@ -26,7 +26,8 @@ public:
         OverrideMaterials.SetNum(value->GetMaterials().Num());
         AABB = FBoundingBox(staticMesh->GetRenderData()->BoundingBoxMin, staticMesh->GetRenderData()->BoundingBoxMax);
     }
-
+    FOcclusionQuery query;
+    bool bIsVisible = true;
 protected:
     UStaticMesh* staticMesh = nullptr;
     int selectedSubMeshIndex = -1;

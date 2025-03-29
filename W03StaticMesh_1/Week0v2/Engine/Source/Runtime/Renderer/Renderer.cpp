@@ -21,6 +21,7 @@
 #include "Components/SkySphereComponent.h"
 #include "Engine/FLoaderOBJ.h"
 
+#include "OcclusionRenderer.h"
 void FRenderer::Initialize(FGraphicsDevice* graphics)
 {
     Graphics = graphics;
@@ -28,9 +29,10 @@ void FRenderer::Initialize(FGraphicsDevice* graphics)
     CreateTextureShader();
     CreateLineShader();
     CreateConstantBuffer();
-    //CreateLightingBuffer();
-    //CreateLitUnlitBuffer();
-    ChangeViewMode(EViewModeIndex::VMI_Lit);
+
+    ChangeViewMode(EViewModeIndex::VMI_Lit);    
+    OcclusionRenderer = new FOcclusionRenderer();
+    OcclusionRenderer->Initialize(graphics);
 }
 
 void FRenderer::Release()
@@ -39,6 +41,7 @@ void FRenderer::Release()
     ReleaseTextureShader();
     ReleaseLineShader();
     ReleaseConstantBuffer();
+    delete OcclusionRenderer;
 }
 
 void FRenderer::CreateShader()
@@ -1199,8 +1202,11 @@ void FRenderer::Render(UWorld* World, const std::shared_ptr<FEditorViewportClien
 }
 
 void FRenderer::RenderStaticMeshes(UWorld* World, std::shared_ptr<FEditorViewportClient> ActiveViewport)
-{    
-    // TODO: 리팩토링 - Shader는 Material에 종속되어야됨.
+{
+    if (GetAsyncKeyState(VK_RBUTTON) & 0x8000) 
+    {
+        //ResolveOcclusionQueries();
+    }
     PrepareShader();
     // for (UStaticMeshComponent* StaticMeshComp : StaticMeshObjs)
     // {
@@ -1302,6 +1308,11 @@ void FRenderer::RenderStaticMeshes(UWorld* World, std::shared_ptr<FEditorViewpor
             Graphics->DeviceContext->IASetIndexBuffer(IndexBuffer, IndexBufferFormat, 0);
             Graphics->DeviceContext->DrawIndexed(IndexCount, 0, 0);
         }
+    }
+
+    if (GetAsyncKeyState(VK_RBUTTON) & 0x8000)
+    {
+        //IssueOcclusionQueries(ActiveViewport);
     }
 }
 
