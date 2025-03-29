@@ -23,10 +23,10 @@
 struct FVertexSimple
 {
     float x, y, z;    // Position
-    float r, g, b, a; // Color
-    float nx, ny, nz;
+    //float r, g, b, a; // Color
+    //float nx, ny, nz;
     float u=0, v=0;
-    uint32 MaterialIndex;
+    //uint32 MaterialIndex;
 };
 
 // Material Subset
@@ -341,35 +341,35 @@ struct FLighting
 	float pad5; // 16바이트 정렬 맞춤 추가 패딩
 };
 
-struct FMaterialConstants {
+struct alignas(16) FMaterialConstants {
     FVector DiffuseColor;
-    float TransparencyScalar;
-    FVector AmbientColor;
-    float DensityScalar;
-    FVector SpecularColor;
-    float SpecularScalar;
-    FVector EmmisiveColor;
-    float MaterialPad0;
+    // float TransparencyScalar;
+    // FVector AmbientColor;
+    // float DensityScalar;
+    // FVector SpecularColor;
+    // float SpecularScalar;
+    // FVector EmmisiveColor;
+    // float MaterialPad0;
 };
 
-struct FConstants {
+struct alignas(16) FConstants {
     FMatrix MVP;      // 모델
-    FMatrix ModelMatrixInverseTranspose; // normal 변환을 위한 행렬
-    FVector4 UUIDColor;
-    bool IsSelected;
-    FVector pad;
+    // FMatrix ModelMatrixInverseTranspose; // normal 변환을 위한 행렬
+    // FVector4 UUIDColor;
+    // bool IsSelected;
 };
-struct FLitUnlitConstants {
+
+struct alignas(16) FLitUnlitConstants {
     int isLit; // 1 = Lit, 0 = Unlit 
     FVector pad;
 };
 
-struct FSubMeshConstants {
+struct alignas(16) FSubMeshConstants {
     float isSelectedSubMesh;
     FVector pad;
 };
 
-struct FTextureConstants {
+struct alignas(16) FTextureConstants {
     float UOffset;
     float VOffset;
     float pad0;

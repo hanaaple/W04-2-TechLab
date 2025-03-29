@@ -33,7 +33,7 @@ void UPrimitiveBatch::GenerateGrid(float spacing, int gridCount)
     GridParam.gridOrigin = { 0,0,0 };
 }
 
-void UPrimitiveBatch::RenderBatch(const FMatrix& View, const FMatrix& Projection)
+void UPrimitiveBatch::RenderBatchLine(const FMatrix& View, const FMatrix& Projection)
 {
     FEngineLoop::renderer.PrepareLineShader();
 
@@ -41,8 +41,9 @@ void UPrimitiveBatch::RenderBatch(const FMatrix& View, const FMatrix& Projection
 
     FMatrix Model = FMatrix::Identity;
     FMatrix MVP = Model * View * Projection;
-    FMatrix NormalMatrix = FMatrix::Transpose(FMatrix::Inverse(Model));
-    FEngineLoop::renderer.UpdateConstant(MVP, NormalMatrix, FVector4(0,0,0,0), false);
+    // FMatrix NormalMatrix = FMatrix::Transpose(FMatrix::Inverse(Model));
+    // FEngineLoop::renderer.UpdateConstant(MVP, NormalMatrix, FVector4(0,0,0,0), false);
+    FEngineLoop::renderer.UpdateConstant(MVP);
     FEngineLoop::renderer.UpdateGridConstantBuffer(GridParam);
 
     UpdateBoundingBoxResources();
