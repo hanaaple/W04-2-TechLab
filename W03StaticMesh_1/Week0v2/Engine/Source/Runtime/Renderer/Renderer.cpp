@@ -388,6 +388,29 @@ void FRenderer::CreateLitUnlitBuffer()
     Graphics->Device->CreateBuffer(&constantbufferdesc, nullptr, &FlagConstantBuffer);
 }
 
+ID3D11Buffer* FRenderer::CreateBuffer(void* Data, uint32 ByteWidth, D3D11_USAGE Usage, D3D11_CPU_ACCESS_FLAG Flag, D3D11_BIND_FLAG BindFlag)
+{
+    D3D11_BUFFER_DESC bufferdesc = {};
+    bufferdesc.ByteWidth = ByteWidth;
+    bufferdesc.Usage = Usage; // will never be updated 
+    bufferdesc.BindFlags = BindFlag;
+    bufferdesc.CPUAccessFlags = Flag;
+
+    D3D11_SUBRESOURCE_DATA vertexbufferSRD = {Data};
+
+    ID3D11Buffer* vertexBuffer;
+    HRESULT hr;
+    if (Data == nullptr)
+        hr = Graphics->Device->CreateBuffer(&bufferdesc, nullptr, &vertexBuffer);
+    else
+        hr = Graphics->Device->CreateBuffer(&bufferdesc, &vertexbufferSRD, &vertexBuffer);
+    if (FAILED(hr))
+    {
+        UE_LOG(LogLevel::Warning, "VertexBuffer Creation faild");
+    }
+    return vertexBuffer;
+}
+
 void FRenderer::ReleaseConstantBuffer()
 {
     if (ConstantBuffer)
@@ -963,11 +986,26 @@ void FRenderer::CreateBatchRenderCache()
         BatchRenderTargetContext.bIsDirty = false;
 
         if (!CachedBuffers.Contains(MaterialName))
-            CachedBuffers.Add(MaterialName, TArray<TPair<ID3D11Buffer*, TPair<uint32, ID3D11Buffer*>>>());
-        
-        CachedBuffers[MaterialName].Empty();
+            CachedBuffers.Add(MaterialName, TMap<uint32, TPair<ID3D11Buffer*, TPair<uint32, ID3D11Buffer*>>>());
 
+#if UseBufferDynamic
+        {}
+#else
+        {
+            for (const auto& [BufferIndex, BufferInfo] : CachedBuffers[MaterialName])
+            {
+                if (BufferInfo.Key)
+                    BufferInfo.Key->Release();
+                if (BufferInfo.Value.Value)
+                    BufferInfo.Value.Value->Release();
+            } 
+        
+            CachedBuffers[MaterialName].Empty();
+        }
+#endif
+        
         int MeshIndex = 0;
+        uint32 BufferIndex = 0;
         while (BatchRenderTargetContext.StaticMeshes.Num() > MeshIndex)
         {
             uint32 VertexOffset = 0;
@@ -982,52 +1020,125 @@ void FRenderer::CreateBatchRenderCache()
                 const uint32 IndexBufferStartIndex = renderData->MaterialSubsets[SubMeshIndex].IndexStart;
                 const uint32 IndexCount = renderData->MaterialSubsets[SubMeshIndex].IndexCount;
 
+                // LOD TODO: Vertex 다른 거로 넣어주기 변경
                 TArray<FVertexSimple> Vertices = StaticMeshComponent->Vertices;
 
+                if ((VertexOffset + Vertices.Num()) * sizeof(FVertexSimple) > MaxBufferSize)
+                {
+                    MeshIndex--;
+                    break;
+                }
+
+                // LOD TODO: IndexData 다른 거로 넣어주기 변경
+                const TArray<uint32>& Indices = renderData->Indices;
+                if ((IndexData.Num() + Indices.Num()) * sizeof(uint32) > MaxBufferSize)
+                {
+                    MeshIndex--;
+                    break;
+                }
+                
                 // UISOO TODO: 사용하지 않는 Vertex 없애고 Indexing 당기기
                 VertexData.Append(Vertices);
 
-                const TArray<uint32>& Indices = renderData->Indices;
                 for (int i = IndexBufferStartIndex; i < IndexBufferStartIndex + IndexCount; i++)
                 {
                     IndexData.Add(Indices[i] + VertexOffset);                    
                 }
                 
                 VertexOffset += Vertices.Num();
-
-                static const uint32 MaxVertexBufferSize = 16 * 1024 * 1024;
-                //static const uint32 MaxIndexBufferSize = 2 * 1024 * 1024;
-                //uint32 IndexByte = IndexData.Num() * sizeof(uint32);
-                uint32 VertexByte = VertexOffset * sizeof(FVertexSimple);
-                if (VertexByte > MaxVertexBufferSize
-                    //|| IndexByte > MaxIndexBufferSize
-                    )
-                    break;
             }
 
             uint32 VertexDataSize = sizeof(FVertexSimple) * VertexData.Num();
-            ID3D11Buffer* VertexBuffer = CreateVertexBuffer(VertexData.GetData(), VertexDataSize);
-            //ID3D11Buffer* VertexBuffer = UpdateOrCreateVertexBuffer(MaterialName, MeshIndex, VertexData.GetData(), VertexDataSize);
         
             uint32 IndexDataSize = sizeof(uint32) * IndexData.Num();
+
+#if UseBufferDynamic
+            UpdateOrCreateBuffer(MaterialName, BufferIndex, VertexData.GetData(), VertexDataSize, IndexData.GetData(), IndexDataSize, IndexData.Num(), MaxBufferSize);
+#else
+            ID3D11Buffer* VertexBuffer = CreateVertexBuffer(VertexData.GetData(), VertexDataSize);
             ID3D11Buffer* IndexBuffer = CreateIndexBuffer(IndexData.GetData(), IndexDataSize);
-            //ID3D11Buffer* IndexBuffer = UpdateOrCreateIndexBuffer(MaterialName, MeshIndex, IndexData.GetData(), IndexDataSize);
-        
-            CachedBuffers[MaterialName].Add({VertexBuffer, {IndexDataSize, IndexBuffer}});
+            CachedBuffers[MaterialName].Add(BufferIndex, {VertexBuffer, {IndexDataSize, IndexBuffer}});
+#endif
+            
 
             MeshIndex++;
+            BufferIndex++;
         }
+#if UseBufferDynamic
+        ReleaseUnUsedBatchBuffer(MaterialName, BufferIndex);
+#else
+#endif
     }
 }
 
-ID3D11Buffer* FRenderer::UpdateOrCreateVertexBuffer(const FString& MaterialName, uint32 MeshIndex, FVertexSimple* Data, uint32 VertexDataSize)
+void FRenderer::UpdateOrCreateBuffer(const FString& MaterialName, uint32 BufferIndex, FVertexSimple* VertexData, uint32 VertexDataSize, void* IndexData, uint32 IndexDataSize, uint32 IndexDataCount, uint32 BufferSize)
 {
+    if (!CachedBuffers[MaterialName].Contains(BufferIndex))
+    {
+        ID3D11Buffer* VertexBuffer = CreateBuffer(nullptr, BufferSize, D3D11_USAGE_DYNAMIC, D3D11_CPU_ACCESS_WRITE, D3D11_BIND_VERTEX_BUFFER);
+        ID3D11Buffer* IndexBuffer = CreateBuffer(nullptr, BufferSize, D3D11_USAGE_DYNAMIC, D3D11_CPU_ACCESS_WRITE, D3D11_BIND_INDEX_BUFFER);
+        CachedBuffers[MaterialName].Add(BufferIndex, {VertexBuffer, {0, IndexBuffer}});
+    }
+
+    CachedBuffers[MaterialName][BufferIndex].Value.Key = IndexDataCount;
     
+    ID3D11Buffer* VertexBuffer = CachedBuffers[MaterialName][BufferIndex].Key;
+    // 기존 버퍼 업데이트
+    D3D11_MAPPED_SUBRESOURCE mappedResource;
+    HRESULT hr = Graphics->DeviceContext->Map(VertexBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+    if (SUCCEEDED(hr))
+    {
+        //reinterpret_cast<FOBB*>(mappedResource.pData);
+        memcpy(mappedResource.pData, VertexData, VertexDataSize);
+        Graphics->DeviceContext->Unmap(VertexBuffer, 0);
+    }
+    else
+    {
+        UE_LOG(LogLevel::Warning, "Failed to map vertex buffer for update.");
+    }
+
+    ID3D11Buffer* IndexBuffer = CachedBuffers[MaterialName][BufferIndex].Key;
+    // 기존 버퍼 업데이트
+    D3D11_MAPPED_SUBRESOURCE mappedResourceIndex;
+    hr = Graphics->DeviceContext->Map(IndexBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResourceIndex);
+    if (SUCCEEDED(hr))
+    {
+        memcpy(mappedResourceIndex.pData, IndexData, IndexDataSize);
+        Graphics->DeviceContext->Unmap(IndexBuffer, 0);
+    }
+    else
+    {
+        UE_LOG(LogLevel::Warning, "Failed to map vertex buffer for update.");
+    }
 }
 
-ID3D11Buffer* FRenderer::UpdateOrCreateIndexBuffer(const FString& MaterialName, uint32 MeshIndex, void* Data, uint32 IndexDataSize)
+void FRenderer::ReleaseUnUsedBatchBuffer(const FString& MaterialName, uint32 ReleaseStartBufferIndex)
 {
-    
+    if (!CachedBuffers.Contains(MaterialName))
+    {
+        return;
+    }
+
+    TArray<uint32> BufferIndexes;
+    for (const auto& [bufferIndex, BufferInfo] : CachedBuffers[MaterialName])
+    {
+        if (ReleaseStartBufferIndex > bufferIndex)
+            continue;
+        ID3D11Buffer* VertexBuffer = BufferInfo.Key;
+        ID3D11Buffer* IndexBuffer = BufferInfo.Value.Value;
+
+        if (VertexBuffer)
+            VertexBuffer->Release();
+        if (IndexBuffer)
+            IndexBuffer->Release();
+
+        BufferIndexes.Add(bufferIndex);
+    }
+
+    for (uint32 buffer_index : BufferIndexes)
+    {
+        CachedBuffers[MaterialName].Remove(buffer_index);
+    } 
 }
 
 void FRenderer::UpdateBoundingBoxBuffer(ID3D11Buffer* pBoundingBoxBuffer, const TArray<FBoundingBox>& BoundingBoxes, int numBoundingBoxes) const
@@ -1161,9 +1272,10 @@ void FRenderer::Render(UWorld* World, const std::shared_ptr<FEditorViewportClien
     ChangeViewMode(ActiveViewport->GetViewMode());  // 완료 - Lit 없앰, Current 비교하여 ConstantBuffer Update X, 연산 짧음.
     //UpdateLightBuffer();
 
-    if (GetAsyncKeyState(VK_RBUTTON) & 0x8000) 
+    if (GetAsyncKeyState(VK_RBUTTON) & 0x8000 || bWasOcculusionQueried) 
     {
         ResolveOcclusionQueries();
+        bWasOcculusionQueried = false;
     }
     
     // UISOO TODO: 여기 Set LineShader
@@ -1185,6 +1297,7 @@ void FRenderer::Render(UWorld* World, const std::shared_ptr<FEditorViewportClien
     if (GetAsyncKeyState(VK_RBUTTON) & 0x8000) 
     {
         IssueOcclusionQueries(ActiveViewport);
+        bWasOcculusionQueried = true;
     }
     
     ClearRenderArr();
@@ -1279,16 +1392,18 @@ void FRenderer::RenderStaticMeshes(UWorld* World, std::shared_ptr<FEditorViewpor
         UINT offset = 0;
         UINT stride = sizeof(FVertexSimple);
 
-        const auto Buffers = GetCachedBuffers(MaterialName);
-
-        for (const auto& [VertexBuffer, IndexBufferInfo] : Buffers)
+        const auto Buffers = CachedBuffers[MaterialName];
+        
+        for (const auto& [BufferIndex, BufferInfo] : Buffers)
         {
-            if (VertexBuffer == nullptr || IndexBufferInfo.Key == 0 || IndexBufferInfo.Value == nullptr)
+            ID3D11Buffer* VertexBuffer = BufferInfo.Key;
+            ID3D11Buffer* IndexBuffer = BufferInfo.Value.Value;
+            uint32 IndexCount = BufferInfo.Value.Key;
+            
+            if (VertexBuffer == nullptr || IndexCount == 0 || IndexBuffer == nullptr)
                 continue;
             
             DXGI_FORMAT IndexBufferFormat = DXGI_FORMAT_R32_UINT;
-            uint32 IndexCount = IndexBufferInfo.Key;
-            ID3D11Buffer* IndexBuffer = IndexBufferInfo.Value;
             Graphics->DeviceContext->IASetVertexBuffers(0, 1, &VertexBuffer, &stride, &offset);
             Graphics->DeviceContext->IASetIndexBuffer(IndexBuffer, IndexBufferFormat, 0);
             Graphics->DeviceContext->DrawIndexed(IndexCount, 0, 0);
@@ -1433,6 +1548,7 @@ void FRenderer::UpdateBatchRenderTarget(std::shared_ptr<FEditorViewportClient> A
         for (uint32 i = 0; i < pStaticMeshComp->GetNumMaterials(); i++)
         {
             auto Material = pStaticMeshComp->GetMaterial(i);
+            // LOD TODO: Texture 다른 거로 넣어주기
             auto MTLName = Material->GetMaterialInfo().MTLName;
             if (!BatchRenderTargets.Contains(MTLName))
             {
@@ -1574,11 +1690,6 @@ void FRenderer::SetPSConstantBuffers(uint32 StartSlot, uint32 NumBuffers, ID3D11
     CurrentPSConstantBuffers[StartSlot].Key = NumBuffers;
     CurrentPSConstantBuffers[StartSlot].Value = InConstantBufferPtr;
     Graphics->DeviceContext->PSSetConstantBuffers(StartSlot, NumBuffers, &InConstantBufferPtr);
-}
-
-TArray<TPair<ID3D11Buffer*, TPair<uint32, ID3D11Buffer*>>> FRenderer::GetCachedBuffers(const FString& InMaterialName)
-{
-    return CachedBuffers[InMaterialName];
 }
 
 
