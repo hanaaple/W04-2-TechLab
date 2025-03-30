@@ -657,7 +657,7 @@ FVector4 FMatrix::TransformVector(const FVector4& v, const FMatrix& m)
 FBoundingBox::FBoundingBox(FVector _min, FVector _max): min(_min), max(_max)
 {}
 
-bool FBoundingBox::Intersect(const FVector& rayOrigin, const FVector& rayDir, float& outDistance) const {
+bool FBoundingBox::IntersectRay(const FVector& rayOrigin, const FVector& rayDir, float& outDistance) const {
     float tmin = -FLT_MAX;
     float tmax = FLT_MAX;
     const float epsilon = 1e-6f;
@@ -722,6 +722,54 @@ bool FBoundingBox::Intersect(const FVector& rayOrigin, const FVector& rayDir, fl
 
     return true;
 }
+
+bool FBoundingBox::IntersectLine(const FVector& p1, const FVector& p2) const {
+
+    float tmin = 0.0f; // 선분의 시작 지점
+    float tmax = 1.0f; // 선분의 끝 지점
+    const float epsilon = 1e-6f;
+    FVector dir = p2 - p1; // 선분의 방향 벡터
+
+    // X축 처리
+    if ( fabs(dir.x) < epsilon ) {
+        if ( p1.x < min.x || p1.x > max.x ) return false;
+    } else {
+        float t1 = (min.x - p1.x) / dir.x;
+        float t2 = (max.x - p1.x) / dir.x;
+        if ( t1 > t2 ) std::swap(t1, t2);
+        tmin = std::max(tmin, t1);
+        tmax = std::min(tmax, t2);
+        if ( tmin > tmax ) return false;
+    }
+
+    // Y축 처리
+    if ( fabs(dir.y) < epsilon ) {
+        if ( p1.y < min.y || p1.y > max.y ) return false;
+    } else {
+        float t1 = (min.y - p1.y) / dir.y;
+        float t2 = (max.y - p1.y) / dir.y;
+        if ( t1 > t2 ) std::swap(t1, t2);
+        tmin = std::max(tmin, t1);
+        tmax = std::min(tmax, t2);
+        if ( tmin > tmax ) return false;
+    }
+
+    // Z축 처리
+    if ( fabs(dir.z) < epsilon ) {
+        if ( p1.z < min.z || p1.z > max.z ) return false;
+    } else {
+        float t1 = (min.z - p1.z) / dir.z;
+        float t2 = (max.z - p1.z) / dir.z;
+        if ( t1 > t2 ) std::swap(t1, t2);
+        tmin = std::max(tmin, t1);
+        tmax = std::min(tmax, t2);
+        if ( tmin > tmax ) return false;
+    }
+
+    // tmin과 tmax가 선분 범위 [0,1] 내에 있는지 확인
+    return (tmin <= 1.0f && tmax >= 0.0f);
+}
+
 
 void FBoundingBox::ExpandToInclude(const FBoundingBox& Other)
 {

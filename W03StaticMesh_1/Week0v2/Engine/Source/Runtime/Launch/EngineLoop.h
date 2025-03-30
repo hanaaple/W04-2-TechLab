@@ -51,18 +51,4 @@ public:
     UWorld* GetWorld() const { return GWorld; }
     SLevelEditor* GetLevelEditor() const { return LevelEditor; }
     UnrealEd* GetUnrealEditor() const { return UnrealEditor; }
-
-#if true //defined(_DEBUG)
-    struct {
-        double worldTickDuration;
-        double levelEditorDuration;
-        double renderDuration;
-        double UIBeginDuration;
-        double UEDuration;
-        double ConsoleDuration;
-        double UIEndDuration;
-        double pendingDestroyTime;
-        double swapBufferTime;
-    } elapsedTimes;
-#endif
 };

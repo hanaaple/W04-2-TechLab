@@ -1428,46 +1428,39 @@ void FRenderer::UpdateBatchRenderTarget(std::shared_ptr<FEditorViewportClient> A
     // LevelEditor->GetActiveViewportClient()
 
     BatchRenderTargets.Empty();
-    
+
+    uint64 startTime, endTime;
+
+    const auto ocTree = GEngineLoop.GetWorld()->GetOcTree();
+    ocTree.PrepareCull();
+
+    startTime = FPlatformTime::Cycles64();
     const FFrustum Frustum(ActiveViewport->GetViewMatrix(), ActiveViewport->GetProjectionMatrix());
 
     // Octree의 FrustumCull을 호출하여, 프러스텀 내에 있는 요소들에 대해 처리합니다.
-    const auto ocTree =  GEngineLoop.GetWorld()->GetOcTree();
-    //ocTree.FrustumCull(Frustum, [&](const FOctreeElement<UStaticMeshComponent>& element)
-    //{
-    //    UStaticMeshComponent* pStaticMeshComp = element.element;
-    //    if (!pStaticMeshComp->bIsVisible)
-    //        return;
-    //    if (Cast<UGizmoBaseComponent>(pStaticMeshComp))
-    //        return;
-    //    // StaticMeshObjs.Add(pStaticMeshComp);
-    //            
-    //    for (uint32 i = 0; i < pStaticMeshComp->GetNumMaterials(); i++)
-    //    {
-    //        auto Material = pStaticMeshComp->GetMaterial(i);
-    //        auto MTLName = Material->GetMaterialInfo().MTLName;
-    //        if (!BatchRenderTargets.Contains(MTLName))
-    //        {
-    //            BatchRenderTargets.Add(MTLName, BatchRenderTargetContext());
-    //            BatchRenderTargets[MTLName].bIsDirty = true;
-    //        }
-    //        if (BatchRenderTargets[MTLName].bIsDirty)
-    //        {
-    //            BatchRenderTargets[MTLName].StaticMeshes.Add({ i, pStaticMeshComp });
-    //        }
-    //        
-    //        // Material의 변경, Transform의 변경, Culling에 의한 삭제에 따라 Targets 초기화 (BatchRenderTargets[MTLName].Empty();
-    //    }
-    //});
+    
+
+    
+
+    ocTree.FrustumCull(Frustum, [&](const FOctreeElement<UStaticMeshComponent>& element){});
+    endTime = FPlatformTime::Cycles64();
+    FWindowsPlatformTime::GElapsedMap["FrustumCull"] = FWindowsPlatformTime::ToMilliseconds(endTime - startTime);
+
+    startTime = FPlatformTime::Cycles64();
 
     FVector cameraPos = ActiveViewport->ViewTransformPerspective.GetLocation();
-    ocTree.OcclusionCull(cameraPos, [&](const FOctreeElement<UStaticMeshComponent>& element) {
+    ocTree.OcclusionCull(cameraPos, [&](const FOctreeElement<UStaticMeshComponent>& element) {});
+
+    endTime = FPlatformTime::Cycles64();
+    FWindowsPlatformTime::GElapsedMap["OcclusionCull"] = FWindowsPlatformTime::ToMilliseconds(endTime - startTime);
+
+    ocTree.ExecuteCallbackForVisible([&](const FOctreeElement<UStaticMeshComponent>& element) {
         UStaticMeshComponent* pStaticMeshComp = element.element;
         if ( !pStaticMeshComp->bIsVisible )
             return;
         if ( Cast<UGizmoBaseComponent>(pStaticMeshComp) )
             return;
-
+        // StaticMeshObjs.Add(pStaticMeshComp);
         for ( uint32 i = 0; i < pStaticMeshComp->GetNumMaterials(); i++ ) {
             auto Material = pStaticMeshComp->GetMaterial(i);
             auto MTLName = Material->GetMaterialInfo().MTLName;
@@ -1478,6 +1471,7 @@ void FRenderer::UpdateBatchRenderTarget(std::shared_ptr<FEditorViewportClient> A
             if ( BatchRenderTargets[MTLName].bIsDirty ) {
                 BatchRenderTargets[MTLName].StaticMeshes.Add({ i, pStaticMeshComp });
             }
+            // Material의 변경, Transform의 변경, Culling에 의한 삭제에 따라 Targets 초기화 (BatchRenderTargets[MTLName].Empty();
         }
     });
 }

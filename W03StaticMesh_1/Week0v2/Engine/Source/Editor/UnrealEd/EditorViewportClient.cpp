@@ -60,6 +60,7 @@ void FEditorViewportClient::Tick(float DeltaTime)
         GEngineLoop.renderer.UpdateCameraConstant(GEngineLoop.GetLevelEditor()->GetActiveViewportClient().get());
         GEngineLoop.renderer.UpdateBatchRenderTarget(GEngineLoop.GetLevelEditor()->GetActiveViewportClient());
     }
+
 }
 
 void FEditorViewportClient::Release()

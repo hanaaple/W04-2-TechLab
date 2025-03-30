@@ -233,7 +233,7 @@ void FEngineLoop::Tick()
 
         ImGui::Begin("stat");
         for(auto& [name, elapsed]: FPlatformTime::GElapsedMap) {
-            ImGui::Text("%s: %fms", name, elapsed);
+            ImGui::Text("%s: %fms", name.c_str(), elapsed);
         }
         ImGui::End();
 
