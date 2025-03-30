@@ -1,11 +1,12 @@
 #pragma once
-#include <fstream>
-#include <sstream>
+#include <map>
 
 #include "Define.h"
 #include "EngineLoop.h"
 #include "Container/Map.h"
+#include "Container/PriorityQueue.h"
 #include "HAL/PlatformType.h"
+#include "Math/MathUtility.h"
 #include "Serialization/Serializer.h"
 
 class UStaticMesh;
@@ -27,7 +28,47 @@ struct FLoaderOBJ
 
     static void ComputeBoundingBox(const TArray<FVertexSimple>& InVertices, FVector& OutMinVector, FVector& OutMaxVector);
 
-    static OBJ::FStaticMeshRenderData* CreateSimpleLOD(const OBJ::FStaticMeshRenderData* HighResData, float reductionFactor);
+    static OBJ::FStaticMeshRenderData* CreateSimpleLOD(const OBJ::FStaticMeshRenderData* HighResData);
+
+    static OBJ::FStaticMeshRenderData* CreateEdgeCollapseLOD(const OBJ::FStaticMeshRenderData* HighResData, const float targetReductionRatio);
+private:
+    struct FEdgeCollapse
+    {
+        uint32 v1, v2;
+        float cost;
+        FVector optimalPos;
+    };
+
+    struct FCompareEdgeCollapse
+    {
+        bool operator()(const FEdgeCollapse& A, const FEdgeCollapse& B) const
+        {
+            return A.cost > B.cost; // 비용이 낮은 것이 우선
+        }
+    };
+
+    // 구조체: 경계 에지를 표현 (정점 인덱스는 항상 오름차순으로 저장)
+    struct FEdgeKey
+    {
+        uint32 a, b;
+        FEdgeKey(uint32 i, uint32 j)
+        {
+            a = FMath::Min(i, j);
+            b = FMath::Max(i, j);
+        }
+        bool operator==(const FEdgeKey& other) const
+        {
+            return a== other.a && b == other.b;
+        }
+    };
+
+    struct FEdgeKeyHash
+    {
+        std::size_t operator()(const FEdgeKey& k) const
+        {
+            return std::hash<UINT>()(k.a) ^ std::hash<UINT>()(k.b);
+        }
+    };
 };
 
 struct FManagerOBJ

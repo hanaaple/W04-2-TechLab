@@ -26,8 +26,9 @@ union FMatrix
 	FMatrix operator/(float Scalar) const;
 	float* operator[](int row);
 	const float* operator[](int row) const;
-	
-	// 유틸리티 함수
+    FMatrix& operator+=(const FMatrix& Other);
+
+    // 유틸리티 함수
 	static FMatrix Transpose(const FMatrix& Mat);
 	static float Determinant(const FMatrix& Mat);
 	static FMatrix Inverse(const FMatrix& Mat);
@@ -53,4 +54,11 @@ union FMatrix
 		);
 	}
 	FVector TransformPosition(const FVector& vector) const;
+
+    static FMatrix ComputePlaneQuadric(const FVector& normal, float d);
+
+    static FMatrix ComputePlaneQuadric(const FVector& A, const FVector& B, const FVector& C);
+
+    // 주어진 점 v에 대해 [v,1]^T * q * [v,1] 계산 (에러 비용)
+    static float EvaluateQuadric(const FMatrix& q, const FVector& v);
 };

@@ -175,6 +175,30 @@ const float* FMatrix::operator[](int row) const
     return M[row];
 }
 
+FMatrix& FMatrix::operator+=(const FMatrix& Other)
+{
+#if defined(__AVX2__)
+    _rowin256[0] = _mm256_add_ps(_rowin256[0], Other._rowin256[0]);
+    _rowin256[1] = _mm256_add_ps(_rowin256[1], Other._rowin256[1]);
+    return *this;
+#elif defined(_XM_SSE_INTRINSICS_)
+    row[0] = _mm_add_ps(row[0], Other.row[0]);
+    row[1] = _mm_add_ps(row[1], Other.row[1]);
+    row[2] = _mm_add_ps(row[2], Other.row[2]);
+    row[3] = _mm_add_ps(row[3], Other.row[3]);
+    return *this;
+#else
+    for (int32 i = 0; i < 4; i++)
+    {
+        for (int32 j = 0; j < 4; j++)
+        {
+            M[i][j] += Other.M[i][j];
+        }
+    }
+    return *this;
+#endif
+}
+
 // 전치 행렬.
 FMatrix FMatrix::Transpose(const FMatrix& Mat) {
 #if defined(_XM_SSE_INTRINSICS_)
@@ -571,6 +595,58 @@ FVector FMatrix::TransformPosition(const FVector& vector) const {
     float w = M[0][3] * vector.x + M[1][3] * vector.y + M[2][3] * vector.z + M[3][3];
     return w != 0.0f ? FVector{ x / w, y / w, z / w } : FVector{ x, y, z };
 #endif
+}
+
+FMatrix FMatrix::ComputePlaneQuadric(const FVector& normal, const float d)
+{
+    FMatrix q;
+    const float v[4] = { normal.x, normal.y, normal.z, d };
+    for (int i = 0; i < 4; i++)
+    {
+        for (int j = 0; j < 4; j++)
+        {
+            q.M[i][j] = v[i] * v[j];
+        }
+    }
+    return q;
+}
+
+FMatrix FMatrix::ComputePlaneQuadric(const FVector& A, const FVector& B, const FVector& C)
+{
+    // 두 벡터의 외적을 통해 평면의 법선 계산
+    const FVector normal = (B - A).Cross(C - A);
+    const FVector NormalizedNormalVector = normal.Normalize();
+    
+    // 평면 방정식: a*x + b*y + c*z + d = 0, 여기서 d = -dot(normal, A)
+    const float d = -NormalizedNormalVector.Dot(A);
+    
+    // plane 벡터: [a, b, c, d]
+    const float plane[4] = { NormalizedNormalVector.x, NormalizedNormalVector.y, NormalizedNormalVector.z, d };
+
+    FMatrix Q;
+    // Q = plane * plane^T
+    for (int i = 0; i < 4; i++)
+    {
+        for (int j = 0; j < 4; j++)
+        {
+            Q.M[i][j] = plane[i] * plane[j];
+        }
+    }
+    return Q;
+}
+
+float FMatrix::EvaluateQuadric(const FMatrix& q, const FVector& v)
+{
+    const float vec[4] = { v.x, v.y, v.z, 1.0f };
+    float error = 0.0f;
+    for (int i = 0; i < 4; i++)
+    {
+        for (int j = 0; j < 4; j++)
+        {
+            error += vec[i] * q.M[i][j] * vec[j];
+        }
+    }
+    return error;
 }
 
 // 4x4 행렬을 사용하여 벡터 변환 (W = 0으로 가정, 방향 벡터)

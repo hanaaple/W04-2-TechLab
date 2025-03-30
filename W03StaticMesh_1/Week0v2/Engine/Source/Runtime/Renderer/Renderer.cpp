@@ -45,11 +45,19 @@ void FRenderer::CreateShader()
 {
     ID3DBlob* VertexShaderCSO;
     ID3DBlob* PixelShaderCSO;
+#ifdef _DEBUG
+    DWORD shaderFlags = D3DCOMPILE_ENABLE_STRICTNESS;
+    shaderFlags |= D3DCOMPILE_DEBUG;
+    shaderFlags |= D3DCOMPILE_SKIP_OPTIMIZATION;
+#else
+    DWORD shaderFlags = D3DCOMPILE_ENABLE_STRICTNESS;
+    // 릴리즈 빌드에서는 최적화가 적용됩니다.
+#endif
 
-    D3DCompileFromFile(L"Shaders/StaticMeshVertexShader.hlsl", nullptr, nullptr, "mainVS", "vs_5_0", 0, 0, &VertexShaderCSO, nullptr);
+    D3DCompileFromFile(L"Shaders/StaticMeshVertexShader.hlsl", nullptr, nullptr, "mainVS", "vs_5_0", shaderFlags, 0, &VertexShaderCSO, nullptr);
     Graphics->Device->CreateVertexShader(VertexShaderCSO->GetBufferPointer(), VertexShaderCSO->GetBufferSize(), nullptr, &VertexShader);
 
-    D3DCompileFromFile(L"Shaders/StaticMeshPixelShader.hlsl", nullptr, nullptr, "mainPS", "ps_5_0", 0, 0, &PixelShaderCSO, nullptr);
+    D3DCompileFromFile(L"Shaders/StaticMeshPixelShader.hlsl", nullptr, nullptr, "mainPS", "ps_5_0", shaderFlags, 0, &PixelShaderCSO, nullptr);
     Graphics->Device->CreatePixelShader(PixelShaderCSO->GetBufferPointer(), PixelShaderCSO->GetBufferSize(), nullptr, &PixelShader);
 
     D3D11_INPUT_ELEMENT_DESC layout[] = {
@@ -1165,17 +1173,17 @@ void FRenderer::PrepareRender(std::shared_ptr<FEditorViewportClient> ActiveViewp
         //{
         //    StaticMeshObjs.Add(iter);
         //}
-
+        
         const FMatrix viewMatrix = ActiveViewport->GetViewMatrix();
         const FMatrix projMatrix = ActiveViewport->GetProjectionMatrix();
         const D3D11_VIEWPORT viewport = ActiveViewport->GetD3DViewport();
         const FVector minBounds = WorldBoundingBox.min;
         const FVector maxBounds = WorldBoundingBox.max;
-
+        
         float screenCoverage = FBoundingBox::ComputeBoundingBoxScreenCoverage(
             minBounds, maxBounds, viewMatrix, projMatrix, viewport.Width, viewport.Height
         );
-
+        
         if (0.5f <= screenCoverage && screenCoverage <= 1.f)
         {
             iter->SetLODLevel(0);
