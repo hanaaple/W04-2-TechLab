@@ -971,9 +971,10 @@ void FRenderer::CreateBatchRenderCache()
         
         for (const auto& [SubMeshIndex, StaticMeshComponent] : BatchRenderTargetContext.StaticMeshes)
         {
-            OBJ::FStaticMeshRenderData* renderData = StaticMeshComponent->GetStaticMesh()->GetRenderData();
-            uint32 IndexBufferStartIndex = renderData->MaterialSubsets[SubMeshIndex].IndexStart;
-            uint32 IndexCount = renderData->MaterialSubsets[SubMeshIndex].IndexCount;
+            const uint32 LODLevel = StaticMeshComponent->GetLODLevel();
+            OBJ::FStaticMeshRenderData* renderData = StaticMeshComponent->GetStaticMesh()->GetRenderData(LODLevel);
+            const uint32 IndexBufferStartIndex = renderData->MaterialSubsets[SubMeshIndex].IndexStart;
+            const uint32 IndexCount = renderData->MaterialSubsets[SubMeshIndex].IndexCount;
 
             TArray<FVertexSimple> Vertices;
             const auto& OriginVertices = renderData->Vertices;
@@ -982,8 +983,8 @@ void FRenderer::CreateBatchRenderCache()
                 FVertexSimple Vertex;
 
                 FMatrix Model = JungleMath::CreateModelMatrix(StaticMeshComponent->GetWorldLocation(), StaticMeshComponent->GetWorldRotation(), StaticMeshComponent->GetWorldScale());
-                    
-                FVector Pos = Model.TransformPosition({OriginVertex.x, OriginVertex.y, OriginVertex.z});
+
+                const FVector Pos = Model.TransformPosition({OriginVertex.x, OriginVertex.y, OriginVertex.z});
 
                 Vertex.x = Pos.x;
                 Vertex.y = Pos.y;
@@ -1005,7 +1006,7 @@ void FRenderer::CreateBatchRenderCache()
             VertexOffset += Vertices.Num();
         }
 
-        uint32 VertexDataSize = sizeof(FVertexSimple) * VertexData.Num();
+        const uint32 VertexDataSize = sizeof(FVertexSimple) * VertexData.Num();
         ID3D11Buffer* VertexBuffer = CreateVertexBuffer(VertexData.GetData(), VertexDataSize);
         
         uint32 IndexDataSize = sizeof(uint32) * IndexData.Num();
@@ -1020,7 +1021,7 @@ void FRenderer::UpdateBoundingBoxBuffer(ID3D11Buffer* pBoundingBoxBuffer, const 
     if (!pBoundingBoxBuffer) return;
     D3D11_MAPPED_SUBRESOURCE mappedResource;
     Graphics->DeviceContext->Map(pBoundingBoxBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
-    auto pData = reinterpret_cast<FBoundingBox*>(mappedResource.pData);
+    const auto pData = static_cast<FBoundingBox*>(mappedResource.pData);
     for (int i = 0; i < BoundingBoxes.Num(); ++i)
     {
         pData[i] = BoundingBoxes[i];
@@ -1098,53 +1099,96 @@ void FRenderer::RenderBatch(
 // UISOO TODO: 매 프레임 순회하며 넣어주고 있음. 변경사항 있는 거만 체크
 void FRenderer::PrepareRender(std::shared_ptr<FEditorViewportClient> ActiveViewport)
 {
-    const FFrustum Frustum(ActiveViewport->GetViewMatrix(), ActiveViewport->GetProjectionMatrix());
+    //const FFrustum Frustum(ActiveViewport->GetViewMatrix(), ActiveViewport->GetProjectionMatrix());
     
     // 전역적으로 관리되는 UObject 배열에서 TMap으로 변경된 매핑을 가져옵니다.
-    TMap<uint32, UObject*> ObjectMap = GUObjectArray.GetObjectItemArrayUnsafe();
+    //TMap<uint32, UObject*> ObjectMap = GUObjectArray.GetObjectItemArrayUnsafe();
+    //
+    //// Octree의 FrustumCull을 호출하여, 프러스텀 내에 있는 요소들에 대해 처리합니다.
+    //const auto ocTree =  GEngineLoop.GetWorld()->GetOcTree();;
+    //ocTree.FrustumCull(Frustum, [&](const FOctreeElement<UStaticMeshComponent>& element)
+    //{
+    //    if (!Cast<UGizmoBaseComponent>(element.element))
+    //    {
+    //        // StaticMeshObjs.Add(pStaticMeshComp);
+    //            
+    //        for (uint32 i = 0; i < element.element->GetNumMaterials(); i++)
+    //        {
+    //            UMaterial* Material = element.element->GetMaterial(i);
+    //            FString MTLName = Material->GetMaterialInfo().MTLName;
+    //            if (!BatchRenderTargets.Contains(MTLName))
+    //            {
+    //                BatchRenderTargets.Add(MTLName, BatchRenderTargetContext());
+    //                BatchRenderTargets[MTLName].bIsDirty = true;
+    //            }
+    //            if (BatchRenderTargets[MTLName].bIsDirty)
+    //            {
+    //                BatchRenderTargets[MTLName].StaticMeshes.Add({ i, element.element });
+    //            }
+    //                
+    //            // Material의 변경, Transform의 변경, Culling에 의한 삭제에 따라 Targets 초기화 (BatchRenderTargets[MTLName].Empty();)
+    //        }
+    //    }
+
+    //});
     
-    // Octree의 FrustumCull을 호출하여, 프러스텀 내에 있는 요소들에 대해 처리합니다.
-    const auto ocTree =  GEngineLoop.GetWorld()->GetOcTree();;
-    ocTree.FrustumCull(Frustum, [&](const FOctreeElement<UStaticMeshComponent>& element)
+    for (auto iter : TObjectRange<UStaticMeshComponent>())
     {
-        if (!Cast<UGizmoBaseComponent>(element.element))
+        if (Cast<UGizmoBaseComponent>(iter)) continue;
+
+        for (uint32 i = 0; i < iter->GetNumMaterials(); i++)
         {
-            // StaticMeshObjs.Add(pStaticMeshComp);
-                
-            for (uint32 i = 0; i < element.element->GetNumMaterials(); i++)
+            UMaterial* Material = iter->GetMaterial(i);
+            FString MTLName = Material->GetMaterialInfo().MTLName;
+            if (!BatchRenderTargets.Contains(MTLName))
             {
-                auto Material = element.element->GetMaterial(i);
-                auto MTLName = Material->GetMaterialInfo().MTLName;
-                if (!BatchRenderTargets.Contains(MTLName))
-                {
-                    BatchRenderTargets.Add(MTLName, BatchRenderTargetContext());
-                    BatchRenderTargets[MTLName].bIsDirty = true;
-                }
-                if (BatchRenderTargets[MTLName].bIsDirty)
-                {
-                    BatchRenderTargets[MTLName].StaticMeshes.Add({ i, element.element });
-                }
-                    
-                // Material의 변경, Transform의 변경, Culling에 의한 삭제에 따라 Targets 초기화 (BatchRenderTargets[MTLName].Empty();)
+                BatchRenderTargets.Add(MTLName, BatchRenderTargetContext());
+                BatchRenderTargets[MTLName].bIsDirty = true;
             }
+            if (BatchRenderTargets[MTLName].bIsDirty)
+            {
+                BatchRenderTargets[MTLName].StaticMeshes.Add({ i, iter });
+            }
+                
+            // Material의 변경, Transform의 변경, Culling에 의한 삭제에 따라 Targets 초기화 (BatchRenderTargets[MTLName].Empty();)
         }
 
-    });
+        FMatrix Model = JungleMath::CreateModelMatrix(
+            iter->GetWorldLocation(),
+            iter->GetWorldRotation(),
+            iter->GetWorldScale()
+            );
     
-    // for (auto iter : TObjectRange<UStaticMeshComponent>())
-    // {
-    //     FMatrix Model = JungleMath::CreateModelMatrix(
-    //         iter->GetWorldLocation(),
-    //         iter->GetWorldRotation(),
-    //         iter->GetWorldScale()
-    //         );
-    //
-    //     FBoundingBox localBoundingBox = iter->AABB;
-    //     if (Frustum.IsBoxVisible(FBoundingBox::TransformBy(localBoundingBox,iter->GetWorldLocation(), Model)))
-    //     {
-    //         StaticMeshObjs.Add(iter);
-    //     }
-    // }
+        FBoundingBox localBoundingBox = iter->AABB;
+        FBoundingBox WorldBoundingBox = FBoundingBox::TransformBy(localBoundingBox, iter->GetWorldLocation(), Model);
+        //if (Frustum.IsBoxVisible(WorldBoundingBox))
+        //{
+        //    StaticMeshObjs.Add(iter);
+        //}
+
+        const FMatrix viewMatrix = ActiveViewport->GetViewMatrix();
+        const FMatrix projMatrix = ActiveViewport->GetProjectionMatrix();
+        const D3D11_VIEWPORT viewport = ActiveViewport->GetD3DViewport();
+        const FVector minBounds = WorldBoundingBox.min;
+        const FVector maxBounds = WorldBoundingBox.max;
+
+        float screenCoverage = FBoundingBox::ComputeBoundingBoxScreenCoverage(
+            minBounds, maxBounds, viewMatrix, projMatrix, viewport.Width, viewport.Height
+        );
+
+        if (0.5f <= screenCoverage && screenCoverage <= 1.f)
+        {
+            iter->SetLODLevel(0);
+        }
+        else if (0.1f <= screenCoverage && screenCoverage <= 0.5f)
+        {
+            iter->SetLODLevel(1);
+        }
+        else
+        {
+            iter->SetLODLevel(2);
+        }
+    }
     
     for (const auto iter : TObjectRange<UGizmoBaseComponent>())
     {

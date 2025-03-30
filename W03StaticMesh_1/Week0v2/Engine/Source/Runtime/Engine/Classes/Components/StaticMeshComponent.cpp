@@ -111,3 +111,4 @@ int UStaticMeshComponent::CheckRayIntersection(const FVector& rayOrigin, const F
     }
     return nIntersections;
 }
+

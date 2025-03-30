@@ -27,7 +27,10 @@ public:
         AABB = FBoundingBox(staticMesh->GetRenderData()->BoundingBoxMin, staticMesh->GetRenderData()->BoundingBoxMax);
     }
 
+    void SetLODLevel(const int InLODLevel) { LODLevel = InLODLevel; }
+    uint32 GetLODLevel() const { return LODLevel; }
 protected:
     UStaticMesh* staticMesh = nullptr;
+    uint32 LODLevel = 0;
     int selectedSubMeshIndex = -1;
 };
