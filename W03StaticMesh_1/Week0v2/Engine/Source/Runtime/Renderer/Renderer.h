@@ -21,11 +21,15 @@ class UBillboardComponent;
 class UStaticMeshComponent;
 class UGizmoBaseComponent;
 class FOcclusionRenderer;
-class FRenderer 
+class FRenderer
+
+#define UseBufferDynamic 0
+#define MaxBufferSize 16 * 1024 * 1024
 {
 
 private:
     float litFlag = 0;
+
 public:
     FGraphicsDevice* Graphics;
     ID3D11VertexShader* VertexShader = nullptr;
@@ -75,6 +79,8 @@ public:
     void CreateConstantBuffer();
     void CreateLightingConstantBuffer();
     void CreateLitUnlitBuffer();
+
+    ID3D11Buffer* CreateBuffer(void* Data, uint32 ByteWidth, D3D11_USAGE Usage, D3D11_CPU_ACCESS_FLAG Flag, D3D11_BIND_FLAG BindFlag);
     ID3D11Buffer* CreateVertexBuffer(FVertexSimple* vertices, UINT byteWidth) const;
     ID3D11Buffer* CreateVertexBuffer(const TArray<FVertexSimple>& vertices, UINT byteWidth) const;
     ID3D11Buffer* CreateIndexBuffer(uint32* indices, UINT byteWidth) const;
@@ -138,9 +144,10 @@ public: // line shader
     ID3D11ShaderResourceView* CreateConeSRV(ID3D11Buffer* pConeBuffer, UINT numCones);
 
     void CreateBatchRenderCache();
-    ID3D11Buffer* UpdateOrCreateVertexBuffer(const FString& MaterialName, uint32 MeshIndex, FVertexSimple* Data, uint32 VertexDataSize);
-    ID3D11Buffer* UpdateOrCreateIndexBuffer(const FString& MaterialName, uint32 MeshIndex, void* Data, uint32 IndexDataSize);
-    
+    void UpdateOrCreateBuffer(const FString& MaterialName, uint32 BufferIndex, FVertexSimple* VertexData, uint32 VertexDataSize, void* IndexData, uint32
+                              IndexDataSize, uint32 IndexDataCount, uint32 BufferSize);
+    void ReleaseUnUsedBatchBuffer(const FString& MaterialName, uint32 ReleaseStartBufferIndex);
+
     void UpdateBoundingBoxBuffer(ID3D11Buffer* pBoundingBoxBuffer, const TArray<FBoundingBox>& BoundingBoxes, int numBoundingBoxes) const;
     void UpdateOBBBuffer(ID3D11Buffer* pBoundingBoxBuffer, const TArray<FOBB>& BoundingBoxes, int numBoundingBoxes) const;
     void UpdateConesBuffer(ID3D11Buffer* pConeBuffer, const TArray<FCone>& Cones, int numCones) const;
@@ -167,8 +174,6 @@ public:
     void SetVSConstantBuffers(uint32 StartSlot, uint32 NumBuffers, ID3D11Buffer* InConstantBufferPtr);
     void SetPSConstantBuffers(uint32 StartSlot, uint32 NumBuffers, ID3D11Buffer* InConstantBufferPtr);
 
-private:
-    TArray<TPair<ID3D11Buffer*, TPair<uint32, ID3D11Buffer*>>> GetCachedBuffers(const FString& InMaterialName);
     
 private:
     TArray<UStaticMeshComponent*> StaticMeshObjs;
@@ -215,14 +220,14 @@ private:
     TMap<uint32, TPair<uint32, ID3D11Buffer*>> CurrentVSConstantBuffers;
     TMap<uint32, TPair<uint32, ID3D11Buffer*>> CurrentPSConstantBuffers;
 
-    // Material
-    TMap<FString, TArray<TPair<ID3D11Buffer*, TPair<uint32, ID3D11Buffer*>>>> CachedBuffers;
+    // Material, BufferIndex, VertexBuffer, IndexBufferCount, IndexBuffer
+    TMap<FString, TMap<uint32, TPair<ID3D11Buffer*, TPair<uint32, ID3D11Buffer*>>>> CachedBuffers;
     
 public:
     void IssueOcclusionQueries(const std::shared_ptr<FEditorViewportClient>& ActiveViewport);
     void ResolveOcclusionQueries();
 private:
     FOcclusionRenderer* OcclusionRenderer = nullptr;
-
+    bool bWasOcculusionQueried = false;
 };
 
