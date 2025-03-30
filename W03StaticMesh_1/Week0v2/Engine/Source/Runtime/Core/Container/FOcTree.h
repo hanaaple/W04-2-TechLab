@@ -404,53 +404,25 @@ private:
             return;
         }
 
-        // InOccludee의 AABB의 각 점과 카메라를 이은 선이 InOccluder와 모두 부딪힐 때만 true.
-        //auto IsOcclusion = [&cameraPos](FBoundingBox InOccluder, FBoundingBox InOccludee)->bool {
-        //    FVector& max = InOccludee.max;
-        //    FVector& min = InOccludee.min;
-        //    FVector occludeePoints[8] = {
-        //        FVector(max.x, max.y, max.z),
-        //        FVector(min.x, max.y, max.z),
-        //        FVector(max.x, min.y, max.z),
-        //        FVector(min.x, min.y, max.z),
-        //        FVector(max.x, max.y, min.z),
-        //        FVector(min.x, max.y, min.z),
-        //        FVector(max.x, min.y, min.z),
-        //        FVector(min.x, min.y, min.z),
-        //    };
-        //    // InOccludee 내에 카메라가 있으면 false로 간주
-        //    if ( min.x < cameraPos.x  && cameraPos.x < max.x && 
-        //        min.y < cameraPos.y && cameraPos.y < max.y &&
-        //        min.z < cameraPos.z && cameraPos.z < max.z
-        //        ) {
-        //        return false;
-        //    }
-        //    for ( int i = 0; i < 8; ++i ) {
-        //        FVector dir = (occludeePoints[i] - cameraPos).Normalize();
-        //        float hitDistance;
-        //        if ( !InOccluder.IntersectRay(cameraPos, dir, hitDistance) )
-        //            return false;
-        //    }
-        //    return true;
-        //};
-
         // InOccludee가 나머지 7개의 BoundingBox에 가려지면 true.
         auto IsOcclusions = [&cameraPos](
             std::shared_ptr<FOctreeNode<T>> InNodes[], 
             int InOccludeeIdx
             )->bool {
-            float e = 0.2f;
-            FVector& max = InNodes[InOccludeeIdx]->Bounds.max;
-            FVector& min = InNodes[InOccludeeIdx]->Bounds.min;
+            constexpr float occluderScale = 0.8f;
+            constexpr float occludeeScale = 1.2f;
+            FBoundingBox scaled = InNodes[InOccludeeIdx]->Bounds.Expanded(occluderScale);
+            FVector& max = scaled.max;
+            FVector& min = scaled.min;
             FVector occludeePoints[8] = {
-                FVector(max.x - e, max.y - e, max.z - e),
-                FVector(min.x + e, max.y - e, max.z - e),
-                FVector(max.x - e, min.y + e, max.z - e),
-                FVector(min.x + e, min.y + e, max.z - e),
-                FVector(max.x - e, max.y - e, min.z + e),
-                FVector(min.x + e, max.y - e, min.z + e),
-                FVector(max.x - e, min.y + e, min.z + e),
-                FVector(min.x + e, min.y + e, min.z + e),
+                FVector(max.x, max.y, max.z),
+                FVector(min.x, max.y, max.z),
+                FVector(max.x, min.y, max.z),
+                FVector(min.x, min.y, max.z),
+                FVector(max.x, max.y, min.z),
+                FVector(min.x, max.y, min.z),
+                FVector(max.x, min.y, min.z),
+                FVector(min.x, min.y, min.z),
             };
 
             // InOccludee의 AABB 8개 점과 InOccludee를 제외한 7개의 BoundingBox가 intersect하는지 테스트.
@@ -461,7 +433,8 @@ private:
                 for ( int j = 0; j < 8; ++j ) {
                     if ( j == InOccludeeIdx )
                         continue;
-                    if ( InNodes[j]->Bounds.IntersectLine(occludeePoints[i], cameraPos) ) {
+                    FBoundingBox bb = InNodes[j]->Bounds.Expanded(0.8);
+                    if ( bb.IntersectLine(occludeePoints[i], cameraPos) ) {
                         intersectFlags |= 1 << i;
                         break;
                     }
@@ -469,21 +442,6 @@ private:
             }
             return (intersectFlags == 0xff);
         };
-
-        //for ( int i = 0; i < 8; ++i ) {
-        //    bool isOcclusion = false;
-        //    for ( int j = 0; j < 8; ++j ) {
-        //        // Node->Children[i]
-        //        if ( i == j )
-        //            continue;
-        //        if (IsOcclusion(Node->Children[j]->Bounds, Node->Children[i]->Bounds)) {
-        //            isOcclusion = true;
-        //            break;
-        //        }
-        //    }
-        //    if ( isOcclusion == false)
-        //        QueryOcclusion(Node->Children[i], cameraPos, Callback);
-        //}
 
         // Node 내에 카메라가 있으면 자식들 다 그려지는걸로 판정
         FVector& max = Node->Bounds.max;

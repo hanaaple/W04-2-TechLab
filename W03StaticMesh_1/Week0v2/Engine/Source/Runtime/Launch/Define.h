@@ -195,6 +195,10 @@ public:
 
     static FBoundingBox TransformBy(const FBoundingBox& localAABB, const FVector& center, const FMatrix& modelMatrix);
 
+    inline FBoundingBox Expanded(const float scale) const {
+        return FBoundingBox(min * scale, max * scale);
+    }
+
     FVector GetCenter() const
     {
         return (max + min) * 0.5f;
