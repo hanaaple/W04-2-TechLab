@@ -146,6 +146,8 @@ public: // line shader
     void CreateBatchRenderCache();
     void UpdateOrCreateBuffer(const FString& MaterialName, uint32 BufferIndex, FVertexSimple* VertexData, uint32 VertexDataSize, void* IndexData, uint32
                               IndexDataSize, uint32 IndexDataCount, uint32 BufferSize);
+    void BakeBatchRenderBuffer();
+    void RenderBakedBuffer();
     void ReleaseUnUsedBatchBuffer(const FString& MaterialName, uint32 ReleaseStartBufferIndex);
 
     void UpdateBoundingBoxBuffer(ID3D11Buffer* pBoundingBoxBuffer, const TArray<FBoundingBox>& BoundingBoxes, int numBoundingBoxes) const;
@@ -222,6 +224,14 @@ private:
 
     // Material, BufferIndex, VertexBuffer, IndexBufferCount, IndexBuffer
     TMap<FString, TMap<uint32, TPair<ID3D11Buffer*, TPair<uint32, ID3D11Buffer*>>>> CachedBuffers;
+
+    struct VIBuffer {
+        TArray<ID3D11Buffer*> VertexBuffer;
+        TArray<ID3D11Buffer*> IndexBuffer;
+        uint32 Stride;
+        TArray<uint32> IndexCount;
+    };
+    TMap<FString, VIBuffer> BakedBuffers;
     
 public:
     void IssueOcclusionQueries(const std::shared_ptr<FEditorViewportClient>& ActiveViewport);

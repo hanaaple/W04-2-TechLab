@@ -89,8 +89,9 @@ public:
         QueryOcclusion(Root, cameraPos);
     }
 
-    void PrepareCull() const {
-        PrepareCullRecursive(Root);
+    template<typename Fn>
+    void PrepareCull(Fn Callback) const {
+        PrepareCullRecursive(Root, Callback);
     }
 
     template<typename Fn>
@@ -278,11 +279,17 @@ private:
         return index;
     }
 
-    void PrepareCullRecursive(const std::shared_ptr<FOctreeNode<T>>& Node) const {
+    template<typename Fn>
+    void PrepareCullRecursive(const std::shared_ptr<FOctreeNode<T>>& Node, Fn Callback) const {
         Node->ChildrenCullFlags = 0;
+        if ( Node->IsLeaf ) {
+            for ( const auto& elem : Node->Elements ) {
+                Callback(elem);
+            }
+        }
         for (int i = 0; i < 8; ++i) {
             if ( Node->Children[i] )
-                PrepareCullRecursive(Node->Children[i]);
+                PrepareCullRecursive(Node->Children[i], Callback);
         }
     }
 

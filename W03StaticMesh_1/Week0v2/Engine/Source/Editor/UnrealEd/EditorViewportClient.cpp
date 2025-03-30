@@ -53,7 +53,7 @@ void FEditorViewportClient::Tick(float DeltaTime)
         GEngineLoop.renderer.UpdateCameraConstant(GEngineLoop.GetLevelEditor()->GetActiveViewportClient().get());
         ViewTransformPerspective.bIsTranslated = false;
     }
-
+    GEngineLoop.renderer.UpdateBatchRenderTarget(GEngineLoop.GetLevelEditor()->GetActiveViewportClient());
     //if (ViewTransformPerspective.bIsTranslated)
     {
         if (ViewTransformPerspective.timer > 0)
@@ -62,7 +62,7 @@ void FEditorViewportClient::Tick(float DeltaTime)
             return;
         }
         ViewTransformPerspective.timer = ViewTransformPerspective.totalTimer;
-        GEngineLoop.renderer.UpdateBatchRenderTarget(GEngineLoop.GetLevelEditor()->GetActiveViewportClient());
+        
     }
 
 }

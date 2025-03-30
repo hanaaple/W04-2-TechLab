@@ -136,6 +136,8 @@ int32 FEngineLoop::Init(HINSTANCE hInstance)
     GWorld = FObjectFactory::ConstructObject<UWorld>();
     GWorld->Initialize();
 
+    renderer.BakeBatchRenderBuffer();
+
     return 0;
 }
 
