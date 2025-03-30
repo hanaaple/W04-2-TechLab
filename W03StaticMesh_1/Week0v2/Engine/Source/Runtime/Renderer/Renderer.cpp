@@ -1430,30 +1430,21 @@ void FRenderer::UpdateBatchRenderTarget(std::shared_ptr<FEditorViewportClient> A
     BatchRenderTargets.Empty();
 
     uint64 startTime, endTime;
+    startTime = FPlatformTime::Cycles64();
 
+    // Prepare
     const auto ocTree = GEngineLoop.GetWorld()->GetOcTree();
     ocTree.PrepareCull();
 
-    startTime = FPlatformTime::Cycles64();
-    const FFrustum Frustum(ActiveViewport->GetViewMatrix(), ActiveViewport->GetProjectionMatrix());
-
     // Octree의 FrustumCull을 호출하여, 프러스텀 내에 있는 요소들에 대해 처리합니다.
-    
+    const FFrustum Frustum(ActiveViewport->GetViewMatrix(), ActiveViewport->GetProjectionMatrix());
+    ocTree.FrustumCull(Frustum);
 
-    
-
-    ocTree.FrustumCull(Frustum, [&](const FOctreeElement<UStaticMeshComponent>& element){});
-    endTime = FPlatformTime::Cycles64();
-    FWindowsPlatformTime::GElapsedMap["FrustumCull"] = FWindowsPlatformTime::ToMilliseconds(endTime - startTime);
-
-    startTime = FPlatformTime::Cycles64();
-
+    // Occlusion
     FVector cameraPos = ActiveViewport->ViewTransformPerspective.GetLocation();
-    ocTree.OcclusionCull(cameraPos, [&](const FOctreeElement<UStaticMeshComponent>& element) {});
+    ocTree.OcclusionCull(cameraPos);
 
-    endTime = FPlatformTime::Cycles64();
-    FWindowsPlatformTime::GElapsedMap["OcclusionCull"] = FWindowsPlatformTime::ToMilliseconds(endTime - startTime);
-
+    // Execute Callback
     ocTree.ExecuteCallbackForVisible([&](const FOctreeElement<UStaticMeshComponent>& element) {
         UStaticMeshComponent* pStaticMeshComp = element.element;
         if ( !pStaticMeshComp->bIsVisible )
@@ -1474,6 +1465,9 @@ void FRenderer::UpdateBatchRenderTarget(std::shared_ptr<FEditorViewportClient> A
             // Material의 변경, Transform의 변경, Culling에 의한 삭제에 따라 Targets 초기화 (BatchRenderTargets[MTLName].Empty();
         }
     });
+
+    endTime = FPlatformTime::Cycles64();
+    FWindowsPlatformTime::GElapsedMap["Culling"] = FWindowsPlatformTime::ToMilliseconds(endTime - startTime);
 }
 
 void FRenderer::SetTopology(const D3D11_PRIMITIVE_TOPOLOGY InPrimitiveTopology)

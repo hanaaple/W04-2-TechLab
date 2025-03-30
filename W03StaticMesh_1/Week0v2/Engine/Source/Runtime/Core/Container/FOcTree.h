@@ -80,15 +80,13 @@ public:
         QueryCollisionRay(Root, origin, direction, Callback);
     }
 
-    template<typename Fn>
-    void FrustumCull(const FFrustum& frustum, Fn Callback) const
+    void FrustumCull(const FFrustum& frustum) const
     {
-        FrustumCullRecursive(Root, frustum, Callback);
+        FrustumCullRecursive(Root, frustum);
     }
 
-    template<typename Fn>
-    void OcclusionCull(const FVector& cameraPos, Fn Callback) const {
-        QueryOcclusion(Root, cameraPos, Callback);
+    void OcclusionCull(const FVector& cameraPos) const {
+        QueryOcclusion(Root, cameraPos);
     }
 
     void PrepareCull() const {
@@ -307,8 +305,7 @@ private:
         }
     }
 
-    template<typename Fn>
-    void FrustumCullRecursive(const std::shared_ptr<FOctreeNode<T>>& Node, const FFrustum &frustum, Fn Callback) const
+    void FrustumCullRecursive(const std::shared_ptr<FOctreeNode<T>>& Node, const FFrustum &frustum) const
     {
         //if (!frustum.IsBoxVisible(Node->Bounds))
         //    return;
@@ -318,9 +315,7 @@ private:
             int i = 0;
             for ( const auto& elem: Node->Elements )
             {
-                if (frustum.IsBoxVisible(elem.Bounds)) {
-                    Callback(Node->Elements[i]);
-                } else {
+                if (!frustum.IsBoxVisible(elem.Bounds)) {
                     Node->ChildrenCullFlags |= 1 << i;
                 }
                 ++i;
@@ -332,7 +327,7 @@ private:
         {
             if (Node->Children[i]) {
                 if ( frustum.IsBoxVisible(Node->Children[i]->Bounds) ) {
-                    FrustumCullRecursive(Node->Children[i], frustum, Callback);
+                    FrustumCullRecursive(Node->Children[i], frustum);
                 } else {
                     Node->ChildrenCullFlags |= 1 << i;
                 }
@@ -384,25 +379,23 @@ private:
         }
         // 자식 노드 탐색
         if ( !Node->IsLeaf ) {
-            for ( int i = 0; i < 8; ++i )
+            for ( int i = 0; i < 8; ++i ) {
+                if ( Node->ChildrenCullFlags & 1 << i )
+                    continue;
                 if ( Node->Children[i] )
                     QueryCollisionRay(Node->Children[i], origin, direction, Callback);
+            }
         }
     }
 
-    // Occlusion되지 않으면 Callback 실행.
+    // Occlusion되지 않으면 ChildrenCullFlag 활성화
     void QueryOcclusion(
         const std::shared_ptr<FOctreeNode<T>> Node,
-        const FVector& cameraPos,
-        std::function<void(const FOctreeElement<T>&)> Callback
+        const FVector& cameraPos
     ) const {
 
-        if ( Node->IsLeaf ) {
-            for ( const FOctreeElement<T>& elem : Node->Elements ) {
-                Callback(elem);
-            }
+        if ( Node->IsLeaf )
             return;
-        }
 
         // InOccludee가 나머지 7개의 BoundingBox에 가려지면 true.
         auto IsOcclusions = [&cameraPos](
@@ -455,10 +448,12 @@ private:
             bIsCameraConatined = true;
         }
         for ( int i = 0; i < 8; ++i ) {
+            if ( Node->ChildrenCullFlags & 1 << i )
+                continue;
             if ( bIsCameraConatined ) {
-                QueryOcclusion(Node->Children[i], cameraPos, Callback);
+                QueryOcclusion(Node->Children[i], cameraPos);
             } else if ( IsOcclusions(Node->Children, i) == false ) {
-                QueryOcclusion(Node->Children[i], cameraPos, Callback);
+                QueryOcclusion(Node->Children[i], cameraPos);
             } else {
                 Node->ChildrenCullFlags |= 1 << i;
             }
