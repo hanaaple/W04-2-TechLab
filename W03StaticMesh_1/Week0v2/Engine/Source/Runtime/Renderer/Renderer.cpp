@@ -1013,6 +1013,19 @@ void FRenderer::CreateBatchRenderCache()
             TArray<FVertexSimple> VertexData;
             TArray<uint32> IndexData;
 
+
+            uint32 TotalVertexDataSize = 0;
+            uint32 TotalIndexDataSize = 0;
+
+            for ( const auto& [MeshIndex, MeshComp]: BatchRenderTargetContext.StaticMeshes ) {
+                const OBJ::FStaticMeshRenderData* renderData = MeshComp->GetStaticMesh()->GetRenderData();
+                TotalVertexDataSize += MeshComp->Vertices.Num();
+                TotalIndexDataSize += renderData->MaterialSubsets[MeshIndex].IndexCount;
+            }
+
+            VertexData.Reserve(TotalVertexDataSize);
+            VertexData.Reserve(TotalIndexDataSize);
+
             for (; MeshIndex < BatchRenderTargetContext.StaticMeshes.Num(); MeshIndex++)
             {
                 UStaticMeshComponent* StaticMeshComponent = BatchRenderTargetContext.StaticMeshes[MeshIndex].Value;
@@ -1022,7 +1035,7 @@ void FRenderer::CreateBatchRenderCache()
                 const uint32 IndexCount = renderData->MaterialSubsets[SubMeshIndex].IndexCount;
 
                 // LOD TODO: Vertex 다른 거로 넣어주기 변경
-                TArray<FVertexSimple> Vertices = StaticMeshComponent->Vertices;
+                const TArray<FVertexSimple> &Vertices = StaticMeshComponent->Vertices;
 
                 if ((VertexOffset + Vertices.Num()) * sizeof(FVertexSimple) > MaxBufferSize)
                 {
@@ -1040,10 +1053,13 @@ void FRenderer::CreateBatchRenderCache()
                 
                 // UISOO TODO: 사용하지 않는 Vertex 없애고 Indexing 당기기
                 VertexData.Append(Vertices);
-
-                for (int i = IndexBufferStartIndex; i < IndexBufferStartIndex + IndexCount; i++)
+                const uint32 IndexSizeBeforeAppend = IndexData.Num();
+                const uint32 IndexBufferEndIndex = IndexBufferStartIndex + IndexCount;
+                IndexData.Append(const_cast<uint32*>(Indices.GetData() + IndexBufferStartIndex), IndexCount);
+                for (int i = IndexBufferStartIndex; i < IndexBufferEndIndex; ++i)
                 {
-                    IndexData.Add(Indices[i] + VertexOffset);                    
+                    //IndexData.Add(Indices[i] + VertexOffset);
+                    IndexData[IndexSizeBeforeAppend + i] += VertexOffset;
                 }
                 
                 VertexOffset += Vertices.Num();
@@ -1272,14 +1288,13 @@ void FRenderer::Render(UWorld* World, const std::shared_ptr<FEditorViewportClien
     Graphics->ChangeRasterizer(ActiveViewport->GetViewMode());
     ChangeViewMode(ActiveViewport->GetViewMode());  // 완료 - Lit 없앰, Current 비교하여 ConstantBuffer Update X, 연산 짧음.
     //UpdateLightBuffer();
+    uint32 startTime, endTime;
 
     if (GetAsyncKeyState(VK_RBUTTON) & 0x8000 || bWasOcculusionQueried) 
     {
         //ResolveOcclusionQueries();
         bWasOcculusionQueried = false;
     }
-    endTime = FPlatformTime::Cycles64();
-    FWindowsPlatformTime::GElapsedMap["resolveOcclusion"] = FWindowsPlatformTime::ToMilliseconds(endTime - startTime);
     
     // UISOO TODO: 여기 Set LineShader
     UPrimitiveBatch::GetInstance().RenderBatchLine(ActiveViewport->GetViewMatrix(), ActiveViewport->GetProjectionMatrix());
@@ -1300,14 +1315,11 @@ void FRenderer::Render(UWorld* World, const std::shared_ptr<FEditorViewportClien
     
     //RenderLight(World, ActiveViewport);
 
-    startTime = FPlatformTime::Cycles64();
     if (GetAsyncKeyState(VK_RBUTTON) & 0x8000) 
     {
         //IssueOcclusionQueries(ActiveViewport);
         bWasOcculusionQueried = true;
     }
-    endTime = FPlatformTime::Cycles64();
-    FWindowsPlatformTime::GElapsedMap["issueOcclusion"] = FWindowsPlatformTime::ToMilliseconds(endTime - startTime);
     
     ClearRenderArr();
 }

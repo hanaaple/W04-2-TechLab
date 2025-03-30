@@ -60,7 +60,7 @@ public:
     SizeType Add(T&& Item);
     SizeType AddUnique(const T& Item);
 
-    void Append(TArray& Source);
+    void Append(const TArray& Source);
     void Append(T* Source, int Size);
 
 	template <typename... Args>
@@ -218,7 +218,7 @@ typename TArray<T, Allocator>::SizeType TArray<T, Allocator>::AddUnique(const T&
 }
 
 template <typename T, typename Allocator>
-void TArray<T, Allocator>::Append(TArray& Source)
+void TArray<T, Allocator>::Append(const TArray& Source)
 {
     if(Source.Num() == 0)
         return;
