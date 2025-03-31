@@ -1255,6 +1255,7 @@ void FRenderer::RenderBakedBuffer() {
             if (!pStaticMeshComp->bIsVisible) {
                 if (length > 0)
                     Graphics->DeviceContext->DrawIndexed(length, offset, 0);
+
                 offset += length + indicesCount;
                 length = 0;
             } else {

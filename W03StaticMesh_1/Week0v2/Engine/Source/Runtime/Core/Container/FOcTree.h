@@ -426,19 +426,27 @@ private:
             };
 
             // InOccludee의 AABB 8개 점과 InOccludee를 제외한 7개의 BoundingBox가 intersect하는지 테스트.
+            //int intersectFlags = 0;
+            //for ( int i = 0; i < 8; ++i ) {
+            //    FVector dir = (cameraPos - occludeePoints[i]).Normalize();
+            //    float hitDistance;
+            //    for ( int j = 0; j < 8; ++j ) {
+            //        if ( j == InOccludeeIdx )
+            //            continue;
+            //        FBoundingBox bb = InNodes[j]->Bounds.Expanded(occluderScale);
+            //        if ( bb.IntersectLine(occludeePoints[i], cameraPos) ) {
+            //            intersectFlags |= 1 << i;
+            //            break;
+            //        }
+            //    }
+            //}
             int intersectFlags = 0;
-            for ( int i = 0; i < 8; ++i ) {
-                FVector dir = (cameraPos - occludeePoints[i]).Normalize();
-                float hitDistance;
-                for ( int j = 0; j < 8; ++j ) {
-                    if ( j == InOccludeeIdx )
-                        continue;
-                    FBoundingBox bb = InNodes[j]->Bounds.Expanded(0.8);
-                    if ( bb.IntersectLine(occludeePoints[i], cameraPos) ) {
-                        intersectFlags |= 1 << i;
-                        break;
-                    }
-                }
+            for ( int j = 0; j < 8; ++j ) {
+                if ( j == InOccludeeIdx )
+                    continue;
+                FBoundingBox bb = InNodes[j]->Bounds.Expanded(occluderScale);
+                intersectFlags |= bb.IntersectLineMulti(occludeePoints, cameraPos);
+
             }
             return (intersectFlags == 0xff);
         };

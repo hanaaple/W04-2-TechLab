@@ -24,7 +24,7 @@ class FOcclusionRenderer;
 class FRenderer
 
 #define UseBufferDynamic 0
-#define MaxBufferSize 16 * 1024 * 1024
+#define MaxBufferSize 64 * 1024 * 1024
 {
 
 private:

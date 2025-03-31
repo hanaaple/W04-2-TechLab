@@ -188,6 +188,7 @@ public:
     
     bool IntersectRay(const FVector& rayOrigin, const FVector& rayDir, float& outDistance) const;
     bool IntersectLine(const FVector& p1, const FVector& p2) const;
+    int IntersectLineMulti(const FVector* p1, const FVector& p2) const;
 
     void ExpandToInclude(const FBoundingBox& Other);
 
