@@ -11,7 +11,7 @@ class FEditorViewportClient;
 class SSplitterV;
 class SSplitterH;
 class SLevelEditor;
-
+class FPSEditorPanel;
 class FEngineLoop
 {
 public:
@@ -47,6 +47,7 @@ private:
     const int32 targetFPS = 60;
     bool bTestInput = false;
 
+    FPSEditorPanel* fpsEditor = nullptr;
 public:
     UWorld* GetWorld() const { return GWorld; }
     SLevelEditor* GetLevelEditor() const { return LevelEditor; }

@@ -1462,7 +1462,7 @@ void FRenderer::Render(UWorld* World, const std::shared_ptr<FEditorViewportClien
     
     // UISOO TODO: 여기 Set LineShader
     UPrimitiveBatch::GetInstance().RenderBatchLine(ActiveViewport->GetViewMatrix(), ActiveViewport->GetProjectionMatrix());
-    
+
     startTime = FPlatformTime::Cycles64();
     // UISOO TODO: 여기 Set StaticMeshShader
     if (ActiveViewport->GetShowFlag() & static_cast<uint64>(EEngineShowFlags::SF_Primitives)) {

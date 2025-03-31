@@ -16,8 +16,8 @@ void FPSEditorPanel::Render()
     float PanelWidth = Width;
     float PanelHeight = Height;
 
-    float PanelPosX = 10.0f;
-    float PanelPosY = 60.0f;
+    float PanelPosX = 0.0f;
+    float PanelPosY = 0.0f;
 
     ImVec2 MinSize(100, 30);
     ImVec2 MaxSize(400, FLT_MAX);
@@ -31,10 +31,13 @@ void FPSEditorPanel::Render()
     /* Panel Size */
     ImGui::SetNextWindowSize(ImVec2(PanelWidth, PanelHeight), ImGuiCond_Always);
 
-    ImGui::PushStyleColor(ImGuiCol_WindowBg, IM_COL32(0, 0, 0, 255));
+    ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(0, 255, 0, 255));
 
     /* Panel Flags */
-    ImGuiWindowFlags PanelFlags = ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoTitleBar;
+    ImGuiWindowFlags PanelFlags = ImGuiWindowFlags_NoResize | 
+        ImGuiWindowFlags_NoMove | 
+        ImGuiWindowFlags_NoTitleBar | 
+        ImGuiWindowFlags_NoBackground;
 
     /* Render Start */
     ImGui::Begin("FPS Panel", nullptr, PanelFlags);
