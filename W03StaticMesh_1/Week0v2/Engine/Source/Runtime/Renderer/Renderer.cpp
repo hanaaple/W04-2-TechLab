@@ -1149,9 +1149,9 @@ void FRenderer::BakeBatchRenderBuffer()
         // StaticMeshObjs.Add(pStaticMeshComp);
         for ( uint32 i = 0; i < pStaticMeshComp->GetNumMaterials(); ++i )
             {
-            auto Material = pStaticMeshComp->GetMaterial(i);
+            UMaterial* Material = pStaticMeshComp->GetMaterial(i);
             // LOD TODO: Texture 다른 거로 넣어주기
-            auto MTLName = Material->GetMaterialInfo().MTLName;
+            const FString& MTLName = Material->GetMaterialInfo().MTLName;
             if ( !BatchRenderTargets.Contains(MTLName) )
             {
                 BatchRenderTargets.Add(MTLName, BatchRenderTargetContext());
@@ -1167,15 +1167,17 @@ void FRenderer::BakeBatchRenderBuffer()
         TArray<FVertexSimple> VertexData = {};
         TArray<uint32> IndexData = {};
         uint32 VertexOffset = 0;
+        BakedLODBuffers[MaterialName].Empty();
+        BakedLODBuffers[MaterialName].SetNum(3);
+
         
         for (auto& [_, pStaticMeshComp]: BatchRenderTargetContext.StaticMeshes)
         {
             auto LODRenderDatas = pStaticMeshComp->GetStaticMesh()->GetLODDatas();
-
             for (int lodLevel = 0; lodLevel < LODRenderDatas.Num(); ++lodLevel)
             {   
                 const TArray<FVertexSimple>& Vertices = pStaticMeshComp->LODVertices[lodLevel];
-                TArray<uint32> Indices = LODRenderDatas[lodLevel]->Indices;
+                TArray<uint32> Indices = pStaticMeshComp->GetStaticMesh()->GetRenderData(lodLevel)->Indices;
                 for (int i = 0; i < Indices.Num(); ++i)
                 {
                     Indices[i] += VertexOffset;
@@ -1265,7 +1267,8 @@ void FRenderer::RenderBakedBuffer()
     PrepareShader();
 
     // MaterialConstant
-    if ( MaterialConstantBuffer ) {
+    if ( MaterialConstantBuffer )
+    {
         D3D11_MAPPED_SUBRESOURCE ConstantBufferMSR; // GPU�� �޸� �ּ� ����
 
         Graphics->DeviceContext->Map(MaterialConstantBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &ConstantBufferMSR); // update constant buffer every frame
@@ -1277,17 +1280,13 @@ void FRenderer::RenderBakedBuffer()
     }
 
     // Render
-    for ( auto& [MaterialName, BatchRenderTargetContext] : BatchRenderTargets ) {
+    for ( auto& [MaterialName, BatchRenderTargetContext] : BatchRenderTargets )
+    {
 
         uint32 bufferIdx = 0;
         uint32 offset = 0;
         uint32 length = 0;
-
-        Graphics->DeviceContext->IASetVertexBuffers(0, 1,
-            &BakedBuffers[MaterialName].VertexBuffer[bufferIdx], &stride, &vertexOffset);
-        Graphics->DeviceContext->IASetIndexBuffer(
-            BakedBuffers[MaterialName].IndexBuffer[bufferIdx], DXGI_FORMAT_R32_UINT, 0);
-
+        
         // Set Material
         UMaterial* Material = FManagerOBJ::GetMaterial(MaterialName);
         const auto& MaterialInfo = Material->GetMaterialInfo();
@@ -1301,42 +1300,128 @@ void FRenderer::RenderBakedBuffer()
             SetPSSamplerState(0, 1, nullptr);
         }
 
-        for ( auto iter = BatchRenderTargetContext.StaticMeshes.begin(); iter != BatchRenderTargetContext.StaticMeshes.end(); ++iter ) {
+        for ( auto iter = BatchRenderTargetContext.StaticMeshes.begin(); iter != BatchRenderTargetContext.StaticMeshes.end(); ++iter )
+        {
             UStaticMeshComponent* pStaticMeshComp = iter->Value;
-            const OBJ::FStaticMeshRenderData* renderData = pStaticMeshComp->GetStaticMesh()->GetRenderData();
-            const uint32 indicesCount = renderData->Indices.Num();
+            auto renderDatas = pStaticMeshComp->GetStaticMesh()->GetLODDatas();
+            const uint32 lodLevel = pStaticMeshComp->GetLODLevel();
+            const uint32 indicesCount = renderDatas[lodLevel]->Indices.Num();
+
+            Graphics->DeviceContext->IASetVertexBuffers(0, 1, &BakedLODBuffers[MaterialName][lodLevel].VertexBuffer[bufferIdx], &stride, &vertexOffset);
+            Graphics->DeviceContext->IASetIndexBuffer(BakedLODBuffers[MaterialName][lodLevel].IndexBuffer[bufferIdx], DXGI_FORMAT_R32_UINT, 0);
             
             // if next meshcomp is visible
             bool bIsNextVisible = (iter + 1 != BatchRenderTargetContext.StaticMeshes.end()) && !(iter + 1)->Value->bIsVisible;
 
             // if meshcomp is not visible
-            if (!pStaticMeshComp->bIsVisible && bIsNextVisible ) {
+            if (!pStaticMeshComp->bIsVisible && bIsNextVisible )
+            {
                 if (length > 0)
                     Graphics->DeviceContext->DrawIndexed(length, offset, 0);
 
                 offset += length + indicesCount;
                 length = 0;
-            } else {
+            }
+            else
+            {
                 length += indicesCount;
             }
 
             // if end of array
-            if (offset + length >= BakedBuffers[MaterialName].IndexCount[bufferIdx]) {
+            if (offset + length >= BakedLODBuffers[MaterialName][lodLevel].IndexCount[bufferIdx])
+            {
                 if ( length > 0 )
                     Graphics->DeviceContext->DrawIndexed(length, offset, 0);
 
                 offset = 0;
                 length = 0;
                 ++bufferIdx;
-                if ( BakedBuffers[MaterialName].VertexBuffer.Num() > bufferIdx ) {
-                    Graphics->DeviceContext->IASetVertexBuffers(0, 1,
-                        &BakedBuffers[MaterialName].VertexBuffer[bufferIdx], &stride, &vertexOffset);
-                    Graphics->DeviceContext->IASetIndexBuffer(
-                        BakedBuffers[MaterialName].IndexBuffer[bufferIdx], DXGI_FORMAT_R32_UINT, 0);
+                if ( BakedLODBuffers[MaterialName][lodLevel].VertexBuffer.Num() > bufferIdx )
+                {
+                    Graphics->DeviceContext->IASetVertexBuffers(0, 1, &BakedLODBuffers[MaterialName][lodLevel].VertexBuffer[bufferIdx], &stride, &vertexOffset);
+                    Graphics->DeviceContext->IASetIndexBuffer(BakedLODBuffers[MaterialName][lodLevel].IndexBuffer[bufferIdx], DXGI_FORMAT_R32_UINT, 0);
                 }
             }
         }
     }
+    // uint32 stride = sizeof(FVertexSimple);
+    // uint32 vertexOffset = 0;
+    //
+    // PrepareShader();
+    //
+    // // MaterialConstant
+    // if ( MaterialConstantBuffer ) {
+    //     D3D11_MAPPED_SUBRESOURCE ConstantBufferMSR; // GPU�� �޸� �ּ� ����
+    //
+    //     Graphics->DeviceContext->Map(MaterialConstantBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &ConstantBufferMSR); // update constant buffer every frame
+    //     {
+    //         FMaterialConstants* constants = static_cast<FMaterialConstants*>(ConstantBufferMSR.pData);
+    //         constants->DiffuseColor = { 0, 0, 0 };
+    //     }
+    //     Graphics->DeviceContext->Unmap(MaterialConstantBuffer, 0); // GPU�� �ٽ� ��밡���ϰ� �����
+    // }
+    //
+    // // Render
+    // for ( auto& [MaterialName, BatchRenderTargetContext] : BatchRenderTargets ) {
+    //
+    //     uint32 bufferIdx = 0;
+    //     uint32 offset = 0;
+    //     uint32 length = 0;
+    //
+    //     Graphics->DeviceContext->IASetVertexBuffers(0, 1,
+    //         &BakedBuffers[MaterialName].VertexBuffer[bufferIdx], &stride, &vertexOffset);
+    //     Graphics->DeviceContext->IASetIndexBuffer(
+    //         BakedBuffers[MaterialName].IndexBuffer[bufferIdx], DXGI_FORMAT_R32_UINT, 0);
+    //
+    //     // Set Material
+    //     UMaterial* Material = FManagerOBJ::GetMaterial(MaterialName);
+    //     const auto& MaterialInfo = Material->GetMaterialInfo();
+    //     if ( MaterialInfo.bHasTexture == true ) {
+    //         std::shared_ptr<FTexture> texture = FEngineLoop::resourceMgr.GetTexture(MaterialInfo.DiffuseTexturePath);
+    //
+    //         SetPSTextureSRV(0, 1, texture->TextureSRV);
+    //         SetPSSamplerState(0, 1, texture->SamplerState);
+    //     } else {
+    //         SetPSTextureSRV(0, 1, nullptr);
+    //         SetPSSamplerState(0, 1, nullptr);
+    //     }
+    //
+    //     for ( auto iter = BatchRenderTargetContext.StaticMeshes.begin(); iter != BatchRenderTargetContext.StaticMeshes.end(); ++iter ) {
+    //         UStaticMeshComponent* pStaticMeshComp = iter->Value;
+    //         const OBJ::FStaticMeshRenderData* renderData = pStaticMeshComp->GetStaticMesh()->GetRenderData();
+    //         const uint32 indicesCount = renderData->Indices.Num();
+    //         
+    //         // if next meshcomp is visible
+    //         bool bIsNextVisible = (iter + 1 != BatchRenderTargetContext.StaticMeshes.end()) && !(iter + 1)->Value->bIsVisible;
+    //
+    //         // if meshcomp is not visible
+    //         if (!pStaticMeshComp->bIsVisible && bIsNextVisible ) {
+    //             if (length > 0)
+    //                 Graphics->DeviceContext->DrawIndexed(length, offset, 0);
+    //
+    //             offset += length + indicesCount;
+    //             length = 0;
+    //         } else {
+    //             length += indicesCount;
+    //         }
+    //
+    //         // if end of array
+    //         if (offset + length >= BakedBuffers[MaterialName].IndexCount[bufferIdx]) {
+    //             if ( length > 0 )
+    //                 Graphics->DeviceContext->DrawIndexed(length, offset, 0);
+    //
+    //             offset = 0;
+    //             length = 0;
+    //             ++bufferIdx;
+    //             if ( BakedBuffers[MaterialName].VertexBuffer.Num() > bufferIdx ) {
+    //                 Graphics->DeviceContext->IASetVertexBuffers(0, 1,
+    //                     &BakedBuffers[MaterialName].VertexBuffer[bufferIdx], &stride, &vertexOffset);
+    //                 Graphics->DeviceContext->IASetIndexBuffer(
+    //                     BakedBuffers[MaterialName].IndexBuffer[bufferIdx], DXGI_FORMAT_R32_UINT, 0);
+    //             }
+    //         }
+    //     }
+    // }
 }
 
 void FRenderer::ReleaseUnUsedBatchBuffer(const FString& MaterialName, uint32 ReleaseStartBufferIndex)
@@ -1760,7 +1845,7 @@ void FRenderer::RenderBillboards(UWorld* World, std::shared_ptr<FEditorViewportC
     PrepareShader();
 }
 
-void FRenderer::UpdateBatchRenderTarget(std::shared_ptr<FEditorViewportClient> ActiveViewport)
+void FRenderer::UpdateBatchRenderTarget(const std::shared_ptr<FEditorViewportClient>& ActiveViewport)
 {
     if (GEngineLoop.GetWorld() == nullptr)
         return;
@@ -1810,6 +1895,25 @@ void FRenderer::UpdateBatchRenderTarget(std::shared_ptr<FEditorViewportClient> A
         //    // Material의 변경, Transform의 변경, Culling에 의한 삭제에 따라 Targets 초기화 (BatchRenderTargets[MTLName].Empty();
         //}
     });
+
+    for (auto pStaticMeshComp : TObjectRange<UStaticMeshComponent>())
+    {
+        if (pStaticMeshComp->bIsVisible == true)
+        {
+            FBoundingBox aabb = pStaticMeshComp->AABB;
+            const auto viewport = ActiveViewport->GetD3DViewport();
+            float screenCoverage = FBoundingBox::ComputeBoundingBoxScreenCoverage(aabb.min, aabb.max, ActiveViewport->GetViewMatrix(), ActiveViewport->GetProjectionMatrix(), viewport.Width, viewport.Height);
+            pStaticMeshComp->SetLODLevel(0);
+            // if (0.75f <= screenCoverage && screenCoverage <= 1.0f)
+            // {
+            //     pStaticMeshComp->SetLODLevel(0);
+            // }
+            // else if (0.0f <= screenCoverage && screenCoverage < 0.75f)
+            // {
+            //     pStaticMeshComp->SetLODLevel(1);
+            // }
+        }
+    }
 
     endTime = FPlatformTime::Cycles64();
     FWindowsPlatformTime::GElapsedMap["Culling"] = FWindowsPlatformTime::ToMilliseconds(endTime - startTime);

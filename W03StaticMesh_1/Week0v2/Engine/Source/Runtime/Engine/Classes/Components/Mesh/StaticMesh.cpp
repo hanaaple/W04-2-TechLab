@@ -9,16 +9,24 @@ UStaticMesh::UStaticMesh()
 
 UStaticMesh::~UStaticMesh()
 {
-    if (staticMeshRenderData == nullptr) return;
+    // if (staticMeshRenderData == nullptr) return;
+    //
+    // if (staticMeshRenderData->VertexBuffer) {
+    //     staticMeshRenderData->VertexBuffer->Release();
+    //     staticMeshRenderData->VertexBuffer = nullptr;
+    // }
+    //
+    // if (staticMeshRenderData->IndexBuffer) {
+    //     staticMeshRenderData->IndexBuffer->Release();
+    //     staticMeshRenderData->IndexBuffer = nullptr;
+    // }
 
-    if (staticMeshRenderData->VertexBuffer) {
-        staticMeshRenderData->VertexBuffer->Release();
-        staticMeshRenderData->VertexBuffer = nullptr;
-    }
-
-    if (staticMeshRenderData->IndexBuffer) {
-        staticMeshRenderData->IndexBuffer->Release();
-        staticMeshRenderData->IndexBuffer = nullptr;
+    for (auto lodData : LODData)
+    {
+        lodData->VertexBuffer->Release();
+        lodData->VertexBuffer = nullptr;
+        lodData->IndexBuffer->Release();
+        lodData->IndexBuffer = nullptr;
     }
 }
 
@@ -42,30 +50,26 @@ void UStaticMesh::GetUsedMaterials(TArray<UMaterial*>& Out) const
 
 void UStaticMesh::SetData(OBJ::FStaticMeshRenderData* renderData)
 {
-    staticMeshRenderData = renderData;
-
-    for (int materialIndex = 0; materialIndex < staticMeshRenderData->Materials.Num(); materialIndex++)
+    for (int materialIndex = 0; materialIndex < renderData->Materials.Num(); materialIndex++)
     {
         FStaticMaterial* newMaterialSlot = new FStaticMaterial();
-        UMaterial* newMaterial = FManagerOBJ::CreateMaterial(staticMeshRenderData->Materials[materialIndex]);
+        UMaterial* newMaterial = FManagerOBJ::CreateMaterial(renderData->Materials[materialIndex]);
 
         newMaterialSlot->Material = newMaterial;
-        newMaterialSlot->MaterialSlotName = staticMeshRenderData->Materials[materialIndex].MTLName;
+        newMaterialSlot->MaterialSlotName = renderData->Materials[materialIndex].MTLName;
 
         materials.Add(newMaterialSlot);
     }
 
     // LOD 데이터를 별도 구조체에 생성 (예: 두 단계 LOD 생성)
     // 기본 메시는 LODLevels[0]
-    LODData.Add(renderData);
-    
     // 예제: reductionFactor 0.75로 중간 해상도, 0.5로 저해상도 생성
     OBJ::FStaticMeshRenderData* LOD1 = FLoaderOBJ::CreateEdgeCollapseLOD(renderData, 0.75f);
-    OBJ::FStaticMeshRenderData* LOD2 = FLoaderOBJ::CreateEdgeCollapseLOD(renderData, 0.5f);
+    //OBJ::FStaticMeshRenderData* LOD2 = FLoaderOBJ::CreateEdgeCollapseLOD(renderData, 0.5f);
     if (LOD1)
         LODData.Add(LOD1);
-    if (LOD2)
-        LODData.Add(LOD2);
+    // if (LOD2)
+    //     LODData.Add(LOD2);
     
     // for (const auto lod : LODData)
     // {

@@ -113,8 +113,8 @@ int32 FEngineLoop::Init(HINSTANCE hInstance)
 {
     if (FSceneMgr::LoadSceneData(TEXT("Default.scene")) == false)
         assert(false, TEXT("Can't Load Default Scene"));
-    //if (FSceneMgr::LoadSceneData(TEXT("Test.scene")) == false)
-    //    assert(false, TEXT("Can't Load Test Scene"));
+    // if (FSceneMgr::LoadSceneData(TEXT("Test.scene")) == false)
+    //     assert(false, TEXT("Can't Load Test Scene"));
     
     FWindowsPlatformTime::InitTiming();
 

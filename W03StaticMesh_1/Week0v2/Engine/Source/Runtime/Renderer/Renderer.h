@@ -164,7 +164,7 @@ public: // line shader
     void RenderBillboards(UWorld* World,std::shared_ptr<FEditorViewportClient> ActiveViewport);
 
 public:
-    void UpdateBatchRenderTarget(std::shared_ptr<FEditorViewportClient> ActiveViewport);
+    void UpdateBatchRenderTarget(const std::shared_ptr<FEditorViewportClient>& ActiveViewport);
     
 public:
     void SetTopology(const D3D11_PRIMITIVE_TOPOLOGY InPrimitiveTopology);

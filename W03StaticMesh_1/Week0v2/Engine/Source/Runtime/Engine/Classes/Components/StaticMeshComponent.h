@@ -56,23 +56,6 @@ public:
                 LODVertices[level].Add(Vertex);
             }
         }
-        const OBJ::FStaticMeshRenderData* renderData = GetStaticMesh()->GetRenderData();
-        Vertices.Empty();
-        for (const auto& OriginVertex : renderData->Vertices)
-        {
-            FVertexSimple Vertex;
-        
-            FMatrix Model = JungleMath::CreateModelMatrix(GetWorldLocation(), GetWorldRotation(), GetWorldScale());
-                    
-            FVector Pos = Model.TransformPosition({OriginVertex.x, OriginVertex.y, OriginVertex.z});
-        
-            Vertex.x = Pos.x;
-            Vertex.y = Pos.y;
-            Vertex.z = Pos.z;
-            Vertex.u = OriginVertex.u;
-            Vertex.v = OriginVertex.v;
-            Vertices.Add(Vertex);
-        }
     }
 
 public:
