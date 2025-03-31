@@ -11,6 +11,7 @@
 #include "UObject/UObjectIterator.h"
 
 #include "Runtime\InteractiveToolsFramework\BaseGizmos\GizmoBaseComponent.h"
+#include "UnrealEd/PrimitiveBatch.h"
 
 
 UWorld::UWorld()
@@ -192,6 +193,17 @@ bool UWorld::DestroyActor(AActor* ThisActor)
     // 제거 대기열에 추가
     GUObjectArray.MarkRemoveObject(ThisActor);
     return true;
+}
+
+void UWorld::SetPickedActor(AActor* InActor)
+{
+    SelectedActor = InActor;
+    const auto prim = InActor->GetComponentByClass<UPrimitiveComponent>();
+
+    const FMatrix Model = JungleMath::CreateModelMatrix(prim->GetWorldLocation(), prim->GetWorldRotation(), prim->GetWorldScale());
+
+    UPrimitiveBatch::GetInstance().RenderAABB(prim->GetBoundingBox(),prim->GetWorldLocation(), Model);
+    // Update Constant Buffer?
 }
 
 void UWorld::SetPickingGizmo(UObject* Object)

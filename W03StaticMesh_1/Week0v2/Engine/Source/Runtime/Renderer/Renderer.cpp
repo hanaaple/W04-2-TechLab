@@ -1785,8 +1785,15 @@ void FRenderer::UpdateBatchRenderTarget(const std::shared_ptr<FEditorViewportCli
         UStaticMeshComponent* pStaticMeshComp = element.element;
         pStaticMeshComp->bIsVisible = true;
 
-        FBoundingBox aabb = pStaticMeshComp->AABB;
+        const FBoundingBox localAABB = pStaticMeshComp->AABB;
+        const FMatrix Model = JungleMath::CreateModelMatrix(
+           pStaticMeshComp->GetWorldLocation(),
+           pStaticMeshComp->GetWorldRotation(),
+           pStaticMeshComp->GetWorldScale()
+       );
+        
         const auto viewport = ActiveViewport->GetD3DViewport();
+        FBoundingBox aabb = FBoundingBox::TransformBy(localAABB,pStaticMeshComp->GetWorldLocation(), Model);
         float screenCoverage = FBoundingBox::ComputeBoundingBoxScreenCoverage(aabb.min, aabb.max, ActiveViewport->GetViewMatrix(), ActiveViewport->GetProjectionMatrix(), viewport.Width, viewport.Height);
 
         pStaticMeshComp->SetLODLevel(0);

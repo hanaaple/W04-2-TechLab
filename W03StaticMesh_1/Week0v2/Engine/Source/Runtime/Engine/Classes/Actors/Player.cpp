@@ -15,6 +15,7 @@
 #include "UObject/UObjectIterator.h"
 #include "Stats/ScopeCycleCounter.h"
 #include "PropertyEditor/FPSEditorPanel.h"
+#include "UnrealEd/PrimitiveBatch.h"
 using namespace DirectX;
 
 AEditorPlayer::AEditorPlayer()
@@ -326,11 +327,10 @@ void AEditorPlayer::PickActor(const FVector& pickOrigin, const FVector& pickDire
 
             FVector rayOrigin = inverseWorldMat.TransformPosition(pickOrigin);
             FVector rayDirection = FMatrix::TransformVector(pickDirection, inverseWorldMat);
-            FVector sphereCenter = e->GetWorldLocation();
-            float sphereRadius = 1.f;
-            //if ( e->CheckRayIntersection(rayOrigin, rayDirection, hitDistance) > 0 ) {
-            if ( CheckRayWithSphere(pickOrigin, pickDirection, sphereCenter, sphereRadius, hitDistance) ) {
-                if (minDistance > hitDistance) {
+            if ( e->CheckRayIntersection(rayOrigin, rayDirection, hitDistance) > 0 )
+            {
+                if (minDistance > hitDistance)
+                {
                     minDistance = hitDistance;
                     Possible = e;
                 }
