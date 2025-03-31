@@ -68,8 +68,8 @@ void AEditorPlayer::Input()
             );
             UE_LOG(LogLevel::Display, TEXT("pickPosition: %f %f %f"), origin.x, origin.y, origin.z);
             UE_LOG(LogLevel::Display, TEXT("direction: %f %f %f"), direction.x, direction.y, direction.z);
-            bool res = PickGizmo(origin, direction);
-            if (!res) PickActor(origin, direction);
+            //bool res = PickGizmo(origin, direction);
+            PickActor(origin, direction);
         }
         else
         {

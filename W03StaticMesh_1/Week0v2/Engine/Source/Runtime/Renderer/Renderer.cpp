@@ -1496,10 +1496,10 @@ void FRenderer::PrepareRender()
     //     }
     // }
     
-    for (const auto iter : TObjectRange<UGizmoBaseComponent>())
-    {
-        GizmoObjs.Add(iter);
-    }
+    //for (const auto iter : TObjectRange<UGizmoBaseComponent>())
+    //{
+    //    GizmoObjs.Add(iter);
+    //}
 
     //for (const auto iter : TObjectRange<UBillboardComponent>())
     //{
@@ -1551,11 +1551,11 @@ void FRenderer::Render(UWorld* World, const std::shared_ptr<FEditorViewportClien
     FWindowsPlatformTime::GElapsedMap["renderStaticMesh"] = FWindowsPlatformTime::ToMilliseconds(endTime - startTime);
 
     // UISOO TODO: Depth Stencil 바인딩 중
-    RenderGizmos(World, ActiveViewport);
+    //RenderGizmos(World, ActiveViewport);
 
     // UISOO TODO: 여기 Set TextureShader
-    if (ActiveViewport->GetShowFlag() & static_cast<uint64>(EEngineShowFlags::SF_BillboardText))
-        RenderBillboards(World, ActiveViewport);
+    //if (ActiveViewport->GetShowFlag() & static_cast<uint64>(EEngineShowFlags::SF_BillboardText))
+    //    RenderBillboards(World, ActiveViewport);
     
     //RenderLight(World, ActiveViewport);
 
