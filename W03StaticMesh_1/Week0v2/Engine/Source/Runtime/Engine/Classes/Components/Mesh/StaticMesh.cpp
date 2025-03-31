@@ -64,10 +64,10 @@ void UStaticMesh::SetData(OBJ::FStaticMeshRenderData* renderData)
     // LOD 데이터를 별도 구조체에 생성 (예: 두 단계 LOD 생성)
     // 기본 메시는 LODLevels[0]
     // 예제: reductionFactor 0.75로 중간 해상도, 0.5로 저해상도 생성
-    //OBJ::FStaticMeshRenderData* LOD1 = FLoaderOBJ::CreateEdgeCollapseLOD(renderData, 0.75f);
+    OBJ::FStaticMeshRenderData* LOD1 = FLoaderOBJ::CreateEdgeCollapseLOD(renderData, 0.75f);
     OBJ::FStaticMeshRenderData* LOD2 = FLoaderOBJ::CreateEdgeCollapseLOD(renderData, 0.5f);
-    // if (LOD1)
-    //     LODData.Add(LOD1);
+    if (LOD1)
+        LODData.Add(LOD1);
     if (LOD2)
         LODData.Add(LOD2);
     

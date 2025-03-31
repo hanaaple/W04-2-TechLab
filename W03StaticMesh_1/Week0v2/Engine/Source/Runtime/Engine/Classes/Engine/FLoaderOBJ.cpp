@@ -578,6 +578,9 @@ OBJ::FStaticMeshRenderData* FLoaderOBJ::CreateEdgeCollapseLOD(const OBJ::FStatic
     LODData->PathName    = HighResData->PathName;
     LODData->DisplayName = HighResData->DisplayName;
     LODData->Materials   = HighResData->Materials;
+    LODData->BoundingBoxMax = HighResData->BoundingBoxMax;
+    LODData->BoundingBoxMin = HighResData->BoundingBoxMin;
+
     LODData->MaterialSubsets.Empty();
 
     // 고해상도 데이터를 복사
@@ -943,7 +946,6 @@ OBJ::FStaticMeshRenderData* FLoaderOBJ::CreateEdgeCollapseLOD(const OBJ::FStatic
     }
     indices = finalIndices;
     LODData->Indices = indices;
-    
 
     return LODData;
 }
