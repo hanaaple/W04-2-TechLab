@@ -1247,12 +1247,13 @@ void FRenderer::RenderBakedBuffer() {
             SetPSSamplerState(0, 1, nullptr);
         }
 
-        for ( auto& [_, pStaticMeshComp] : BatchRenderTargetContext.StaticMeshes ) {
+        for ( auto iter = BatchRenderTargetContext.StaticMeshes.begin(); iter != BatchRenderTargetContext.StaticMeshes.end(); ++iter ) {
+            UStaticMeshComponent* pStaticMeshComp = iter->Value;
             const OBJ::FStaticMeshRenderData* renderData = pStaticMeshComp->GetStaticMesh()->GetRenderData();
             const uint32 indicesCount = renderData->Indices.Num();
             
             // if meshcomp is not visible
-            if (!pStaticMeshComp->bIsVisible) {
+            if (!pStaticMeshComp->bIsVisible && !(iter + 1)->Value->bIsVisible ) {
                 if (length > 0)
                     Graphics->DeviceContext->DrawIndexed(length, offset, 0);
 
