@@ -1299,7 +1299,7 @@ void FRenderer::RenderBakedBuffer()
             const bool bIsNextVisible = (i + 1 < Meshes.Num()) && !Meshes[i+1].Value->bIsVisible;
 
             // if meshcomp is not visible
-            if (!pStaticMeshComp->bIsVisible && bIsNextVisible )
+            if (!pStaticMeshComp->bIsVisible)
             {
                 if (length > 0) {
                     Graphics->DeviceContext->DrawIndexed(length, offset, 0);
@@ -1334,6 +1334,39 @@ void FRenderer::RenderBakedBuffer()
 
 void FRenderer::ReleaseBakedData()
 {
+    for ( auto& [_, buffer] : BakedBuffers ) {
+        for ( auto& vertexBuffer: buffer.VertexBuffer ) {
+            vertexBuffer->Release();
+        }
+        for ( auto& IndexBuffer : buffer.IndexBuffer ) {
+            IndexBuffer->Release();
+        }
+        buffer.VertexBuffer.Empty();
+        buffer.IndexBuffer.Empty();
+        buffer.Stride = 0;
+        buffer.IndexCount.Empty();
+    }
+
+
+    for ( auto& [_, buffers] : BakedLODBuffers ) {
+        for ( auto& buffer: buffers) {
+            for ( auto& vertexBuffer : buffer.VertexBuffer ) {
+                vertexBuffer->Release();
+            }
+            for ( auto& IndexBuffer : buffer.IndexBuffer ) {
+                IndexBuffer->Release();
+            }
+            buffer.VertexBuffer.Empty();
+            buffer.IndexBuffer.Empty();
+            buffer.Stride = 0;
+            buffer.IndexCount.Empty();
+        }
+        buffers.Empty();
+    }
+
+    for ( auto& [_, context]: BatchRenderTargets ) {
+        context.StaticMeshes.Empty();
+    }
 }
 
 void FRenderer::ReleaseUnUsedBatchBuffer(const FString& MaterialName, uint32 ReleaseStartBufferIndex)
@@ -1793,7 +1826,10 @@ void FRenderer::UpdateBatchRenderTarget(const std::shared_ptr<FEditorViewportCli
         const auto viewport = ActiveViewport->GetD3DViewport();
         float screenCoverage = FBoundingBox::ComputeBoundingBoxScreenCoverage(aabb.min, aabb.max, ActiveViewport->GetViewMatrix(), ActiveViewport->GetProjectionMatrix(), viewport.Width, viewport.Height);
 
-        pStaticMeshComp->SetLODLevel(0);
+        if (screenCoverage > 1 / 16)
+            pStaticMeshComp->SetLODLevel(0);
+        else if (screenCoverage > 1 / 256)
+            pStaticMeshComp->SetLODLevel(1);
     });
 
     endTime = FPlatformTime::Cycles64();
