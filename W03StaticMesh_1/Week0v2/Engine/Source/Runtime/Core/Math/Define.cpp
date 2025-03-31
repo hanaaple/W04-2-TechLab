@@ -175,6 +175,30 @@ const float* FMatrix::operator[](int row) const
     return M[row];
 }
 
+FMatrix& FMatrix::operator+=(const FMatrix& Other)
+{
+#if defined(__AVX2__)
+    _rowin256[0] = _mm256_add_ps(_rowin256[0], Other._rowin256[0]);
+    _rowin256[1] = _mm256_add_ps(_rowin256[1], Other._rowin256[1]);
+    return *this;
+#elif defined(_XM_SSE_INTRINSICS_)
+    row[0] = _mm_add_ps(row[0], Other.row[0]);
+    row[1] = _mm_add_ps(row[1], Other.row[1]);
+    row[2] = _mm_add_ps(row[2], Other.row[2]);
+    row[3] = _mm_add_ps(row[3], Other.row[3]);
+    return *this;
+#else
+    for (int32 i = 0; i < 4; i++)
+    {
+        for (int32 j = 0; j < 4; j++)
+        {
+            M[i][j] += Other.M[i][j];
+        }
+    }
+    return *this;
+#endif
+}
+
 // 전치 행렬.
 FMatrix FMatrix::Transpose(const FMatrix& Mat) {
 #if defined(_XM_SSE_INTRINSICS_)
@@ -571,6 +595,58 @@ FVector FMatrix::TransformPosition(const FVector& vector) const {
     float w = M[0][3] * vector.x + M[1][3] * vector.y + M[2][3] * vector.z + M[3][3];
     return w != 0.0f ? FVector{ x / w, y / w, z / w } : FVector{ x, y, z };
 #endif
+}
+
+FMatrix FMatrix::ComputePlaneQuadric(const FVector& normal, const float d)
+{
+    FMatrix q;
+    const float v[4] = { normal.x, normal.y, normal.z, d };
+    for (int i = 0; i < 4; i++)
+    {
+        for (int j = 0; j < 4; j++)
+        {
+            q.M[i][j] = v[i] * v[j];
+        }
+    }
+    return q;
+}
+
+FMatrix FMatrix::ComputePlaneQuadric(const FVector& A, const FVector& B, const FVector& C)
+{
+    // 두 벡터의 외적을 통해 평면의 법선 계산
+    const FVector normal = (B - A).Cross(C - A);
+    const FVector NormalizedNormalVector = normal.Normalize();
+    
+    // 평면 방정식: a*x + b*y + c*z + d = 0, 여기서 d = -dot(normal, A)
+    const float d = -NormalizedNormalVector.Dot(A);
+    
+    // plane 벡터: [a, b, c, d]
+    const float plane[4] = { NormalizedNormalVector.x, NormalizedNormalVector.y, NormalizedNormalVector.z, d };
+
+    FMatrix Q;
+    // Q = plane * plane^T
+    for (int i = 0; i < 4; i++)
+    {
+        for (int j = 0; j < 4; j++)
+        {
+            Q.M[i][j] = plane[i] * plane[j];
+        }
+    }
+    return Q;
+}
+
+float FMatrix::EvaluateQuadric(const FMatrix& q, const FVector& v)
+{
+    const float vec[4] = { v.x, v.y, v.z, 1.0f };
+    float error = 0.0f;
+    for (int i = 0; i < 4; i++)
+    {
+        for (int j = 0; j < 4; j++)
+        {
+            error += vec[i] * q.M[i][j] * vec[j];
+        }
+    }
+    return error;
 }
 
 // 4x4 행렬을 사용하여 벡터 변환 (W = 0으로 가정, 방향 벡터)
@@ -1010,4 +1086,74 @@ FBoundingBox FBoundingBox::TransformBy(const FBoundingBox& localAABB, const FVec
     BoundingBox.max = max;
 
     return BoundingBox;
+}
+
+FBoundingBox FBoundingBox::Transform(const FMatrix& mat) const
+{
+    const FVector corners[8] = {
+        FVector(min.x, min.y, min.z),
+        FVector(max.x, min.y, min.z),
+        FVector(min.x, max.y, min.z),
+        FVector(max.x, max.y, min.z),
+        FVector(min.x, min.y, max.z),
+        FVector(max.x, min.y, max.z),
+        FVector(min.x, max.y, max.z),
+        FVector(max.x, max.y, max.z)
+    };
+
+    FVector transformedMin = mat.TransformPosition(corners[0]);
+    FVector transformedMax = transformedMin;
+
+    for (int i = 1; i < 8; ++i)
+    {
+        FVector p = mat.TransformPosition(corners[i]);
+        transformedMin.x = std::min(transformedMin.x, p.x);
+        transformedMin.y = std::min(transformedMin.y, p.y);
+        transformedMin.z = std::min(transformedMin.z, p.z);
+
+        transformedMax.x = std::max(transformedMax.x, p.x);
+        transformedMax.y = std::max(transformedMax.y, p.y);
+        transformedMax.z = std::max(transformedMax.z, p.z);
+    }
+
+    return FBoundingBox(transformedMin, transformedMax);
+}
+
+float FBoundingBox::ComputeBoundingBoxScreenCoverage(const FVector& min, const FVector& max, const FMatrix& view, const FMatrix& projection,
+    float viewportWidth, float viewportHeight)
+{
+    FVector corners[8];
+    corners[0] = FVector(min.x, min.y, min.z);
+    corners[1] = FVector(max.x, min.y, min.z);
+    corners[2] = FVector(min.x, max.y, min.z);
+    corners[3] = FVector(max.x, max.y, min.z);
+    corners[4] = FVector(min.x, min.y, max.z);
+    corners[5] = FVector(max.x, min.y, max.z);
+    corners[6] = FVector(min.x, max.y, max.z);
+    corners[7] = FVector(max.x, max.y, max.z);
+
+    FVector center = (max + min) * 0.5f;
+
+    float minX = FLT_MAX, minY = FLT_MAX;
+    float maxX = -FLT_MAX, maxY = -FLT_MAX;
+
+    FMatrix viewProj = view * projection;
+
+    for (INT i = 0; i < 8; ++i)
+    {
+        FVector4 clipPos = FMatrix::TransformVector(FVector4(corners[i].x, corners[i].y, corners[i].z, 1), viewProj);
+        FVector4 ndc = clipPos / clipPos.a;
+        
+        float x = ((ndc.x + 1.0f) * 0.5f) * viewportWidth;
+        float y = ((1.0f - ndc.y) * 0.5f) * viewportHeight;
+        
+        minX = std::min(minX, x);
+        minY = std::min(minY, y);
+        maxX = std::max(maxX, x);
+        maxY = std::max(maxY, y);
+    }
+
+    float rectArea = (maxX - minX) * (maxY - minY) * (maxX - maxY);
+    float screenArea = viewportWidth * viewportHeight;
+    return rectArea / screenArea;
 }

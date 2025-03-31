@@ -58,8 +58,11 @@ public:
 public:
     // 모델 행렬 적용된 VertexData
     TArray<FVertexSimple> Vertices;
-    
+
+    void SetLODLevel(const int InLODLevel) { LODLevel = InLODLevel; }
+    uint32 GetLODLevel() const { return LODLevel; }
 protected:
     UStaticMesh* staticMesh = nullptr;
+    uint32 LODLevel = 0;
     int selectedSubMeshIndex = -1;
 };

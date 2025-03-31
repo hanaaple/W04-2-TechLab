@@ -49,11 +49,19 @@ void FRenderer::CreateShader()
 {
     ID3DBlob* VertexShaderCSO;
     ID3DBlob* PixelShaderCSO;
+#ifdef _DEBUG
+    DWORD shaderFlags = D3DCOMPILE_ENABLE_STRICTNESS;
+    shaderFlags |= D3DCOMPILE_DEBUG;
+    shaderFlags |= D3DCOMPILE_SKIP_OPTIMIZATION;
+#else
+    DWORD shaderFlags = D3DCOMPILE_ENABLE_STRICTNESS;
+    // 릴리즈 빌드에서는 최적화가 적용됩니다.
+#endif
 
-    D3DCompileFromFile(L"Shaders/StaticMeshVertexShader.hlsl", nullptr, nullptr, "mainVS", "vs_5_0", 0, 0, &VertexShaderCSO, nullptr);
+    D3DCompileFromFile(L"Shaders/StaticMeshVertexShader.hlsl", nullptr, nullptr, "mainVS", "vs_5_0", shaderFlags, 0, &VertexShaderCSO, nullptr);
     Graphics->Device->CreateVertexShader(VertexShaderCSO->GetBufferPointer(), VertexShaderCSO->GetBufferSize(), nullptr, &VertexShader);
 
-    D3DCompileFromFile(L"Shaders/StaticMeshPixelShader.hlsl", nullptr, nullptr, "mainPS", "ps_5_0", 0, 0, &PixelShaderCSO, nullptr);
+    D3DCompileFromFile(L"Shaders/StaticMeshPixelShader.hlsl", nullptr, nullptr, "mainPS", "ps_5_0", shaderFlags, 0, &PixelShaderCSO, nullptr);
     Graphics->Device->CreatePixelShader(PixelShaderCSO->GetBufferPointer(), PixelShaderCSO->GetBufferSize(), nullptr, &PixelShader);
 
     D3D11_INPUT_ELEMENT_DESC layout[] = {
@@ -1316,7 +1324,7 @@ void FRenderer::UpdateBoundingBoxBuffer(ID3D11Buffer* pBoundingBoxBuffer, const 
     if (!pBoundingBoxBuffer) return;
     D3D11_MAPPED_SUBRESOURCE mappedResource;
     Graphics->DeviceContext->Map(pBoundingBoxBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
-    auto pData = reinterpret_cast<FBoundingBox*>(mappedResource.pData);
+    const auto pData = static_cast<FBoundingBox*>(mappedResource.pData);
     for (int i = 0; i < BoundingBoxes.Num(); ++i)
     {
         pData[i] = BoundingBoxes[i];

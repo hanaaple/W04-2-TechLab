@@ -130,14 +130,7 @@ namespace OBJ
         FVector BoundingBoxMin;
         FVector BoundingBoxMax;
     };
-
-    // 별도의 LOD 데이터 전담 구조체
-    //
-    struct FStaticMeshLODData
-    {
-        // LODLevels[0]: 기본(고해상도) 메시, [1]: 중간, [2]: 저해상도 등
-        TArray<OBJ::FStaticMeshRenderData*> LODLevels;
-    };
+    
 }
 
 struct FVertexTexture
@@ -175,6 +168,7 @@ struct FPoint
 
     float x, y;
 };
+
 struct FBoundingBox
 {
 public:
@@ -210,36 +204,13 @@ public:
         return (max - min) * 0.5f;
     }
 
-    FBoundingBox Transform(const FMatrix& mat) const
-    {
-        FVector corners[8] = {
-            FVector(min.x, min.y, min.z),
-            FVector(max.x, min.y, min.z),
-            FVector(min.x, max.y, min.z),
-            FVector(max.x, max.y, min.z),
-            FVector(min.x, min.y, max.z),
-            FVector(max.x, min.y, max.z),
-            FVector(min.x, max.y, max.z),
-            FVector(max.x, max.y, max.z)
-        };
+    FBoundingBox Transform(const FMatrix& mat) const;
 
-        FVector transformedMin = mat.TransformPosition(corners[0]);
-        FVector transformedMax = transformedMin;
-
-        for (int i = 1; i < 8; ++i)
-        {
-            FVector p = mat.TransformPosition(corners[i]);
-            transformedMin.x = std::min(transformedMin.x, p.x);
-            transformedMin.y = std::min(transformedMin.y, p.y);
-            transformedMin.z = std::min(transformedMin.z, p.z);
-
-            transformedMax.x = std::max(transformedMax.x, p.x);
-            transformedMax.y = std::max(transformedMax.y, p.y);
-            transformedMax.z = std::max(transformedMax.z, p.z);
-        }
-
-        return FBoundingBox(transformedMin, transformedMax);
-    }
+    // 메시의 바운딩 박스가 차지하는 화면 비율을 계산하는 함수
+    // 입력: 메시의 바운딩 박스의 최소, 최대 좌표, 카메라의 뷰/프로젝션 행렬, 뷰포트 크기
+    // 반환: 0~1 사이의 값으로 화면 전체에서 차지하는 비율
+    // 화면 비율이 50% 이상이면 LOD 0 (고해상도), 10% 이상이면 LOD 1, 그보다 작으면 LOD 2로 쓰면 될 듯
+    static float ComputeBoundingBoxScreenCoverage(const FVector& min, const FVector& max, const FMatrix& view, const FMatrix& projection, float viewportWidth, float viewportHeight);
 };
 struct FCone
 {

@@ -60,8 +60,8 @@ void UStaticMesh::SetData(OBJ::FStaticMeshRenderData* renderData)
     LODData.Add(renderData);
     
     // 예제: reductionFactor 0.5로 중간 해상도, 0.25로 저해상도 생성
-    OBJ::FStaticMeshRenderData* LOD1 = FLoaderOBJ::CreateSimpleLOD(renderData, 0.5f);
-    OBJ::FStaticMeshRenderData* LOD2 = FLoaderOBJ::CreateSimpleLOD(renderData, 0.25f);
+    OBJ::FStaticMeshRenderData* LOD1 = FLoaderOBJ::CreateEdgeCollapseLOD(renderData, 0.75f);
+    OBJ::FStaticMeshRenderData* LOD2 = FLoaderOBJ::CreateEdgeCollapseLOD(renderData, 0.5f);
     if (LOD1)
         LODData.Add(LOD1);
     if (LOD2)
