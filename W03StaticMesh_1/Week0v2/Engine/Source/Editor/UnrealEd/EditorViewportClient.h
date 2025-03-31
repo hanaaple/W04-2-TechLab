@@ -31,7 +31,7 @@ public:
     void SetLocation(const FVector& Position)
     {
         ViewLocation = Position;
-        UE_LOG(LogLevel::Display, "On Move!");
+        //UE_LOG(LogLevel::Display, "On Move!");
         OnTransformation();
     }
 
@@ -39,7 +39,7 @@ public:
     void SetRotation(const FVector& Rotation)
     {
         ViewRotation = Rotation;
-        UE_LOG(LogLevel::Display, "On Rotate!");
+        //UE_LOG(LogLevel::Display, "On Rotate!");
         OnTransformation();
     }
 
@@ -47,7 +47,7 @@ public:
     void SetLookAt(const FVector& InLookAt)
     {
         LookAt = InLookAt;
-        UE_LOG(LogLevel::Display, "On LookAt!");
+        //UE_LOG(LogLevel::Display, "On LookAt!");
         OnTransformation();
     }
 
@@ -56,7 +56,7 @@ public:
     {
         assert(InOrthoZoom >= MIN_ORTHOZOOM && InOrthoZoom <= MAX_ORTHOZOOM);
         OrthoZoom = InOrthoZoom;
-        UE_LOG(LogLevel::Display, "On Zoom!");
+        //UE_LOG(LogLevel::Display, "On Zoom!");
         OnTransformation();
     }
 

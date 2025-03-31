@@ -1565,6 +1565,15 @@ void FRenderer::Render(UWorld* World, const std::shared_ptr<FEditorViewportClien
         bWasOcculusionQueried = true;
     }
 
+    AActor* selected = World->GetSelectedActor();
+    if (selected != nullptr) {
+        const auto prim = selected->GetComponentByClass<UPrimitiveComponent>();
+        const FMatrix Model = JungleMath::CreateModelMatrix(prim->GetWorldLocation(), prim->GetWorldRotation(), prim->GetWorldScale());
+
+        UPrimitiveBatch::GetInstance().RenderAABB(
+            prim->GetBoundingBox(), prim->GetWorldLocation(), Model
+        );
+    }
     
     
     ClearRenderArr();
@@ -1818,6 +1827,7 @@ void FRenderer::UpdateBatchRenderTarget(const std::shared_ptr<FEditorViewportCli
     ocTree.OcclusionCull(cameraPos);
 
     // Execute Callback
+    const auto viewport = ActiveViewport->GetD3DViewport();
     ocTree.ExecuteCallbackForVisible([&](const FOctreeElement<UStaticMeshComponent>& element) {
         UStaticMeshComponent* pStaticMeshComp = element.element;
         pStaticMeshComp->bIsVisible = true;
@@ -1827,19 +1837,18 @@ void FRenderer::UpdateBatchRenderTarget(const std::shared_ptr<FEditorViewportCli
            pStaticMeshComp->GetWorldLocation(),
            pStaticMeshComp->GetWorldRotation(),
            pStaticMeshComp->GetWorldScale()
-       );
+        );
         
-        const auto viewport = ActiveViewport->GetD3DViewport();
         FBoundingBox aabb = FBoundingBox::TransformBy(localAABB,pStaticMeshComp->GetWorldLocation(), Model);
         float screenCoverage = FBoundingBox::ComputeBoundingBoxScreenCoverage(aabb.min, aabb.max, ActiveViewport->GetViewMatrix(), ActiveViewport->GetProjectionMatrix(), viewport.Width, viewport.Height);
 
         if (screenCoverage > 1 / 16)
             pStaticMeshComp->SetLODLevel(0);
-        else if (screenCoverage > 1 / 256)
+        else
             pStaticMeshComp->SetLODLevel(1);
     });
-
     endTime = FPlatformTime::Cycles64();
+
     FWindowsPlatformTime::GElapsedMap["Culling"] = FWindowsPlatformTime::ToMilliseconds(endTime - startTime);
 }
 

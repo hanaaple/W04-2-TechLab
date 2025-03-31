@@ -51,9 +51,10 @@ void FEditorViewportClient::Tick(float DeltaTime)
     if (ViewTransformPerspective.bIsTranslated)
     {
         GEngineLoop.renderer.UpdateCameraConstant(GEngineLoop.GetLevelEditor()->GetActiveViewportClient().get());
+        GEngineLoop.renderer.UpdateBatchRenderTarget(GEngineLoop.GetLevelEditor()->GetActiveViewportClient());
         ViewTransformPerspective.bIsTranslated = false;
     }
-    GEngineLoop.renderer.UpdateBatchRenderTarget(GEngineLoop.GetLevelEditor()->GetActiveViewportClient());
+    
     //if (ViewTransformPerspective.bIsTranslated)
     {
         if (ViewTransformPerspective.timer > 0)

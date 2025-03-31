@@ -1052,6 +1052,61 @@ FBoundingBox FBoundingBox::ComputeSceneBoundingBox(const TSet<class AActor*>& Sp
 
 FBoundingBox FBoundingBox::TransformBy(const FBoundingBox& localAABB, const FVector& center, const FMatrix& modelMatrix)
 {
+#if defined(__AVX2__)
+    const FVector& min = localAABB.min;
+    const FVector& max = localAABB.max;
+    __m256 x = _mm256_set_ps(
+        min.x, max.x, min.x, max.x,
+        min.x, max.x, min.x, max.x
+    );
+    __m256 y = _mm256_set_ps(
+        min.y, min.y, max.y, max.y,
+        min.y, min.y, max.y, max.y
+    );
+    __m256 z = _mm256_set_ps(
+        min.z, min.z, min.z, min.z,
+        max.z, max.z, max.z, max.z
+    );
+    __m256 w = _mm256_set1_ps(1.0f);
+
+    __m256 transformedX = _mm256_fmadd_ps(
+        x, _mm256_set1_ps(modelMatrix.M[0][0]), _mm256_fmadd_ps(
+            y, _mm256_set1_ps(modelMatrix.M[1][0]), _mm256_fmadd_ps(
+                z, _mm256_set1_ps(modelMatrix.M[2][0]), _mm256_mul_ps(w, _mm256_set1_ps(modelMatrix.M[3][0])))
+        )
+    );
+    __m256 transformedY = _mm256_fmadd_ps(
+        x, _mm256_set1_ps(modelMatrix.M[0][1]), _mm256_fmadd_ps(
+            y, _mm256_set1_ps(modelMatrix.M[1][1]), _mm256_fmadd_ps(
+                z, _mm256_set1_ps(modelMatrix.M[2][1]), _mm256_mul_ps(w, _mm256_set1_ps(modelMatrix.M[3][1])))
+        )
+    );
+    __m256 transformedZ = _mm256_fmadd_ps(
+        x, _mm256_set1_ps(modelMatrix.M[0][2]), _mm256_fmadd_ps(
+            y, _mm256_set1_ps(modelMatrix.M[1][2]), _mm256_fmadd_ps(
+                z, _mm256_set1_ps(modelMatrix.M[2][2]), _mm256_mul_ps(w, _mm256_set1_ps(modelMatrix.M[3][2])))
+        )
+    );
+
+    float* _x = transformedX.m256_f32;
+    float* _y = transformedY.m256_f32;
+    float* _z = transformedZ.m256_f32;
+    float minx = FLT_MAX, miny = FLT_MAX, minz = FLT_MAX;
+    float maxx = -FLT_MAX, maxy = -FLT_MAX, maxz = -FLT_MAX;
+    for ( int i = 0; i < 8; i++ ) {
+        if ( _x[i] < minx ) minx = _x[i];
+        if ( _y[i] < miny ) miny = _y[i];
+        if ( _z[i] < minz ) minz = _z[i];
+        if ( _x[i] > maxx ) maxx = _x[i];
+        if ( _y[i] > maxy ) maxy = _y[i];
+        if ( _z[i] > maxz ) maxz = _z[i];
+    }
+    FBoundingBox BoundingBox;
+    BoundingBox.min = FVector(minx, miny, minz);
+    BoundingBox.max = FVector(maxx, maxy, maxz);
+
+    return BoundingBox;
+#else
     FVector localVertices[8] = {
         { localAABB.min.x, localAABB.min.y, localAABB.min.z },
         { localAABB.max.x, localAABB.min.y, localAABB.min.z },
@@ -1086,6 +1141,7 @@ FBoundingBox FBoundingBox::TransformBy(const FBoundingBox& localAABB, const FVec
     BoundingBox.max = max;
 
     return BoundingBox;
+#endif
 }
 
 FBoundingBox FBoundingBox::Transform(const FMatrix& mat) const
@@ -1141,12 +1197,6 @@ float FBoundingBox::ComputeBoundingBoxScreenCoverage(const FVector& min, const F
 
     FMatrix viewProj = view * projection;
 
-    //FVector4 result;
-    //result.x = v.x * m.M[0][0] + v.y * m.M[1][0] + v.z * m.M[2][0] + v.a * m.M[3][0];
-    //result.y = v.x * m.M[0][1] + v.y * m.M[1][1] + v.z * m.M[2][1] + v.a * m.M[3][1];
-    //result.z = v.x * m.M[0][2] + v.y * m.M[1][2] + v.z * m.M[2][2] + v.a * m.M[3][2];
-    //result.a = v.x * m.M[0][3] + v.y * m.M[1][3] + v.z * m.M[2][3] + v.a * m.M[3][3];
-
     __m256 clipX = _mm256_fmadd_ps(
         x, _mm256_set1_ps(viewProj.M[0][0]), _mm256_fmadd_ps(
             y, _mm256_set1_ps(viewProj.M[1][0]), _mm256_fmadd_ps(
@@ -1180,7 +1230,7 @@ float FBoundingBox::ComputeBoundingBoxScreenCoverage(const FVector& min, const F
     float* _x = screenX.m256_f32;
     float* _y = screenY.m256_f32;
     float minx = FLT_MAX, miny = FLT_MAX;
-    float maxx = FLT_MIN, maxy = FLT_MIN;
+    float maxx = -FLT_MAX, maxy = -FLT_MAX;
     for (int i = 0; i < 8; i++) {
         if ( _x[i] < minx ) minx = _x[i];
         if ( _y[i] < miny ) miny = _y[i];

@@ -327,7 +327,10 @@ void AEditorPlayer::PickActor(const FVector& pickOrigin, const FVector& pickDire
 
             FVector rayOrigin = inverseWorldMat.TransformPosition(pickOrigin);
             FVector rayDirection = FMatrix::TransformVector(pickDirection, inverseWorldMat);
-            if ( e->CheckRayIntersection(rayOrigin, rayDirection, hitDistance) > 0 )
+            FVector sphereCenter = e->GetWorldLocation();
+            float sphereRadius = 0.5f;
+            //if ( e->CheckRayIntersection(rayOrigin, rayDirection, hitDistance) > 0 ) {
+            if ( CheckRayWithSphere(pickOrigin, pickDirection, sphereCenter, sphereRadius, hitDistance) ) 
             {
                 if (minDistance > hitDistance)
                 {
