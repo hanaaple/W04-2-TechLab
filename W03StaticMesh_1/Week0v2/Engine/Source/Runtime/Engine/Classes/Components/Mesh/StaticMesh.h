@@ -16,7 +16,7 @@ public:
     const TArray<FStaticMaterial*>& GetMaterials() const { return materials; }
     uint32 GetMaterialIndex(FName MaterialSlotName) const;
     void GetUsedMaterials(TArray<UMaterial*>& Out) const;
-    OBJ::FStaticMeshRenderData* GetRenderData(const uint32 LODLevel = 0) const { return LODData[LODLevel]; }
+    OBJ::FStaticMeshRenderData* GetRenderData(/*const uint32 LODLevel = 0*/) const { return staticMeshRenderData /*LODData[LODLevel]*/; }
     void SetData(OBJ::FStaticMeshRenderData* renderData);
 
 private:

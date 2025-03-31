@@ -1261,7 +1261,7 @@ void FRenderer::RenderBakedBuffer() {
             const uint32 indicesCount = renderData->Indices.Num();
             
             // if meshcomp is not visible
-            if (!pStaticMeshComp->bIsVisible && !(iter + 1)->Value->bIsVisible ) {
+            if (!pStaticMeshComp->bIsVisible/* && !(iter + 1)->Value->bIsVisible */) {
                 if (length > 0)
                     Graphics->DeviceContext->DrawIndexed(length, offset, 0);
 
