@@ -1144,28 +1144,9 @@ void FRenderer::BakeBatchRenderBuffer()
 
 
     TArray<UStaticMeshComponent*> components;
-    
-    for (auto* pStaticMeshComp : TObjectRange<UStaticMeshComponent>())
+    GEngineLoop.GetWorld()->GetOcTree().PrepareCull([&](const FOctreeElement<UStaticMeshComponent>& element)
     {
-        if (Cast<UGizmoBaseComponent>(pStaticMeshComp))
-            continue; // return 대신 continue 사용
-
-        components.Add(pStaticMeshComp);
-    }
-
-    components.Sort([](UStaticMeshComponent* A, UStaticMeshComponent* B)
-    {
-       return A->GetWorldLocation().x > B->GetWorldLocation().x;
-    });
-
-    components.Sort([](UStaticMeshComponent* A, UStaticMeshComponent* B)
-    {
-       return A->GetWorldLocation().y > B->GetWorldLocation().y;
-    });
-
-    components.Sort([](UStaticMeshComponent* A, UStaticMeshComponent* B)
-    {
-       return A->GetWorldLocation().z > B->GetWorldLocation().z;
+        components.Add(element.element);
     });
     
     for (auto* pStaticMeshComp : components)
