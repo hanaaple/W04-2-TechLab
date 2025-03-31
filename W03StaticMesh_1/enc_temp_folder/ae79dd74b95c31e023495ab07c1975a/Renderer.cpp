@@ -1807,7 +1807,6 @@ void FRenderer::UpdateBatchRenderTarget(const std::shared_ptr<FEditorViewportCli
         FBoundingBox aabb = pStaticMeshComp->AABB;
         const auto viewport = ActiveViewport->GetD3DViewport();
         float screenCoverage = FBoundingBox::ComputeBoundingBoxScreenCoverage(aabb.min, aabb.max, ActiveViewport->GetViewMatrix(), ActiveViewport->GetProjectionMatrix(), viewport.Width, viewport.Height);
-
         pStaticMeshComp->SetLODLevel(0);
     });
 

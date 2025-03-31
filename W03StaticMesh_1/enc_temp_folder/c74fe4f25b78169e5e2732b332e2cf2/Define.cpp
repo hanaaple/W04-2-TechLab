@@ -1181,7 +1181,7 @@ float FBoundingBox::ComputeBoundingBoxScreenCoverage(const FVector& min, const F
         if ( _x[i] > maxx ) maxx = _x[i];
         if ( _y[i] > maxy ) maxy = _y[i];
     }
-    float rectArea = (maxx - minx) * (maxy - miny);
+    float rectArea = (maxx - minx) * (maxy - miny) * (maxx - maxy);
     float screenArea = viewportWidth * viewportHeight;
     return rectArea / screenArea;
 
