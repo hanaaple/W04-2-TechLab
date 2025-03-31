@@ -1129,17 +1129,23 @@ float FBoundingBox::ComputeBoundingBoxScreenCoverage(const FVector& min, const F
         min.x, max.x, min.x, max.x
     );
     __m256 y = _mm256_set_ps(
-        min.x, min.x, max.x, max.x,
-        min.x, min.x, max.x, max.x
+        min.y, min.y, max.y, max.y,
+        min.y, min.y, max.y, max.y
     );
     __m256 z = _mm256_set_ps(
-        min.x, min.x, min.x, min.x,
-        max.x, max.x, max.x, max.x
+        min.z, min.z, min.z, min.z,
+        max.z, max.z, max.z, max.z
     );
 
     __m256 w = _mm256_set1_ps(1.f);
 
     FMatrix viewProj = view * projection;
+
+    //FVector4 result;
+    //result.x = v.x * m.M[0][0] + v.y * m.M[1][0] + v.z * m.M[2][0] + v.a * m.M[3][0];
+    //result.y = v.x * m.M[0][1] + v.y * m.M[1][1] + v.z * m.M[2][1] + v.a * m.M[3][1];
+    //result.z = v.x * m.M[0][2] + v.y * m.M[1][2] + v.z * m.M[2][2] + v.a * m.M[3][2];
+    //result.a = v.x * m.M[0][3] + v.y * m.M[1][3] + v.z * m.M[2][3] + v.a * m.M[3][3];
 
     __m256 clipX = _mm256_fmadd_ps(
         x, _mm256_set1_ps(viewProj.M[0][0]), _mm256_fmadd_ps(
