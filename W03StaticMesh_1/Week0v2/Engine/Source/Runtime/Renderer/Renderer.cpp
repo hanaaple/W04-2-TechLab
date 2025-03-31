@@ -1141,11 +1141,35 @@ void FRenderer::BakeBatchRenderBuffer()
 {
     // 액터 조회
     TSet<AActor*> Actors = GEngineLoop.GetWorld()->GetActors();
-    for (const auto pStaticMeshComp : TObjectRange<UStaticMeshComponent>())
+
+
+    TArray<UStaticMeshComponent*> components;
+    
+    for (auto* pStaticMeshComp : TObjectRange<UStaticMeshComponent>())
     {
         if (Cast<UGizmoBaseComponent>(pStaticMeshComp))
             continue; // return 대신 continue 사용
 
+        components.Add(pStaticMeshComp);
+    }
+
+    components.Sort([](UStaticMeshComponent* A, UStaticMeshComponent* B)
+    {
+       return A->GetWorldLocation().x > B->GetWorldLocation().x;
+    });
+
+    components.Sort([](UStaticMeshComponent* A, UStaticMeshComponent* B)
+    {
+       return A->GetWorldLocation().y > B->GetWorldLocation().y;
+    });
+
+    components.Sort([](UStaticMeshComponent* A, UStaticMeshComponent* B)
+    {
+       return A->GetWorldLocation().z > B->GetWorldLocation().z;
+    });
+    
+    for (auto* pStaticMeshComp : components)
+    {
         for (uint32 i = 0; i < pStaticMeshComp->GetNumMaterials(); ++i)
         {
             UMaterial* Material = pStaticMeshComp->GetMaterial(i);
