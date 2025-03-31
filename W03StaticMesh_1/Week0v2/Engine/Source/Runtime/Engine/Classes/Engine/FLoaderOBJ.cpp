@@ -544,6 +544,29 @@ OBJ::FStaticMeshRenderData* FLoaderOBJ::CreateSimpleLOD(const OBJ::FStaticMeshRe
     return LODData;
 }
 
+bool FLoaderOBJ::IsBoundaryVertex(const uint32 Vertex, const std::unordered_map<FEdgeKey, int32, FEdgeKeyHash>& EdgeCount, TArray<uint32> Indices)
+{
+    // 해당 정점에 연결된 모든 에지를 확인합니다.
+    // 인덱스 배열을 순회하면서, 정점이 포함된 에지의 등장 횟수가 1인 경우가 있다면 경계 정점으로 판단합니다.
+    for (int32 i = 0; i < Indices.Num(); i += 3)
+    {
+        const uint32 i0 = Indices[i];
+        const uint32 i1 = Indices[i+1];
+        const uint32 i2 = Indices[i+2];
+        if (i0 == Vertex || i1 == Vertex || i2 == Vertex)
+        {
+            FEdgeKey edge0(i0, i1);
+            FEdgeKey edge1(i1, i2);
+            FEdgeKey edge2(i2, i0);
+
+            if (EdgeCount.contains(edge0) && EdgeCount.at(edge0) == 1) return true;
+            if (EdgeCount.contains(edge1) && EdgeCount.at(edge1) == 1) return true;
+            if (EdgeCount.contains(edge2) && EdgeCount.at(edge2) == 1) return true;
+        }
+    }
+    return false;
+}
+
 OBJ::FStaticMeshRenderData* FLoaderOBJ::CreateEdgeCollapseLOD(const OBJ::FStaticMeshRenderData* HighResData, const float targetReductionRatio)
 {
     if (targetReductionRatio <= 0.0f || targetReductionRatio >= 1.0f)
@@ -591,7 +614,10 @@ OBJ::FStaticMeshRenderData* FLoaderOBJ::CreateEdgeCollapseLOD(const OBJ::FStatic
     // 이 quadric 값을 사용하여 병합 후의 오차(cost)를 계산하고,
     // 최적의 정점 위치(optimal position)를 결정하는 데 활용됩니다.
     TArray<FMatrix> vertexQuadrics;
-    vertexQuadrics.SetNum(vertices.Num());
+    vertexQuadrics.SetNum(vertices.Num(), FMatrix());
+    TArray<uint8> bValid;
+    bValid.Init(true, vertices.Num());
+    
     for (size_t i = 0; i < indices.Num(); i += 3)
     {
         uint32 idx0 = indices[i], idx1 = indices[i+1], idx2 = indices[i+2];
@@ -630,30 +656,69 @@ OBJ::FStaticMeshRenderData* FLoaderOBJ::CreateEdgeCollapseLOD(const OBJ::FStatic
         edgeSet.Add(FEdgeKey(idx2, idx0));
     }
 
+    // EdgeCount를 계산 (인덱스 배열 기준)
+    std::unordered_map<FEdgeKey, int32, FEdgeKeyHash> EdgeCount;
+    for (size_t i = 0; i < indices.Num(); i += 3)
+    {
+        uint32 idx0 = indices[i], idx1 = indices[i+1], idx2 = indices[i+2];
+        FEdgeKey edge0(idx0, idx1);
+        FEdgeKey edge1(idx1, idx2);
+        FEdgeKey edge2(idx2, idx0);
+
+        EdgeCount[edge0]++;
+        EdgeCount[edge1]++;
+        EdgeCount[edge2]++;
+    }
+
+    // 기존에 구성한 에지 집합(edgeSet)으로부터 후보 에지 목록을 생성
     TArray<FEdgeCollapse> candidateEdges;
     for (const auto& ek : edgeSet)
     {
+        // 만약 에지 자체가 경계 에지라면 아래처럼 비용을 크게 주거나 건너뛰기
+        bool bEdgeIsBoundary = (EdgeCount[ek] == 1);
+        bool bV1Boundary = IsBoundaryVertex(ek.a, EdgeCount, indices);
+        bool bV2Boundary = IsBoundaryVertex(ek.b, EdgeCount, indices);
+    
+        // 경계 정점이면 후보로 추가하지 않습니다.
+        if (bV1Boundary || bV2Boundary)
+        {
+            continue;
+        }
+        
         FEdgeCollapse ec;
         ec.v1 = ek.a;
         ec.v2 = ek.b;
-        // 최적 위치는 여기서는 두 정점의 단순 평균으로 계산합니다.
         FVertexSimple& va = vertices[ec.v1];
         FVertexSimple& vb = vertices[ec.v2];
-        ec.optimalPos = { (va.x + vb.x) * 0.5f, (va.y + vb.y) * 0.5f, (va.z + vb.z) * 0.5f };
+        FVector opt = { (va.x + vb.x) * 0.5f, (va.y + vb.y) * 0.5f, (va.z + vb.z) * 0.5f };
+        ec.optimalPos = opt;
         FMatrix qSum = vertexQuadrics[ec.v1] + vertexQuadrics[ec.v2];
-        ec.cost = FMatrix::EvaluateQuadric(qSum, ec.optimalPos);
+        ec.cost = FMatrix::EvaluateQuadric(qSum, opt);
+    
+        // 만약 에지 자체가 경계 에지라면 비용을 크게 설정
+        if (bEdgeIsBoundary)
+        {
+            ec.cost = FLT_MAX; 
+        }
+    
         candidateEdges.Add(ec);
     }
 
+    auto GetValidVertexCount = [&bValid]() -> int32 {
+        int32 count = 0;
+        for (const bool b : bValid)
+            if (b) count++;
+        return count;
+    };
+
     // 3. 반복적 에지 붕괴
-    constexpr size_t maxIterations = 1000;
     size_t currentTriangleCount = indices.Num() / 3;
-    size_t currentVertexCount = vertices.Num();
     float maxError = 0.0f;
 
-    for (size_t iter = 0; iter < maxIterations; iter++)
+    for (size_t iter = 0; iter < 1000; iter++)
     {
-        if (currentTriangleCount <= targetTriangleCount || currentVertexCount <= targetVertexCount)
+        int32 validVertexCount = GetValidVertexCount();
+        if (currentTriangleCount <= targetTriangleCount || validVertexCount <= targetVertexCount)
             break;
 
         // 후보 에지 중 최소 비용 에지를 선택합니다.
@@ -665,8 +730,12 @@ OBJ::FStaticMeshRenderData* FLoaderOBJ::CreateEdgeCollapseLOD(const OBJ::FStatic
         candidateEdges.RemoveAt(it - candidateEdges.begin());
 
         // 에지 붕괴: bestEdge.v2를 bestEdge.v1에 합칩니다.
-        UINT vKeep = bestEdge.v1;
-        UINT vRemove = bestEdge.v2;
+        uint32 vKeep = bestEdge.v1;
+        uint32 vRemove = bestEdge.v2;
+        
+        if (!bValid[vKeep] || !bValid[vRemove])
+            continue;
+        
         // bestEdge.optimalPos로 정점 위치 업데이트
         vertices[vKeep].x = bestEdge.optimalPos.x;
         vertices[vKeep].y = bestEdge.optimalPos.y;
@@ -675,7 +744,7 @@ OBJ::FStaticMeshRenderData* FLoaderOBJ::CreateEdgeCollapseLOD(const OBJ::FStatic
         vertexQuadrics[vKeep] = vertexQuadrics[vKeep] + vertexQuadrics[vRemove];
 
         // vRemove는 제거된 것으로 처리 (여기서는 NaN 값으로 마킹)
-        vertices[vRemove].x = vertices[vRemove].y = vertices[vRemove].z = std::numeric_limits<float>::quiet_NaN();
+        bValid[vRemove] = false;
 
         // 인덱스 목록 업데이트: vRemove를 vKeep으로 대체하고, 축퇴된 삼각형은 제거
         TArray<uint32> newIndices;
@@ -697,35 +766,101 @@ OBJ::FStaticMeshRenderData* FLoaderOBJ::CreateEdgeCollapseLOD(const OBJ::FStatic
         indices = newIndices;
         triangleMaterials = newTriangleMaterials;
         currentTriangleCount = indices.Num() / 3;
-        currentVertexCount--;  // 단순화를 위해 정점 수 감소
 
-        // 4. 후보 에지 목록 업데이트
-        TArray<FEdgeCollapse> newCandidates;
-        for (auto& edge : candidateEdges)
+        //--------------------------------------------------------------------------
+        // 문제 3 해결: triangleMaterials와 인덱스 동기화 검사 및 보정
+        //--------------------------------------------------------------------------
+        int32 expectedTriangleCount = indices.Num() / 3;
+        if (triangleMaterials.Num() < expectedTriangleCount)
         {
-            // vRemove 관련 에지는 모두 버립니다.
+            int32 diff = expectedTriangleCount - triangleMaterials.Num();
+            for (int32 i = 0; i < diff; ++i)
+                triangleMaterials.Add(0); // 기본 재질 인덱스 할당
+        }
+        else if (triangleMaterials.Num() > expectedTriangleCount)
+        {
+            triangleMaterials.SetNum(expectedTriangleCount);
+        }
+
+        //--------------------------------------------------------------------------
+        // 문제 2 해결: vKeep와 인접한 삼각형을 기반으로 후보 에지 재구성
+        //--------------------------------------------------------------------------
+        TSet<FEdgeKey, FEdgeKeyHash> updatedEdges;
+        for (size_t i = 0; i < indices.Num(); i += 3)
+        {
+            if (indices[i] == vKeep || indices[i+1] == vKeep || indices[i+2] == vKeep)
+            {
+                updatedEdges.Add(FEdgeKey(vKeep, indices[i]));
+                updatedEdges.Add(FEdgeKey(vKeep, indices[i+1]));
+                updatedEdges.Add(FEdgeKey(vKeep, indices[i+2]));
+            }
+        }
+
+        TArray<FEdgeCollapse> newCandidates;
+        for (const FEdgeKey& ek : updatedEdges)
+        {
+            if (ek.a == ek.b)
+                continue;
+            if (!bValid[ek.a] || !bValid[ek.b])
+                continue;
+            FEdgeCollapse ec;
+            ec.v1 = ek.a;
+            ec.v2 = ek.b;
+            FVertexSimple& va = vertices[ec.v1];
+            FVertexSimple& vb = vertices[ec.v2];
+            FVector opt = { (va.x + vb.x) * 0.5f, (va.y + vb.y) * 0.5f, (va.z + vb.z) * 0.5f };
+            ec.optimalPos = opt;
+            FMatrix qSum = vertexQuadrics[ec.v1] + vertexQuadrics[ec.v2];
+            ec.cost = FMatrix::EvaluateQuadric(qSum, opt);
+            newCandidates.Add(ec);
+        }
+        // 기존 후보 에지 중 vRemove 관련 항목 제거 후 새 후보와 병합
+        TArray<FEdgeCollapse> remainingCandidates;
+        for (const FEdgeCollapse& edge : candidateEdges)
+        {
             if (edge.v1 == vRemove || edge.v2 == vRemove)
                 continue;
-            // vKeep와 관련된 에지의 경우, 비용 재계산
-            if (edge.v1 == vKeep || edge.v2 == vKeep)
-            {
-                UINT a = edge.v1, b = edge.v2;
-                FVertexSimple& va = vertices[a];
-                FVertexSimple& vb = vertices[b];
-                if (std::isnan(va.x) || std::isnan(vb.x))
-                    continue;
-                FVector opt = { (va.x + vb.x) * 0.5f, (va.y + vb.y) * 0.5f, (va.z + vb.z) * 0.5f };
-                FMatrix qSum = vertexQuadrics[a] + vertexQuadrics[b];
-                float cost = FMatrix::EvaluateQuadric(qSum, opt);
-                edge.optimalPos = opt;
-                edge.cost = cost;
-            }
-            newCandidates.Add(edge);
+            remainingCandidates.Add(edge);
         }
-        candidateEdges = newCandidates;
-        
+        candidateEdges = remainingCandidates;
+        candidateEdges.Append(newCandidates);
+
         maxError = FMath::Max(maxError, bestEdge.cost);
     }
+
+    //--------------------------------------------------------------------------
+    // 문제 1 해결 보완: 압축(compact) 단계 - bValid에 따라 정점 배열 재구성 및 인덱스 재매핑
+    //--------------------------------------------------------------------------
+    TArray<FVertexSimple> compactedVertices;
+    TArray<uint32> vertexMapping;
+    vertexMapping.SetNum(vertices.Num());
+    for (int32 i = 0; i < vertices.Num(); i++)
+    {
+        if (bValid[i])
+            vertexMapping[i] = compactedVertices.Add(vertices[i]);
+        else
+            vertexMapping[i] = INDEX_NONE;
+    }
+    for (int32 i = 0; i < indices.Num(); i++)
+    {
+        uint32 oldIndex = indices[i];
+        if (vertexMapping[oldIndex] != INDEX_NONE)
+            indices[i] = vertexMapping[oldIndex];
+    }
+    vertices = compactedVertices;
+
+    TArray<uint32> validIndices;
+    for (int32 i = 0; i < indices.Num(); i += 3)
+    {
+        uint32 i0 = indices[i], i1 = indices[i+1], i2 = indices[i+2];
+        if (i0 != INDEX_NONE && i1 != INDEX_NONE && i2 != INDEX_NONE)
+        {
+            validIndices.Add(i0);
+            validIndices.Add(i1);
+            validIndices.Add(i2);
+        }
+    }
+    indices = validIndices;
 
     if (vertices.IsEmpty() || indices.IsEmpty())
     {
@@ -745,6 +880,23 @@ OBJ::FStaticMeshRenderData* FLoaderOBJ::CreateEdgeCollapseLOD(const OBJ::FStatic
 
     LODData->Indices = indices;
     LODData->Vertices = vertices;
+    
+    // // 이 부분에서 World 기준 원점으로 모이는 듯?
+    // PostProcessStitching(vertices, indices);
+    //
+    // // PostProcessStitching 호출 후, 새로 추가된 삼각형의 개수를 확인합니다.
+    // int32 newNumTriangles = indices.Num() / 3;
+    //
+    // // 만약 triangleMaterials의 크기가 newNumTriangles보다 작다면, 
+    // // 부족한 삼각형에 대해 기본 재질 (예: 0)을 할당합니다.
+    // if (triangleMaterials.Num() < newNumTriangles)
+    // {
+    //     int32 diff = newNumTriangles - triangleMaterials.Num();
+    //     for (int32 i = 0; i < diff; ++i)
+    //     {
+    //         triangleMaterials.Add(0); // 기본 재질 인덱스 (필요에 따라 변경)
+    //     }
+    // }
 
     // 5. 재질(서브셋) 재구성
     // simplified indices와 triangleMaterials를 이용해 재질별 인덱스 그룹을 구성합니다.
@@ -794,6 +946,131 @@ OBJ::FStaticMeshRenderData* FLoaderOBJ::CreateEdgeCollapseLOD(const OBJ::FStatic
     
 
     return LODData;
+}
+
+void FLoaderOBJ::PostProcessStitching(TArray<FVertexSimple>& Vertices, TArray<uint32>& Indices)
+{
+    // 1. 각 에지의 등장 횟수를 계산하여, 경계 에지(단 한 번 등장한 에지)를 찾습니다.
+    std::unordered_map<FEdgeKey, int32, FEdgeKeyHash> EdgeCount;
+    for (int32 i = 0; i < Indices.Num(); i += 3)
+    {
+        const uint32 i0 = Indices[i];
+        const uint32 i1 = Indices[i+1];
+        const uint32 i2 = Indices[i+2];
+        FEdgeKey E0(i0, i1);
+        FEdgeKey E1(i1, i2);
+        FEdgeKey E2(i2, i0);
+        EdgeCount[E0]++;
+        EdgeCount[E1]++;
+        EdgeCount[E2]++;
+    }
+    
+    // 2. 경계 에지 수집 (등장 횟수가 1인 에지)
+    TArray<FEdgeKey> BoundaryEdges;
+    for (auto& Elem : EdgeCount)
+    {
+        if (Elem.second == 1)
+        {
+            BoundaryEdges.Add(Elem.first);
+        }
+    }
+
+    // 3. 경계 에지들을 연결하여 경계 루프(구멍)를 찾습니다.
+    TArray<TArray<uint32>> BoundaryLoops;
+    while (BoundaryEdges.Num() > 0)
+    {
+        TArray<uint32> Loop;
+        // 첫번째 경계 에지에서 시작
+        FEdgeKey StartEdge = BoundaryEdges[0];
+        Loop.Add(StartEdge.a);
+        Loop.Add(StartEdge.b);
+        BoundaryEdges.RemoveAt(0);
+
+        uint32 CurrentVertex = StartEdge.b;
+        bool bLoopClosed  = false;
+        while (!bLoopClosed && BoundaryEdges.Num() > 0)
+        {
+            bool bFoundNext = false;
+            // 남은 경계 에지들 중에서, CurrentVertex와 연결된 에지를 찾습니다.
+            for (int32 j = 0; j < BoundaryEdges.Num(); j++)
+            {
+                const FEdgeKey Edge = BoundaryEdges[j];
+                if (Edge.a == CurrentVertex)
+                {
+                    CurrentVertex = Edge.b;
+                    Loop.Add(CurrentVertex);
+                    BoundaryEdges.RemoveAt(j);
+                    bFoundNext = true;
+                    break;
+                }
+                else if (Edge.b == CurrentVertex)
+                {
+                    CurrentVertex = Edge.a;
+                    Loop.Add(CurrentVertex);
+                    BoundaryEdges.RemoveAt(j);
+                    bFoundNext = true;
+                    break;
+                }
+            }
+            // 다음 에지를 찾지 못했거나, 루프가 닫혔다면 종료
+            if (!bFoundNext || CurrentVertex == Loop[0])
+            {
+                bLoopClosed  = true;
+            }
+        }
+        BoundaryLoops.Add(Loop);
+    }
+
+    // 4. 각 경계 루프(구멍)에 대해 팬 삼각형(fan triangulation) 방식으로 구멍을 채웁니다.
+    for (const TArray<uint32>& Loop : BoundaryLoops)
+    {
+        if (Loop.Num() < 3)
+        {
+            continue; // 삼각형을 만들 수 없는 경우 건너뜁니다.
+        }
+
+        // 루프 내 정점의 평균을 구해 중심점을 계산
+        FVertexSimple Center = {0, 0, 0, 0, 0};
+        int validCount = 0;
+        for (const uint32 VertexIndex : Loop)
+        {
+            if (VertexIndex < static_cast<uint32>(Vertices.Num()))
+            {
+                Center.x += Vertices[VertexIndex].x;
+                Center.y += Vertices[VertexIndex].y;
+                Center.z += Vertices[VertexIndex].z;
+                validCount++;
+            }
+        }
+        if (validCount > 0)
+        {
+            Center.x /= validCount;
+            Center.y /= validCount;
+            Center.z /= validCount;
+        }
+        else
+        {
+            // 유효한 정점이 하나도 없으면 이 루프는 스킵합니다.
+            continue;
+        }
+        // (UV 등 다른 속성이 있다면, 필요에 따라 계산)
+
+        // 중심점을 새로운 정점으로 추가합니다.
+        uint32 CenterIndex = Vertices.Add(Center);
+
+        // 팬 삼각형을 이용해 루프의 인접한 두 정점과 중심점을 연결한 삼각형들을 추가합니다.
+        for (int32 i = 0; i < Loop.Num(); i++)
+        {
+            uint32 v0 = Loop[i];
+            uint32 v1 = Loop[(i + 1) % Loop.Num()];
+            if (v0 < static_cast<uint32>(Vertices.Num()) && v1 < static_cast<uint32>(Vertices.Num()))
+            {
+                Indices.Add(v0);
+                Indices.Add(v1);
+                Indices.Add(CenterIndex);
+            }
+        }
+    }
 }
 
 OBJ::FStaticMeshRenderData* FManagerOBJ::LoadObjStaticMeshAsset(const FString& PathFileName)
