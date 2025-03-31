@@ -41,6 +41,9 @@ public:
     /** World에 존재하는 Actor를 제거합니다. */
     bool DestroyActor(AActor* ThisActor);
 
+    void ClearWorld();
+    void LoadWorld();
+
 private:
     const FString defaultMapName = "Default";
 

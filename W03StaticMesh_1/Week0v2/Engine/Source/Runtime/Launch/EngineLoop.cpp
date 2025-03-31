@@ -136,9 +136,7 @@ int32 FEngineLoop::Init(HINSTANCE hInstance)
     GWorld = FObjectFactory::ConstructObject<UWorld>();
     GWorld->Initialize();
 
-    renderer.BakeBatchRenderBuffer();
 
-    fpsEditor = new FPSEditorPanel();
     return 0;
 }
 
@@ -225,7 +223,7 @@ void FEngineLoop::Tick()
 
 
         //startTime = FPlatformTime::Cycles64();
-        //UnrealEditor->Render();
+        UnrealEditor->Render();
         //endTime = FPlatformTime::Cycles64();
         //elapsedTimes.UEDuration = FWindowsPlatformTime::ToMilliseconds(endTime - startTime);
 
@@ -234,7 +232,6 @@ void FEngineLoop::Tick()
         //endTime = FPlatformTime::Cycles64();
         //elapsedTimes.ConsoleDuration = FWindowsPlatformTime::ToMilliseconds(endTime - startTime);
 
-        fpsEditor->Render();
         
         ImGui::Begin("stat");
         for(auto& [name, elapsed]: FPlatformTime::GElapsedMap) {
@@ -313,7 +310,6 @@ void FEngineLoop::Exit()
     resourceMgr.Release(&renderer);
     renderer.Release();
     graphicDevice.Release();
-    delete fpsEditor;
 }
 
 

@@ -30,46 +30,8 @@ void UWorld::Initialize()
     // skySphere->SetStaticMesh(FManagerOBJ::GetStaticMesh(L"SkySphere.obj"));
     // skySphere->GetStaticMesh()->GetMaterials()[0]->Material->SetDiffuse(FVector((float)32/255, (float)171/255, (float)191/255));
 
-    FSceneData defaultSceneData = FSceneMgr::GetCurrentSceneData();
     
-    for (auto objectInfo : defaultSceneData.Primitives)
-    {
-        AActor* SpawnedActor = SpawnActor<AActor>();
-        UStaticMeshComponent* SpawnedStaticMeshComponent = SpawnedActor->AddComponent<UStaticMeshComponent>();
-        FString AssetPath = "Assets/";
-        UStaticMesh* SpawnedStaticMesh = FManagerOBJ::CreateStaticMesh(AssetPath + objectInfo.Value.ObjStaticMeshAsset);
-        SpawnedStaticMeshComponent->SetStaticMesh(SpawnedStaticMesh);
-        SpawnedActor->SetActorLocation(objectInfo.Value.Location);
-        SpawnedActor->SetActorRotation(objectInfo.Value.Rotation);
-        SpawnedActor->SetActorScale(objectInfo.Value.Scale);
-    }
-    
-    SceneBoundingBox = FBoundingBox::ComputeSceneBoundingBox(ActorsArray);
-    OcTree = FOctree<UStaticMeshComponent>(SceneBoundingBox);
 
-    for (const auto iter : TObjectRange<UStaticMeshComponent>())
-    {
-        if (iter->IsA<UGizmoBaseComponent>()) continue;
-
-        FMatrix Model = JungleMath::CreateModelMatrix(
-            iter->GetWorldLocation(),
-            iter->GetWorldRotation(),
-            iter->GetWorldScale()
-        );
-
-        FBoundingBox localBoundingBox = iter->AABB;
-        FOctreeElement Element = FOctreeElement<UStaticMeshComponent>(
-			FBoundingBox::TransformBy(
-				localBoundingBox,iter->GetWorldLocation(), 
-				Model
-			),
-			iter->GetUUID()
-		);
-		Element.element = iter;
-        OcTree.Insert(Element, Element.Bounds);
-    }
-    
-    bisInitialized = true;
 }
 
 void UWorld::CreateBaseObject()
@@ -192,6 +154,71 @@ bool UWorld::DestroyActor(AActor* ThisActor)
     // 제거 대기열에 추가
     GUObjectArray.MarkRemoveObject(ThisActor);
     return true;
+}
+
+void UWorld::ClearWorld()
+{
+    for (AActor* Actor : ActorsArray)
+    {
+        Actor->EndPlay(EEndPlayReason::WorldTransition);
+        TSet<UActorComponent*> Components = Actor->GetComponents();
+        for (UActorComponent* Component : Components)
+        {
+            GUObjectArray.MarkRemoveObject(Component);
+        }
+        GUObjectArray.MarkRemoveObject(Actor);
+    }
+    ActorsArray.Empty();
+
+    pickingGizmo = nullptr;
+
+    GUObjectArray.ProcessPendingDestroyObjects();
+}
+
+void UWorld::LoadWorld()
+{
+    ClearWorld();
+    FSceneData defaultSceneData = FSceneMgr::GetCurrentSceneData();
+
+    for (auto objectInfo : defaultSceneData.Primitives)
+    {
+        AActor* SpawnedActor = SpawnActor<AActor>();
+        UStaticMeshComponent* SpawnedStaticMeshComponent = SpawnedActor->AddComponent<UStaticMeshComponent>();
+        FString AssetPath = "Assets/";
+        UStaticMesh* SpawnedStaticMesh = FManagerOBJ::CreateStaticMesh(AssetPath + objectInfo.Value.ObjStaticMeshAsset);
+        SpawnedStaticMeshComponent->SetStaticMesh(SpawnedStaticMesh);
+        SpawnedActor->SetActorLocation(objectInfo.Value.Location);
+        SpawnedActor->SetActorRotation(objectInfo.Value.Rotation);
+        SpawnedActor->SetActorScale(objectInfo.Value.Scale);
+    }
+
+    SceneBoundingBox = FBoundingBox::ComputeSceneBoundingBox(ActorsArray);
+    OcTree = FOctree<UStaticMeshComponent>(SceneBoundingBox);
+
+    for (const auto iter : TObjectRange<UStaticMeshComponent>())
+    {
+        if (iter->IsA<UGizmoBaseComponent>()) continue;
+
+        FMatrix Model = JungleMath::CreateModelMatrix(
+            iter->GetWorldLocation(),
+            iter->GetWorldRotation(),
+            iter->GetWorldScale()
+        );
+
+        FBoundingBox localBoundingBox = iter->AABB;
+        FOctreeElement Element = FOctreeElement<UStaticMeshComponent>(
+            FBoundingBox::TransformBy(
+                localBoundingBox, iter->GetWorldLocation(),
+                Model
+            ),
+            iter->GetUUID()
+        );
+        Element.element = iter;
+        OcTree.Insert(Element, Element.Bounds);
+    }
+
+
+    bisInitialized = true;
 }
 
 void UWorld::SetPickingGizmo(UObject* Object)

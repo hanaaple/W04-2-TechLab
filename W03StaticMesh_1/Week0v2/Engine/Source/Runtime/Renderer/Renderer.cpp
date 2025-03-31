@@ -1293,6 +1293,10 @@ void FRenderer::RenderBakedBuffer() {
     }
 }
 
+void FRenderer::ReleaseBakedData()
+{
+}
+
 void FRenderer::ReleaseUnUsedBatchBuffer(const FString& MaterialName, uint32 ReleaseStartBufferIndex)
 {
     if (!CachedBuffers.Contains(MaterialName))

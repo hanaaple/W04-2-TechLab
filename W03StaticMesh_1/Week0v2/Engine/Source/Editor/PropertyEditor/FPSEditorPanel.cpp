@@ -16,8 +16,8 @@ void FPSEditorPanel::Render()
     float PanelWidth = Width;
     float PanelHeight = Height;
 
-    float PanelPosX = 0.0f;
-    float PanelPosY = 0.0f;
+    float PanelPosX = 10.0f;
+    float PanelPosY = 50.0f;
 
     ImVec2 MinSize(100, 30);
     ImVec2 MaxSize(400, FLT_MAX);

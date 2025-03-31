@@ -65,6 +65,44 @@ public:
         InsertRecursive(Root, element, ElementBounds, 0);
     }
 
+    bool Delete(uint32 Id)
+    {
+        return DeleteRecursive(Root, Id);
+    }
+
+    // 재귀적으로 요소를 삭제하는 함수
+    bool DeleteRecursive(std::shared_ptr<FOctreeNode<T>> Node, uint32 Id)
+    {
+        if (!Node)
+            return false;
+
+        // Leaf 노드일 경우, 요소 목록에서 삭제 시도
+        if (Node->IsLeaf)
+        {
+            auto it = std::remove_if(Node->Elements.begin(), Node->Elements.end(),
+                [Id](const FOctreeElement<T>& elem) { return elem.Id == Id; });
+
+            if (it != Node->Elements.end())
+            {
+                Node->Elements.erase(it, Node->Elements.end());
+                return true;
+            }
+            return false;
+        }
+
+        // 내부 노드일 경우, 자식 노드를 재귀적으로 탐색
+        for (int i = 0; i < 8; ++i)
+        {
+            if (Node->Children[i])
+            {
+                if (DeleteRecursive(Node->Children[i], Id))
+                    return true;
+            }
+        }
+
+        return false;
+    }
+
     // 쿼리 함수: 주어진 영역과 교차하는 요소들에 대해 callback 함수를 호출합니다.
     template<typename Fn>
     void Query(const FBoundingBox &QueryBounds, Fn Callback) const
