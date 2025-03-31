@@ -4,6 +4,7 @@
 #include "UObject/ObjectFactory.h"
 #include "UObject/ObjectMacros.h"
 #include "Container/FOcTree.h"
+#include "GameFramework/Actor.h"
 
 class FObjectFactory;
 class AActor;
@@ -73,12 +74,7 @@ public:
 
     // EditorManager 같은데로 보내기
     AActor* GetSelectedActor() const { return SelectedActor; }
-    void SetPickedActor(AActor* InActor)
-    {
-        SelectedActor = InActor;
-
-        // Update Constant Buffer?
-    }
+    void SetPickedActor(AActor* InActor);
 
     UObject* GetWorldGizmo() const { return worldGizmo; }
     USceneComponent* GetPickingGizmo() const { return pickingGizmo; }
