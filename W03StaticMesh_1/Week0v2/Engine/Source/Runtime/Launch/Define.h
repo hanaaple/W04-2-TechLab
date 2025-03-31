@@ -119,7 +119,7 @@ namespace OBJ
         FString DisplayName;
         
         TArray<FVertexSimple> Vertices;
-        TArray<UINT> Indices;
+        TArray<uint32> Indices;
 
         ID3D11Buffer* VertexBuffer;
         ID3D11Buffer* IndexBuffer;

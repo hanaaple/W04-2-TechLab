@@ -411,10 +411,10 @@ private:
             )->bool {
             constexpr float occluderScale = 0.8f;
             constexpr float occludeeScale = 1.2f;
-            FBoundingBox scaled = InNodes[InOccludeeIdx]->Bounds.Expanded(occluderScale);
-            FVector& max = scaled.max;
-            FVector& min = scaled.min;
-            FVector occludeePoints[8] = {
+            const FBoundingBox scaled = InNodes[InOccludeeIdx]->Bounds.Expanded(occluderScale);
+            const FVector& max = scaled.max;
+            const FVector& min = scaled.min;
+            const FVector occludeePoints[8] = {
                 FVector(max.x, max.y, max.z),
                 FVector(min.x, max.y, max.z),
                 FVector(max.x, min.y, max.z),
@@ -452,8 +452,8 @@ private:
         };
 
         // Node 내에 카메라가 있으면 자식들 다 그려지는걸로 판정
-        FVector& max = Node->Bounds.max;
-        FVector& min = Node->Bounds.min;
+        const FVector& max = Node->Bounds.max;
+        const FVector& min = Node->Bounds.min;
         bool bIsCameraConatined = false;
 
         if ( min.x < cameraPos.x && cameraPos.x < max.x &&

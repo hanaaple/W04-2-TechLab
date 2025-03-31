@@ -59,7 +59,7 @@ void UStaticMesh::SetData(OBJ::FStaticMeshRenderData* renderData)
     // 기본 메시는 LODLevels[0]
     LODData.Add(renderData);
     
-    // 예제: reductionFactor 0.5로 중간 해상도, 0.25로 저해상도 생성
+    // 예제: reductionFactor 0.75로 중간 해상도, 0.5로 저해상도 생성
     OBJ::FStaticMeshRenderData* LOD1 = FLoaderOBJ::CreateEdgeCollapseLOD(renderData, 0.75f);
     OBJ::FStaticMeshRenderData* LOD2 = FLoaderOBJ::CreateEdgeCollapseLOD(renderData, 0.5f);
     if (LOD1)
@@ -67,13 +67,13 @@ void UStaticMesh::SetData(OBJ::FStaticMeshRenderData* renderData)
     if (LOD2)
         LODData.Add(LOD2);
     
-    for (const auto lod : LODData)
-    {
-        const uint32 numVerts = lod->Vertices.Num();
-        if (numVerts > 0)
-            lod->VertexBuffer = GetEngine().renderer.CreateVertexBuffer(lod->Vertices, numVerts * sizeof(FVertexSimple));
-        const uint32 numIndices = lod->Indices.Num();
-        if (numIndices > 0)
-            lod->IndexBuffer = GetEngine().renderer.CreateIndexBuffer(lod->Indices, numIndices * sizeof(uint32));
-    }
+    // for (const auto lod : LODData)
+    // {
+    //     const uint32 numVerts = lod->Vertices.Num();
+    //     if (numVerts > 0)
+    //         lod->VertexBuffer = GetEngine().renderer.CreateVertexBuffer(lod->Vertices, numVerts * sizeof(FVertexSimple));
+    //     const uint32 numIndices = lod->Indices.Num();
+    //     if (numIndices > 0)
+    //         lod->IndexBuffer = GetEngine().renderer.CreateIndexBuffer(lod->Indices, numIndices * sizeof(uint32));
+    // }
 }

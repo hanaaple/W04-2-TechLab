@@ -225,13 +225,16 @@ private:
     // Material, BufferIndex, VertexBuffer, IndexBufferCount, IndexBuffer
     TMap<FString, TMap<uint32, TPair<ID3D11Buffer*, TPair<uint32, ID3D11Buffer*>>>> CachedBuffers;
 
-    struct VIBuffer {
+    struct VIBuffer
+    {
         TArray<ID3D11Buffer*> VertexBuffer;
         TArray<ID3D11Buffer*> IndexBuffer;
         uint32 Stride;
         TArray<uint32> IndexCount;
     };
     TMap<FString, VIBuffer> BakedBuffers;
+    
+    TMap<FString, TArray<VIBuffer>> BakedLODBuffers;
     
 public:
     void IssueOcclusionQueries(const std::shared_ptr<FEditorViewportClient>& ActiveViewport);

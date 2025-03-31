@@ -1137,20 +1137,23 @@ void FRenderer::UpdateOrCreateBuffer(const FString& MaterialName, uint32 BufferI
     }
 }
 
-void FRenderer::BakeBatchRenderBuffer() {
-
+void FRenderer::BakeBatchRenderBuffer()
+{
     // Lookup Actors
     TSet<AActor*> Actors = GEngineLoop.GetWorld()->GetActors();
-    for (AActor* actor : Actors) {
+    for (AActor* actor : Actors)
+    {
         UStaticMeshComponent* pStaticMeshComp = actor->GetComponentByClass<UStaticMeshComponent>();
         if ( Cast<UGizmoBaseComponent>(pStaticMeshComp) )
             return;
         // StaticMeshObjs.Add(pStaticMeshComp);
-        for ( uint32 i = 0; i < pStaticMeshComp->GetNumMaterials(); ++i ) {
+        for ( uint32 i = 0; i < pStaticMeshComp->GetNumMaterials(); ++i )
+            {
             auto Material = pStaticMeshComp->GetMaterial(i);
             // LOD TODO: Texture 다른 거로 넣어주기
             auto MTLName = Material->GetMaterialInfo().MTLName;
-            if ( !BatchRenderTargets.Contains(MTLName) ) {
+            if ( !BatchRenderTargets.Contains(MTLName) )
+            {
                 BatchRenderTargets.Add(MTLName, BatchRenderTargetContext());
                 BatchRenderTargets[MTLName].bIsDirty = true;
             }
@@ -1159,60 +1162,103 @@ void FRenderer::BakeBatchRenderBuffer() {
         }
     }
 
-    // bake render buffers
-    for ( auto& [MaterialName, BatchRenderTargetContext] : BatchRenderTargets ) {
-
+    for ( auto& [MaterialName, BatchRenderTargetContext] : BatchRenderTargets )
+    {
         TArray<FVertexSimple> VertexData = {};
         TArray<uint32> IndexData = {};
         uint32 VertexOffset = 0;
-        BakedBuffers[MaterialName] = {
-            .VertexBuffer = {},
-            .IndexBuffer = {},
-        };
+        
+        for (auto& [_, pStaticMeshComp]: BatchRenderTargetContext.StaticMeshes)
+        {
+            auto LODRenderDatas = pStaticMeshComp->GetStaticMesh()->GetLODDatas();
 
+            for (int lodLevel = 0; lodLevel < LODRenderDatas.Num(); ++lodLevel)
+            {   
+                const TArray<FVertexSimple>& Vertices = pStaticMeshComp->LODVertices[lodLevel];
+                TArray<uint32> Indices = LODRenderDatas[lodLevel]->Indices;
+                for (int i = 0; i < Indices.Num(); ++i)
+                {
+                    Indices[i] += VertexOffset;
+                }
 
+                VertexData.Append(Vertices);
+                IndexData.Append(Indices);
+                VertexOffset += Vertices.Num();
 
-        for (auto& [_, pStaticMeshComp]: BatchRenderTargetContext.StaticMeshes) {
-            const OBJ::FStaticMeshRenderData* renderData = pStaticMeshComp->GetStaticMesh()->GetRenderData();
+                if (sizeof(FVertexSimple) * Vertices.Num() > MaxBufferSize || sizeof(uint32) * Indices.Num() > MaxBufferSize)
+                {
+                    BakedLODBuffers[MaterialName][lodLevel].VertexBuffer.Add(CreateVertexBuffer(VertexData, sizeof(FVertexSimple) * VertexData.Num()));
+                    BakedLODBuffers[MaterialName][lodLevel].IndexBuffer.Add(CreateIndexBuffer(IndexData, sizeof(uint32) * Indices.Num()));
+                    BakedLODBuffers[MaterialName][lodLevel].Stride = sizeof(FVertexSimple);
+                    BakedLODBuffers[MaterialName][lodLevel].IndexCount.Add(IndexData.Num());
 
-            const TArray<FVertexSimple>& Vertices = pStaticMeshComp->Vertices;
-            TArray<uint32> Indices = TArray<uint32>(renderData->Indices);
-            for (int i = 0; i < Indices.Num(); ++i) {
-                Indices[i] += VertexOffset;
-            }
-            VertexData.Append(Vertices);
-            IndexData.Append(Indices);
-            VertexOffset += Vertices.Num();
+                    VertexData.Empty();
+                    IndexData.Empty();
+                    VertexOffset = 0;
+                }
 
-            if ( sizeof(FVertexSimple) * VertexData.Num() > MaxBufferSize || 
-                sizeof(uint32) * IndexData.Num() > MaxBufferSize
-                ) {
-                BakedBuffers[MaterialName].VertexBuffer.Add(
-                    CreateVertexBuffer(VertexData, sizeof(FVertexSimple) * VertexData.Num())
-                );
-                BakedBuffers[MaterialName].IndexBuffer.Add(
-                    CreateIndexBuffer(IndexData, sizeof(uint32) * IndexData.Num())
-                );
-                BakedBuffers[MaterialName].Stride = sizeof(FVertexSimple);
-                BakedBuffers[MaterialName].IndexCount.Add(IndexData.Num());
-                VertexData.Empty();
-                IndexData.Empty();
-                VertexOffset = 0;
+                BakedLODBuffers[MaterialName][lodLevel].VertexBuffer.Add(CreateVertexBuffer(VertexData, sizeof(FVertexSimple) * VertexData.Num()));
+                BakedLODBuffers[MaterialName][lodLevel].IndexBuffer.Add(CreateIndexBuffer(IndexData, sizeof(uint32) * Indices.Num()));
+                BakedLODBuffers[MaterialName][lodLevel].Stride = sizeof(FVertexSimple);
+                BakedLODBuffers[MaterialName][lodLevel].IndexCount.Add(IndexData.Num());
             }
         }
-
-        BakedBuffers[MaterialName].VertexBuffer.Add(
-            CreateVertexBuffer(VertexData, sizeof(FVertexSimple) * VertexData.Num())
-        );
-        BakedBuffers[MaterialName].IndexBuffer.Add(
-            CreateIndexBuffer(IndexData, sizeof(uint32) * IndexData.Num())
-        );
-        BakedBuffers[MaterialName].Stride = sizeof(FVertexSimple);
-        BakedBuffers[MaterialName].IndexCount.Add(IndexData.Num());
     }
+    // // bake render buffers
+    // for ( auto& [MaterialName, BatchRenderTargetContext] : BatchRenderTargets ) {
+    //
+    //     TArray<FVertexSimple> VertexData = {};
+    //     TArray<uint32> IndexData = {};
+    //     uint32 VertexOffset = 0;
+    //     BakedBuffers[MaterialName] = {
+    //         .VertexBuffer = {},
+    //         .IndexBuffer = {},
+    //     };
+    //
+    //
+    //
+    //     for (auto& [_, pStaticMeshComp]: BatchRenderTargetContext.StaticMeshes) {
+    //         const OBJ::FStaticMeshRenderData* renderData = pStaticMeshComp->GetStaticMesh()->GetRenderData();
+    //
+    //         const TArray<FVertexSimple>& Vertices = pStaticMeshComp->Vertices;
+    //         TArray<uint32> Indices = TArray<uint32>(renderData->Indices);
+    //         for (int i = 0; i < Indices.Num(); ++i) {
+    //             Indices[i] += VertexOffset;
+    //         }
+    //         VertexData.Append(Vertices);
+    //         IndexData.Append(Indices);
+    //         VertexOffset += Vertices.Num();
+    //
+    //         if ( sizeof(FVertexSimple) * VertexData.Num() > MaxBufferSize || 
+    //             sizeof(uint32) * IndexData.Num() > MaxBufferSize
+    //             ) {
+    //             BakedBuffers[MaterialName].VertexBuffer.Add(
+    //                 CreateVertexBuffer(VertexData, sizeof(FVertexSimple) * VertexData.Num())
+    //             );
+    //             BakedBuffers[MaterialName].IndexBuffer.Add(
+    //                 CreateIndexBuffer(IndexData, sizeof(uint32) * IndexData.Num())
+    //             );
+    //             BakedBuffers[MaterialName].Stride = sizeof(FVertexSimple);
+    //             BakedBuffers[MaterialName].IndexCount.Add(IndexData.Num());
+    //             VertexData.Empty();
+    //             IndexData.Empty();
+    //             VertexOffset = 0;
+    //         }
+    //     }
+    //
+    //     BakedBuffers[MaterialName].VertexBuffer.Add(
+    //         CreateVertexBuffer(VertexData, sizeof(FVertexSimple) * VertexData.Num())
+    //     );
+    //     BakedBuffers[MaterialName].IndexBuffer.Add(
+    //         CreateIndexBuffer(IndexData, sizeof(uint32) * IndexData.Num())
+    //     );
+    //     BakedBuffers[MaterialName].Stride = sizeof(FVertexSimple);
+    //     BakedBuffers[MaterialName].IndexCount.Add(IndexData.Num());
+    // }
 }
 
-void FRenderer::RenderBakedBuffer() {
+void FRenderer::RenderBakedBuffer()
+{
     uint32 stride = sizeof(FVertexSimple);
     uint32 vertexOffset = 0;
 
