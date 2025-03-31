@@ -136,6 +136,8 @@ int32 FEngineLoop::Init(HINSTANCE hInstance)
     GWorld = FObjectFactory::ConstructObject<UWorld>();
     GWorld->Initialize();
 
+    renderer.BakeBatchRenderBuffer();
+
     return 0;
 }
 
@@ -151,14 +153,14 @@ void FEngineLoop::Render()
         for (int i = 0; i < 4; ++i)
         {
             LevelEditor->SetViewportClient(i);
-            renderer.PrepareRender(viewportClient);
+            renderer.PrepareRender();
             renderer.Render(GetWorld(),LevelEditor->GetActiveViewportClient());
         }
         GetLevelEditor()->SetViewportClient(viewportClient);
     }
     else
     {
-        renderer.PrepareRender(LevelEditor->GetActiveViewportClient());  // UISOO TODO: 바꿔야됨.
+        renderer.PrepareRender();  // UISOO TODO: 바꿔야됨.
         renderer.Render(GetWorld(),LevelEditor->GetActiveViewportClient());
     }
 }
@@ -193,20 +195,66 @@ void FEngineLoop::Tick()
         }
 
         Input();
+
+        uint64 startTime, endTime;
+
+        startTime = FPlatformTime::Cycles64();
         GWorld->Tick(elapsedTime);
+        endTime = FPlatformTime::Cycles64();
+        //elapsedTimes.worldTickDuration = FWindowsPlatformTime::ToMilliseconds(endTime - startTime);
+        FWindowsPlatformTime::GElapsedMap["worldTick"] = FWindowsPlatformTime::ToMilliseconds(endTime - startTime);
+
+        startTime = FPlatformTime::Cycles64();
         LevelEditor->Tick(elapsedTime);
+        endTime = FPlatformTime::Cycles64();
+        //elapsedTimes.levelEditorDuration = FWindowsPlatformTime::ToMilliseconds(endTime - startTime);
+        FWindowsPlatformTime::GElapsedMap["levelEdit"] = FWindowsPlatformTime::ToMilliseconds(endTime - startTime);
+
+        startTime = FPlatformTime::Cycles64();
         Render();
+        endTime = FPlatformTime::Cycles64();
+        //elapsedTimes.renderDuration = FWindowsPlatformTime::ToMilliseconds(endTime - startTime);
+        FWindowsPlatformTime::GElapsedMap["Render"] = FWindowsPlatformTime::ToMilliseconds(endTime - startTime);
+
+
+        startTime = FPlatformTime::Cycles64();
         UIMgr->BeginFrame();
+        endTime = FPlatformTime::Cycles64();
+        //elapsedTimes.UIBeginDuration = FWindowsPlatformTime::ToMilliseconds(endTime - startTime);
+
+
+        startTime = FPlatformTime::Cycles64();
         UnrealEditor->Render();
+        endTime = FPlatformTime::Cycles64();
+        //elapsedTimes.UEDuration = FWindowsPlatformTime::ToMilliseconds(endTime - startTime);
 
+        startTime = FPlatformTime::Cycles64();
         Console::GetInstance().Draw();
+        endTime = FPlatformTime::Cycles64();
+        //elapsedTimes.ConsoleDuration = FWindowsPlatformTime::ToMilliseconds(endTime - startTime);
 
+        ImGui::Begin("stat");
+        for(auto& [name, elapsed]: FPlatformTime::GElapsedMap) {
+            ImGui::Text("%s: %fms", name.c_str(), elapsed);
+        }
+        ImGui::End();
+
+        startTime = FPlatformTime::Cycles64();
         UIMgr->EndFrame();
+        endTime = FPlatformTime::Cycles64();
+        //elapsedTimes.UIEndDuration = FWindowsPlatformTime::ToMilliseconds(endTime - startTime);
 
         // Pending 처리된 오브젝트 제거
+        startTime = FPlatformTime::Cycles64();
         GUObjectArray.ProcessPendingDestroyObjects();
+        endTime = FPlatformTime::Cycles64();
+        //elapsedTimes.pendingDestroyTime = FWindowsPlatformTime::ToMilliseconds(endTime - startTime);
 
+        startTime = FPlatformTime::Cycles64();
         graphicDevice.SwapBuffer();
+        endTime = FPlatformTime::Cycles64();
+        //elapsedTimes.swapBufferTime = FWindowsPlatformTime::ToMilliseconds(endTime - startTime);
+        FWindowsPlatformTime::GElapsedMap["swapBuffer"] = FWindowsPlatformTime::ToMilliseconds(endTime - startTime);
         
         /*
         do

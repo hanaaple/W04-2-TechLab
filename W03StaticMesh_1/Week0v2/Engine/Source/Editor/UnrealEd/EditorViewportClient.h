@@ -75,10 +75,14 @@ public:
     /** @return The ortho zoom amount */
     FORCEINLINE float GetOrthoZoom() const { return OrthoZoom; }
 
+public:
+    bool bIsTranslated = false;
+    const float totalTimer = 5 * 1000;
+    float timer = totalTimer;
 private:
     void OnTransformation()
     {
-        GEngineLoop.renderer.UpdateCameraConstant(GEngineLoop.GetLevelEditor()->GetActiveViewportClient().get());
+        bIsTranslated = true;
     }
     
 private:

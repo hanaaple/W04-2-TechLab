@@ -233,7 +233,7 @@ FMatrix FMatrix::Transpose(const FMatrix& Mat) {
 
 // 행렬식 계산.
 float FMatrix::Determinant(const FMatrix& mat) {
-#if not defined(_XM_SSE_INTRINSICS_)
+#if false
     static const __m128 Sign = _mm_set_ps(1.f, -1.f, 1.f, -1.f);
 
     const float* R0 = mat.row[0].m128_f32;
@@ -733,7 +733,7 @@ FVector4 FMatrix::TransformVector(const FVector4& v, const FMatrix& m)
 FBoundingBox::FBoundingBox(FVector _min, FVector _max): min(_min), max(_max)
 {}
 
-bool FBoundingBox::Intersect(const FVector& rayOrigin, const FVector& rayDir, float& outDistance) const {
+bool FBoundingBox::IntersectRay(const FVector& rayOrigin, const FVector& rayDir, float& outDistance) const {
     float tmin = -FLT_MAX;
     float tmax = FLT_MAX;
     const float epsilon = 1e-6f;
@@ -798,6 +798,218 @@ bool FBoundingBox::Intersect(const FVector& rayOrigin, const FVector& rayDir, fl
 
     return true;
 }
+
+bool FBoundingBox::IntersectLine(const FVector& p1, const FVector& p2) const {
+
+    float tmin = 0.0f; // 선분의 시작 지점
+    float tmax = 1.0f; // 선분의 끝 지점
+    const float epsilon = 1e-6f;
+    FVector dir = p2 - p1; // 선분의 방향 벡터
+
+    // X축 처리
+    if ( fabs(dir.x) < epsilon ) {
+        if ( p1.x < min.x || p1.x > max.x ) return false;
+    } else {
+        float t1 = (min.x - p1.x) / dir.x;
+        float t2 = (max.x - p1.x) / dir.x;
+        if ( t1 > t2 ) std::swap(t1, t2);
+        tmin = std::max(tmin, t1);
+        tmax = std::min(tmax, t2);
+        if ( tmin > tmax ) return false;
+    }
+
+    // Y축 처리
+    if ( fabs(dir.y) < epsilon ) {
+        if ( p1.y < min.y || p1.y > max.y ) return false;
+    } else {
+        float t1 = (min.y - p1.y) / dir.y;
+        float t2 = (max.y - p1.y) / dir.y;
+        if ( t1 > t2 ) std::swap(t1, t2);
+        tmin = std::max(tmin, t1);
+        tmax = std::min(tmax, t2);
+        if ( tmin > tmax ) return false;
+    }
+
+    // Z축 처리
+    if ( fabs(dir.z) < epsilon ) {
+        if ( p1.z < min.z || p1.z > max.z ) return false;
+    } else {
+        float t1 = (min.z - p1.z) / dir.z;
+        float t2 = (max.z - p1.z) / dir.z;
+        if ( t1 > t2 ) std::swap(t1, t2);
+        tmin = std::max(tmin, t1);
+        tmax = std::min(tmax, t2);
+        if ( tmin > tmax ) return false;
+    }
+
+    // tmin과 tmax가 선분 범위 [0,1] 내에 있는지 확인
+    return (tmin <= 1.0f && tmax >= 0.0f);
+}
+
+int FBoundingBox::IntersectLineMulti(const FVector* p1, const FVector& p2) const {
+    __m256 tmin = _mm256_set1_ps(0.0f);
+    __m256 tmax = _mm256_set1_ps(1.0f);
+    __m256 epsilon = _mm256_set1_ps(1e-6);
+
+    __m256 minx = _mm256_set1_ps(min.x);
+    __m256 maxx = _mm256_set1_ps(max.x);
+    __m256 miny = _mm256_set1_ps(min.y);
+    __m256 maxy = _mm256_set1_ps(max.y);
+    __m256 minz = _mm256_set1_ps(min.z);
+    __m256 maxz = _mm256_set1_ps(max.z);
+
+    //FVector dir = p2 - p1; // 선분의 방향 벡터
+    __m256 _p1x = _mm256_set_ps(
+        p1[7].x, p1[6].x, p1[5].x, p1[4].x,
+        p1[3].x, p1[2].x, p1[1].x, p1[0].x
+    );
+    __m256 _p1y = _mm256_set_ps(
+        p1[7].y, p1[6].y, p1[5].y, p1[4].y,
+        p1[3].y, p1[2].y, p1[1].y, p1[0].y
+    );
+    __m256 _p1z = _mm256_set_ps(
+        p1[7].z, p1[6].z, p1[5].z, p1[4].z,
+        p1[3].z, p1[2].z, p1[1].z, p1[0].z
+    );
+    __m256 _p2x = _mm256_set1_ps(p2.x);
+    __m256 _p2y = _mm256_set1_ps(p2.y);
+    __m256 _p2z = _mm256_set1_ps(p2.z);
+
+    __m256 dirx = _mm256_sub_ps(_p2x, _p1x);
+    __m256 diry = _mm256_sub_ps(_p2y, _p1y);
+    __m256 dirz = _mm256_sub_ps(_p2z, _p1z);
+
+
+    // X축 처리
+    //if ( fabs(dir.x) < epsilon ) {
+    //    if ( p1.x < min.x || p1.x > max.x ) return false;
+    //} else {
+    //    float t1 = (min.x - p1.x) / dir.x;
+    //    float t2 = (max.x - p1.x) / dir.x;
+    //    if ( t1 > t2 ) std::swap(t1, t2);
+    //    tmin = std::max(tmin, t1);
+    //    tmax = std::min(tmax, t2);
+    //    if ( tmin > tmax ) return false;
+    //}
+    
+    int resx1;
+    __m256 absDirX = _mm256_andnot_ps(_mm256_set1_ps(-0.0f), dirx);
+    __m256 maskX1 = _mm256_cmp_ps(absDirX, epsilon, _CMP_LT_OS);
+    __m256 maskX2 = _mm256_andnot_ps(maskX1, _mm256_set1_ps(-1.0f));
+    __m256 maskXOut = _mm256_or_ps(
+        _mm256_cmp_ps(_p1x, minx, _CMP_LT_OS), 
+        _mm256_cmp_ps(_p1x, maxx, _CMP_GT_OS)
+    );
+    __m256 andres = _mm256_andnot_ps(_mm256_and_ps(maskX1, maskXOut), _mm256_set1_ps(-1.0f));
+    resx1 = _mm256_movemask_ps(andres);
+    if ( !resx1 ) 
+        return 0;
+
+    int resx2;
+    __m256 t1 = _mm256_div_ps(_mm256_sub_ps(minx, _p1x), dirx);
+    __m256 t2 = _mm256_div_ps(_mm256_sub_ps(maxx, _p1x), dirx);
+    __m256 t1min = _mm256_min_ps(t1, t2);
+    __m256 t1max = _mm256_max_ps(t1, t2);
+    tmin = _mm256_max_ps(tmin, t1min);
+    tmax = _mm256_min_ps(tmax, t1max);
+    __m256 maskRes = _mm256_cmp_ps(tmin, tmax, _CMP_GT_OS);
+    andres = _mm256_andnot_ps(_mm256_and_ps(maskX2, maskRes), _mm256_set1_ps(-1.0f));
+    resx2 = _mm256_movemask_ps(andres);
+    if ( !resx2 )
+        return 0;
+
+    int resx = resx1 & resx2;
+
+    // Y축 처리
+    //if ( fabs(dir.y) < epsilon ) {
+    //    if ( p1.y < min.y || p1.y > max.y ) return false;
+    //} else {
+    //    float t1 = (min.y - p1.y) / dir.y;
+    //    float t2 = (max.y - p1.y) / dir.y;
+    //    if ( t1 > t2 ) std::swap(t1, t2);
+    //    tmin = std::max(tmin, t1);
+    //    tmax = std::min(tmax, t2);
+    //    if ( tmin > tmax ) return false;
+    //}
+
+    int resy1;
+    __m256 absDirY = _mm256_andnot_ps(_mm256_set1_ps(-0.0f), diry);
+    __m256 maskY1 = _mm256_cmp_ps(absDirY, epsilon, _CMP_LT_OS);
+    __m256 maskY2 = _mm256_andnot_ps(maskY1, _mm256_set1_ps(-1.0f));
+    __m256 maskYOut = _mm256_or_ps(
+        _mm256_cmp_ps(_p1y, miny, _CMP_LT_OS), 
+        _mm256_cmp_ps(_p1y, maxy, _CMP_GT_OS)
+    );
+    andres = _mm256_andnot_ps(_mm256_and_ps(maskY1, maskYOut), _mm256_set1_ps(-1.0f));
+    resy1 = _mm256_movemask_ps(andres);
+    if ( !resy1 )
+        return 0;
+
+    int resy2;
+    t1 = _mm256_div_ps(_mm256_sub_ps(miny, _p1y), diry);
+    t2 = _mm256_div_ps(_mm256_sub_ps(maxy, _p1y), diry);
+    t1min = _mm256_min_ps(t1, t2);
+    t1max = _mm256_max_ps(t1, t2);
+    tmin = _mm256_max_ps(tmin, t1min);
+    tmax = _mm256_min_ps(tmax, t1max);
+    maskRes = _mm256_cmp_ps(tmin, tmax, _CMP_GT_OS);
+    andres = _mm256_andnot_ps(_mm256_and_ps(maskY2, maskRes), _mm256_set1_ps(-1.0f));
+    resy2 = _mm256_movemask_ps(andres);
+    if ( !resy2 )
+        return 0;
+
+    int resy = resy1 & resy2;
+
+    // Z축 처리
+    //if ( fabs(dir.z) < epsilon ) {
+    //    if ( p1.z < min.z || p1.z > max.z ) return false;
+    //} else {
+    //    float t1 = (min.z - p1.z) / dir.z;
+    //    float t2 = (max.z - p1.z) / dir.z;
+    //    if ( t1 > t2 ) std::swap(t1, t2);
+    //    tmin = std::max(tmin, t1);
+    //    tmax = std::min(tmax, t2);
+    //    if ( tmin > tmax ) return false;
+    //}
+
+    int resz1;
+    __m256 absDirZ = _mm256_andnot_ps(_mm256_set1_ps(-0.0f), dirz);
+    __m256 maskZ1 = _mm256_cmp_ps(absDirZ, epsilon, _CMP_LT_OS);
+    __m256 maskZ2 = _mm256_andnot_ps(maskZ1, _mm256_set1_ps(-1.0f));
+    __m256 maskZOut = _mm256_or_ps(
+        _mm256_cmp_ps(_p1z, minz, _CMP_LT_OS),
+        _mm256_cmp_ps(_p1z, maxz, _CMP_GT_OS)
+    );
+    andres = _mm256_andnot_ps(_mm256_and_ps(maskZ1, maskZOut), _mm256_set1_ps(-1.0f));
+    resz1 = _mm256_movemask_ps(andres);
+    if ( !resz1 )
+        return 0;
+
+    int resz2;
+    t1 = _mm256_div_ps(_mm256_sub_ps(minz, _p1z), dirz);
+    t2 = _mm256_div_ps(_mm256_sub_ps(maxz, _p1z), dirz);
+    t1min = _mm256_min_ps(t1, t2);
+    t1max = _mm256_max_ps(t1, t2);
+    tmin = _mm256_max_ps(tmin, t1min);
+    tmax = _mm256_min_ps(tmax, t1max);
+    maskRes = _mm256_cmp_ps(tmin, tmax, _CMP_GT_OS);
+    andres = _mm256_andnot_ps(_mm256_and_ps(maskZ2, maskRes), _mm256_set1_ps(-1.0f));
+    resz2 = _mm256_movemask_ps(andres);
+    if ( !resz2 )
+        return 0;
+
+    int resz = resz1 & resz2;
+
+    // tmin과 tmax가 선분 범위 [0,1] 내에 있는지 확인
+    //return (tmin <= 1.0f && tmax >= 0.0f);
+    maskRes = _mm256_and_ps(
+        _mm256_cmp_ps(tmin, _mm256_set1_ps(1.0f), _CMP_LE_OS),
+        _mm256_cmp_ps(tmax, _mm256_set1_ps(0.0f), _CMP_GE_OS)
+    );
+    int res = _mm256_movemask_ps(maskRes);
+    return resx & resy & resz & res;
+}
+
 
 void FBoundingBox::ExpandToInclude(const FBoundingBox& Other)
 {

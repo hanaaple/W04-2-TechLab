@@ -44,7 +44,10 @@ FVector FVector::operator*(float scalar) const {
 
 // 벡터 내적
 float FVector::Dot(const FVector& other) const {
-#if defined(_XM_SSE_INTRINSICS_)
+#if defined(__AVX2__) 
+    __m128 vTemp = _mm_dp_ps(_mm_set_ps(0.f, z, y, x), _mm_set_ps(0.f, other.z, other.y, other.x), 0xff);
+    return vTemp.m128_f32[0];
+#elif defined(_XM_SSE_INTRINSICS_)
     __m128 vTemp2 = _mm_set_ps(0.f, other.z, other.y, other.x);
     __m128 vTemp1 = _mm_set_ps(0.f, z, y, x);
     __m128 vTemp = _mm_mul_ps(vTemp1, vTemp2);
@@ -58,7 +61,12 @@ float FVector::Dot(const FVector& other) const {
 
 // 벡터 크기
 float FVector::MagnitudePow() const {
-#if defined(_XM_SSE_INTRINSICS_)
+#if defined(__AVX2__)
+    __m128 vTemp2 = _mm_set_ps(0.f, z, y, x);
+    __m128 vTemp1 = _mm_set_ps(0.f, z, y, x);
+    __m128 vTemp = _mm_dp_ps(vTemp1, vTemp2, 0xff);
+    return vTemp.m128_f32[0];
+#elif defined(_XM_SSE_INTRINSICS_)
     __m128 vTemp2 = _mm_set_ps(0.f, z, y, x);
     __m128 vTemp1 = _mm_set_ps(0.f, z, y, x);
     __m128 vTemp = _mm_mul_ps(vTemp1, vTemp2);

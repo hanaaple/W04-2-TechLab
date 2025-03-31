@@ -39,12 +39,19 @@ public:
 
     FVector GetLocalScale() const { return RelativeScale3D; }
     FVector GetLocalLocation() const { return RelativeLocation; }
+    FVector GetRelativeRotation() const { return RelativeRotation; }
 
-    void SetLocation(FVector _newLoc) { RelativeLocation = _newLoc; }
+    void SetLocation(FVector _newLoc)
+    {
+        RelativeLocation = _newLoc;
+        OnTransformation();
+    }
     virtual void SetRotation(FVector _newRot);
-    void SetRotation(FQuat _newRot) { QuatRotation = _newRot; }
-    void SetScale(FVector _newScale) { RelativeScale3D = _newScale; }
+    void SetRotation(FQuat _newRot) { QuatRotation = _newRot; OnTransformation();}
+    void SetScale(FVector _newScale) { RelativeScale3D = _newScale; OnTransformation();}
     void SetupAttachment(USceneComponent* InParent);
+
+    virtual void OnTransformation() {}
 
 private:
     class UTextUUID* uuidText = nullptr;

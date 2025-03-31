@@ -21,6 +21,8 @@
 #include "Components/SkySphereComponent.h"
 #include "Engine/FLoaderOBJ.h"
 
+#include "Stats/ScopeCycleCounter.h"
+#include "OcclusionRenderer.h"
 void FRenderer::Initialize(FGraphicsDevice* graphics)
 {
     Graphics = graphics;
@@ -28,9 +30,10 @@ void FRenderer::Initialize(FGraphicsDevice* graphics)
     CreateTextureShader();
     CreateLineShader();
     CreateConstantBuffer();
-    //CreateLightingBuffer();
-    //CreateLitUnlitBuffer();
-    ChangeViewMode(EViewModeIndex::VMI_Lit);
+
+    ChangeViewMode(EViewModeIndex::VMI_Lit);    
+    OcclusionRenderer = new FOcclusionRenderer();
+    OcclusionRenderer->Initialize(graphics);
 }
 
 void FRenderer::Release()
@@ -39,6 +42,7 @@ void FRenderer::Release()
     ReleaseTextureShader();
     ReleaseLineShader();
     ReleaseConstantBuffer();
+    delete OcclusionRenderer;
 }
 
 void FRenderer::CreateShader()
@@ -276,7 +280,7 @@ ID3D11Buffer* FRenderer::CreateVertexBuffer(const TArray<FVertexSimple>& vertice
     vertexbufferdesc.Usage = D3D11_USAGE_IMMUTABLE; // will never be updated 
     vertexbufferdesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
 
-    D3D11_SUBRESOURCE_DATA vertexbufferSRD;
+    D3D11_SUBRESOURCE_DATA vertexbufferSRD = {};
     vertexbufferSRD.pSysMem = vertices.GetData();
 
     ID3D11Buffer* vertexBuffer;
@@ -391,6 +395,29 @@ void FRenderer::CreateLitUnlitBuffer()
     constantbufferdesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
     constantbufferdesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
     Graphics->Device->CreateBuffer(&constantbufferdesc, nullptr, &FlagConstantBuffer);
+}
+
+ID3D11Buffer* FRenderer::CreateBuffer(void* Data, uint32 ByteWidth, D3D11_USAGE Usage, D3D11_CPU_ACCESS_FLAG Flag, D3D11_BIND_FLAG BindFlag)
+{
+    D3D11_BUFFER_DESC bufferdesc = {};
+    bufferdesc.ByteWidth = ByteWidth;
+    bufferdesc.Usage = Usage; // will never be updated 
+    bufferdesc.BindFlags = BindFlag;
+    bufferdesc.CPUAccessFlags = Flag;
+
+    D3D11_SUBRESOURCE_DATA vertexbufferSRD = {Data};
+
+    ID3D11Buffer* vertexBuffer;
+    HRESULT hr;
+    if (Data == nullptr)
+        hr = Graphics->Device->CreateBuffer(&bufferdesc, nullptr, &vertexBuffer);
+    else
+        hr = Graphics->Device->CreateBuffer(&bufferdesc, &vertexbufferSRD, &vertexBuffer);
+    if (FAILED(hr))
+    {
+        UE_LOG(LogLevel::Warning, "VertexBuffer Creation faild");
+    }
+    return vertexBuffer;
 }
 
 void FRenderer::ReleaseConstantBuffer()
@@ -965,63 +992,331 @@ void FRenderer::CreateBatchRenderCache()
     {
         if(!BatchRenderTargetContext.bIsDirty)
             return;
-
-        if (!CachedBuffers.Contains(MaterialName))
-            CachedBuffers.Add(MaterialName, TArray<TPair<ID3D11Buffer*, TPair<uint32, ID3D11Buffer*>>>());
-        
-        CachedBuffers[MaterialName].Empty();
-        
         BatchRenderTargetContext.bIsDirty = false;
 
-        uint32 VertexOffset = 0;
-        TArray<FVertexSimple> VertexData;
-        TArray<uint32> IndexData;
-        
-        for (const auto& [SubMeshIndex, StaticMeshComponent] : BatchRenderTargetContext.StaticMeshes)
+        if (!CachedBuffers.Contains(MaterialName))
+            CachedBuffers.Add(MaterialName, TMap<uint32, TPair<ID3D11Buffer*, TPair<uint32, ID3D11Buffer*>>>());
+
+#if UseBufferDynamic
+        {}
+#else
         {
-            const uint32 LODLevel = StaticMeshComponent->GetLODLevel();
-            OBJ::FStaticMeshRenderData* renderData = StaticMeshComponent->GetStaticMesh()->GetRenderData(LODLevel);
-            const uint32 IndexBufferStartIndex = renderData->MaterialSubsets[SubMeshIndex].IndexStart;
-            const uint32 IndexCount = renderData->MaterialSubsets[SubMeshIndex].IndexCount;
-
-            TArray<FVertexSimple> Vertices;
-            const auto& OriginVertices = renderData->Vertices;
-            for (const auto& OriginVertex : OriginVertices)
+            for (const auto& [BufferIndex, BufferInfo] : CachedBuffers[MaterialName])
             {
-                FVertexSimple Vertex;
-
-                FMatrix Model = JungleMath::CreateModelMatrix(StaticMeshComponent->GetWorldLocation(), StaticMeshComponent->GetWorldRotation(), StaticMeshComponent->GetWorldScale());
-
-                const FVector Pos = Model.TransformPosition({OriginVertex.x, OriginVertex.y, OriginVertex.z});
-
-                Vertex.x = Pos.x;
-                Vertex.y = Pos.y;
-                Vertex.z = Pos.z;
-                Vertex.u = OriginVertex.u;
-                Vertex.v = OriginVertex.v;
-                Vertices.Add(Vertex);
+                if (BufferInfo.Key)
+                    BufferInfo.Key->Release();
+                if (BufferInfo.Value.Value)
+                    BufferInfo.Value.Value->Release();
             } 
+        
+            CachedBuffers[MaterialName].Empty();
+        }
+#endif
+        
+        int MeshIndex = 0;
+        uint32 BufferIndex = 0;
+        while (BatchRenderTargetContext.StaticMeshes.Num() > MeshIndex)
+        {
+            uint32 VertexOffset = 0;
+            TArray<FVertexSimple> VertexData;
+            TArray<uint32> IndexData;
 
-            // UISOO TODO: 사용하지 않는 Vertex 없애고 Indexing 당기기
-            VertexData.Append(Vertices);
 
-            const TArray<uint32>& Indices = renderData->Indices;
-            for (int i = IndexBufferStartIndex; i < IndexBufferStartIndex + IndexCount; i++)
-            {
-                IndexData.Add(Indices[i] + VertexOffset);                    
+            uint32 TotalVertexDataSize = 0;
+            uint32 TotalIndexDataSize = 0;
+
+            for ( const auto& [MeshIndex, MeshComp]: BatchRenderTargetContext.StaticMeshes ) {
+                const OBJ::FStaticMeshRenderData* renderData = MeshComp->GetStaticMesh()->GetRenderData();
+                TotalVertexDataSize += MeshComp->Vertices.Num();
+                TotalIndexDataSize += renderData->MaterialSubsets[MeshIndex].IndexCount;
             }
+
+            VertexData.Reserve(TotalVertexDataSize);
+            VertexData.Reserve(TotalIndexDataSize);
+
+            for (; MeshIndex < BatchRenderTargetContext.StaticMeshes.Num(); MeshIndex++)
+            {
+                UStaticMeshComponent* StaticMeshComponent = BatchRenderTargetContext.StaticMeshes[MeshIndex].Value;
+                const uint32 SubMeshIndex = BatchRenderTargetContext.StaticMeshes[MeshIndex].Key;
+                const OBJ::FStaticMeshRenderData* renderData = StaticMeshComponent->GetStaticMesh()->GetRenderData();
+                const uint32 IndexBufferStartIndex = renderData->MaterialSubsets[SubMeshIndex].IndexStart;
+                const uint32 IndexCount = renderData->MaterialSubsets[SubMeshIndex].IndexCount;
+
+                // LOD TODO: Vertex 다른 거로 넣어주기 변경
+                const TArray<FVertexSimple> &Vertices = StaticMeshComponent->Vertices;
+
+                if ((VertexOffset + Vertices.Num()) * sizeof(FVertexSimple) > MaxBufferSize)
+                {
+                    MeshIndex--;
+                    break;
+                }
+
+                // LOD TODO: IndexData 다른 거로 넣어주기 변경
+                const TArray<uint32>& Indices = renderData->Indices;
+                if ((IndexData.Num() + Indices.Num()) * sizeof(uint32) > MaxBufferSize)
+                {
+                    MeshIndex--;
+                    break;
+                }
                 
+                // UISOO TODO: 사용하지 않는 Vertex 없애고 Indexing 당기기
+                VertexData.Append(Vertices);
+                const uint32 IndexSizeBeforeAppend = IndexData.Num();
+                const uint32 IndexBufferEndIndex = IndexBufferStartIndex + IndexCount;
+                IndexData.Append(const_cast<uint32*>(Indices.GetData() + IndexBufferStartIndex), IndexCount);
+                for (int i = IndexBufferStartIndex; i < IndexBufferEndIndex; ++i)
+                {
+                    //IndexData.Add(Indices[i] + VertexOffset);
+                    IndexData[IndexSizeBeforeAppend + i] += VertexOffset;
+                }
+                
+                VertexOffset += Vertices.Num();
+            }
+
+            uint32 VertexDataSize = sizeof(FVertexSimple) * VertexData.Num();
+        
+            uint32 IndexDataSize = sizeof(uint32) * IndexData.Num();
+
+#if UseBufferDynamic
+            UpdateOrCreateBuffer(MaterialName, BufferIndex, VertexData.GetData(), VertexDataSize, IndexData.GetData(), IndexDataSize, IndexData.Num(), MaxBufferSize);
+#else
+            ID3D11Buffer* VertexBuffer = CreateVertexBuffer(VertexData.GetData(), VertexDataSize);
+            ID3D11Buffer* IndexBuffer = CreateIndexBuffer(IndexData.GetData(), IndexDataSize);
+            CachedBuffers[MaterialName].Add(BufferIndex, {VertexBuffer, {IndexDataSize, IndexBuffer}});
+#endif
+            
+
+            MeshIndex++;
+            BufferIndex++;
+        }
+#if UseBufferDynamic
+        ReleaseUnUsedBatchBuffer(MaterialName, BufferIndex);
+#else
+#endif
+    }
+}
+
+void FRenderer::UpdateOrCreateBuffer(const FString& MaterialName, uint32 BufferIndex, FVertexSimple* VertexData, uint32 VertexDataSize, void* IndexData, uint32 IndexDataSize, uint32 IndexDataCount, uint32 BufferSize)
+{
+    if (!CachedBuffers[MaterialName].Contains(BufferIndex))
+    {
+        ID3D11Buffer* VertexBuffer = CreateBuffer(nullptr, BufferSize, D3D11_USAGE_DYNAMIC, D3D11_CPU_ACCESS_WRITE, D3D11_BIND_VERTEX_BUFFER);
+        ID3D11Buffer* IndexBuffer = CreateBuffer(nullptr, BufferSize, D3D11_USAGE_DYNAMIC, D3D11_CPU_ACCESS_WRITE, D3D11_BIND_INDEX_BUFFER);
+        CachedBuffers[MaterialName].Add(BufferIndex, {VertexBuffer, {0, IndexBuffer}});
+    }
+
+    CachedBuffers[MaterialName][BufferIndex].Value.Key = IndexDataCount;
+    
+    ID3D11Buffer* VertexBuffer = CachedBuffers[MaterialName][BufferIndex].Key;
+    // 기존 버퍼 업데이트
+    D3D11_MAPPED_SUBRESOURCE mappedResource;
+    HRESULT hr = Graphics->DeviceContext->Map(VertexBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+    if (SUCCEEDED(hr))
+    {
+        //reinterpret_cast<FOBB*>(mappedResource.pData);
+        memcpy(mappedResource.pData, VertexData, VertexDataSize);
+        Graphics->DeviceContext->Unmap(VertexBuffer, 0);
+    }
+    else
+    {
+        UE_LOG(LogLevel::Warning, "Failed to map vertex buffer for update.");
+    }
+
+    ID3D11Buffer* IndexBuffer = CachedBuffers[MaterialName][BufferIndex].Key;
+    // 기존 버퍼 업데이트
+    D3D11_MAPPED_SUBRESOURCE mappedResourceIndex;
+    hr = Graphics->DeviceContext->Map(IndexBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResourceIndex);
+    if (SUCCEEDED(hr))
+    {
+        memcpy(mappedResourceIndex.pData, IndexData, IndexDataSize);
+        Graphics->DeviceContext->Unmap(IndexBuffer, 0);
+    }
+    else
+    {
+        UE_LOG(LogLevel::Warning, "Failed to map vertex buffer for update.");
+    }
+}
+
+void FRenderer::BakeBatchRenderBuffer() {
+
+    // Lookup Actors
+    TSet<AActor*> Actors = GEngineLoop.GetWorld()->GetActors();
+    for (AActor* actor : Actors) {
+        UStaticMeshComponent* pStaticMeshComp = actor->GetComponentByClass<UStaticMeshComponent>();
+        if ( Cast<UGizmoBaseComponent>(pStaticMeshComp) )
+            return;
+        // StaticMeshObjs.Add(pStaticMeshComp);
+        for ( uint32 i = 0; i < pStaticMeshComp->GetNumMaterials(); ++i ) {
+            auto Material = pStaticMeshComp->GetMaterial(i);
+            // LOD TODO: Texture 다른 거로 넣어주기
+            auto MTLName = Material->GetMaterialInfo().MTLName;
+            if ( !BatchRenderTargets.Contains(MTLName) ) {
+                BatchRenderTargets.Add(MTLName, BatchRenderTargetContext());
+                BatchRenderTargets[MTLName].bIsDirty = true;
+            }
+            BatchRenderTargets[MTLName].StaticMeshes.Add({ i, pStaticMeshComp });
+            // Material의 변경, Transform의 변경, Culling에 의한 삭제에 따라 Targets 초기화 (BatchRenderTargets[MTLName].Empty();
+        }
+    }
+
+    // bake render buffers
+    for ( auto& [MaterialName, BatchRenderTargetContext] : BatchRenderTargets ) {
+
+        TArray<FVertexSimple> VertexData = {};
+        TArray<uint32> IndexData = {};
+        uint32 VertexOffset = 0;
+        BakedBuffers[MaterialName] = {
+            .VertexBuffer = {},
+            .IndexBuffer = {},
+        };
+
+
+
+        for (auto& [_, pStaticMeshComp]: BatchRenderTargetContext.StaticMeshes) {
+            const OBJ::FStaticMeshRenderData* renderData = pStaticMeshComp->GetStaticMesh()->GetRenderData();
+
+            const TArray<FVertexSimple>& Vertices = pStaticMeshComp->Vertices;
+            TArray<uint32> Indices = TArray<uint32>(renderData->Indices);
+            for (int i = 0; i < Indices.Num(); ++i) {
+                Indices[i] += VertexOffset;
+            }
+            VertexData.Append(Vertices);
+            IndexData.Append(Indices);
             VertexOffset += Vertices.Num();
+
+            if ( sizeof(FVertexSimple) * VertexData.Num() > MaxBufferSize || 
+                sizeof(uint32) * IndexData.Num() > MaxBufferSize
+                ) {
+                BakedBuffers[MaterialName].VertexBuffer.Add(
+                    CreateVertexBuffer(VertexData, sizeof(FVertexSimple) * VertexData.Num())
+                );
+                BakedBuffers[MaterialName].IndexBuffer.Add(
+                    CreateIndexBuffer(IndexData, sizeof(uint32) * IndexData.Num())
+                );
+                BakedBuffers[MaterialName].Stride = sizeof(FVertexSimple);
+                BakedBuffers[MaterialName].IndexCount.Add(IndexData.Num());
+                VertexData.Empty();
+                IndexData.Empty();
+                VertexOffset = 0;
+            }
         }
 
-        const uint32 VertexDataSize = sizeof(FVertexSimple) * VertexData.Num();
-        ID3D11Buffer* VertexBuffer = CreateVertexBuffer(VertexData.GetData(), VertexDataSize);
-        
-        uint32 IndexDataSize = sizeof(uint32) * IndexData.Num();
-        ID3D11Buffer* IndexBuffer = CreateIndexBuffer(IndexData.GetData(), IndexDataSize);
-        
-        CachedBuffers[MaterialName].Add({VertexBuffer, {IndexDataSize, IndexBuffer}});
+        BakedBuffers[MaterialName].VertexBuffer.Add(
+            CreateVertexBuffer(VertexData, sizeof(FVertexSimple) * VertexData.Num())
+        );
+        BakedBuffers[MaterialName].IndexBuffer.Add(
+            CreateIndexBuffer(IndexData, sizeof(uint32) * IndexData.Num())
+        );
+        BakedBuffers[MaterialName].Stride = sizeof(FVertexSimple);
+        BakedBuffers[MaterialName].IndexCount.Add(IndexData.Num());
     }
+}
+
+void FRenderer::RenderBakedBuffer() {
+    uint32 stride = sizeof(FVertexSimple);
+    uint32 vertexOffset = 0;
+
+    PrepareShader();
+
+    // MaterialConstant
+    if ( MaterialConstantBuffer ) {
+        D3D11_MAPPED_SUBRESOURCE ConstantBufferMSR; // GPU�� �޸� �ּ� ����
+
+        Graphics->DeviceContext->Map(MaterialConstantBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &ConstantBufferMSR); // update constant buffer every frame
+        {
+            FMaterialConstants* constants = static_cast<FMaterialConstants*>(ConstantBufferMSR.pData);
+            constants->DiffuseColor = { 0, 0, 0 };
+        }
+        Graphics->DeviceContext->Unmap(MaterialConstantBuffer, 0); // GPU�� �ٽ� ��밡���ϰ� �����
+    }
+
+    // Render
+    for ( auto& [MaterialName, BatchRenderTargetContext] : BatchRenderTargets ) {
+
+        uint32 bufferIdx = 0;
+        uint32 offset = 0;
+        uint32 length = 0;
+
+        Graphics->DeviceContext->IASetVertexBuffers(0, 1,
+            &BakedBuffers[MaterialName].VertexBuffer[bufferIdx], &stride, &vertexOffset);
+        Graphics->DeviceContext->IASetIndexBuffer(
+            BakedBuffers[MaterialName].IndexBuffer[bufferIdx], DXGI_FORMAT_R32_UINT, 0);
+
+        // Set Material
+        UMaterial* Material = FManagerOBJ::GetMaterial(MaterialName);
+        const auto& MaterialInfo = Material->GetMaterialInfo();
+        if ( MaterialInfo.bHasTexture == true ) {
+            std::shared_ptr<FTexture> texture = FEngineLoop::resourceMgr.GetTexture(MaterialInfo.DiffuseTexturePath);
+
+            SetPSTextureSRV(0, 1, texture->TextureSRV);
+            SetPSSamplerState(0, 1, texture->SamplerState);
+        } else {
+            SetPSTextureSRV(0, 1, nullptr);
+            SetPSSamplerState(0, 1, nullptr);
+        }
+
+        for ( auto iter = BatchRenderTargetContext.StaticMeshes.begin(); iter != BatchRenderTargetContext.StaticMeshes.end(); ++iter ) {
+            UStaticMeshComponent* pStaticMeshComp = iter->Value;
+            const OBJ::FStaticMeshRenderData* renderData = pStaticMeshComp->GetStaticMesh()->GetRenderData();
+            const uint32 indicesCount = renderData->Indices.Num();
+            
+            // if meshcomp is not visible
+            if (!pStaticMeshComp->bIsVisible && !(iter + 1)->Value->bIsVisible ) {
+                if (length > 0)
+                    Graphics->DeviceContext->DrawIndexed(length, offset, 0);
+
+                offset += length + indicesCount;
+                length = 0;
+            } else {
+                length += indicesCount;
+            }
+
+            // if end of array
+            if (offset + length >= BakedBuffers[MaterialName].IndexCount[bufferIdx]) {
+                if ( length > 0 )
+                    Graphics->DeviceContext->DrawIndexed(length, offset, 0);
+
+                offset = 0;
+                length = 0;
+                ++bufferIdx;
+                if ( BakedBuffers[MaterialName].VertexBuffer.Num() > bufferIdx ) {
+                    Graphics->DeviceContext->IASetVertexBuffers(0, 1,
+                        &BakedBuffers[MaterialName].VertexBuffer[bufferIdx], &stride, &vertexOffset);
+                    Graphics->DeviceContext->IASetIndexBuffer(
+                        BakedBuffers[MaterialName].IndexBuffer[bufferIdx], DXGI_FORMAT_R32_UINT, 0);
+                }
+            }
+        }
+    }
+}
+
+void FRenderer::ReleaseUnUsedBatchBuffer(const FString& MaterialName, uint32 ReleaseStartBufferIndex)
+{
+    if (!CachedBuffers.Contains(MaterialName))
+    {
+        return;
+    }
+
+    TArray<uint32> BufferIndexes;
+    for (const auto& [bufferIndex, BufferInfo] : CachedBuffers[MaterialName])
+    {
+        if (ReleaseStartBufferIndex > bufferIndex)
+            continue;
+        ID3D11Buffer* VertexBuffer = BufferInfo.Key;
+        ID3D11Buffer* IndexBuffer = BufferInfo.Value.Value;
+
+        if (VertexBuffer)
+            VertexBuffer->Release();
+        if (IndexBuffer)
+            IndexBuffer->Release();
+
+        BufferIndexes.Add(bufferIndex);
+    }
+
+    for (uint32 buffer_index : BufferIndexes)
+    {
+        CachedBuffers[MaterialName].Remove(buffer_index);
+    } 
 }
 
 void FRenderer::UpdateBoundingBoxBuffer(ID3D11Buffer* pBoundingBoxBuffer, const TArray<FBoundingBox>& BoundingBoxes, int numBoundingBoxes) const
@@ -1105,115 +1400,39 @@ void FRenderer::RenderBatch(
 }
 
 // UISOO TODO: 매 프레임 순회하며 넣어주고 있음. 변경사항 있는 거만 체크
-void FRenderer::PrepareRender(std::shared_ptr<FEditorViewportClient> ActiveViewport)
+void FRenderer::PrepareRender()
 {
-    //const FFrustum Frustum(ActiveViewport->GetViewMatrix(), ActiveViewport->GetProjectionMatrix());
-    
-    // 전역적으로 관리되는 UObject 배열에서 TMap으로 변경된 매핑을 가져옵니다.
-    //TMap<uint32, UObject*> ObjectMap = GUObjectArray.GetObjectItemArrayUnsafe();
+    // for (auto iter : TObjectRange<UStaticMeshComponent>())
+    // {
+    //     FMatrix Model = JungleMath::CreateModelMatrix(
+    //         iter->GetWorldLocation(),
+    //         iter->GetWorldRotation(),
+    //         iter->GetWorldScale()
+    //         );
     //
-    //// Octree의 FrustumCull을 호출하여, 프러스텀 내에 있는 요소들에 대해 처리합니다.
-    //const auto ocTree =  GEngineLoop.GetWorld()->GetOcTree();;
-    //ocTree.FrustumCull(Frustum, [&](const FOctreeElement<UStaticMeshComponent>& element)
-    //{
-    //    if (!Cast<UGizmoBaseComponent>(element.element))
-    //    {
-    //        // StaticMeshObjs.Add(pStaticMeshComp);
-    //            
-    //        for (uint32 i = 0; i < element.element->GetNumMaterials(); i++)
-    //        {
-    //            UMaterial* Material = element.element->GetMaterial(i);
-    //            FString MTLName = Material->GetMaterialInfo().MTLName;
-    //            if (!BatchRenderTargets.Contains(MTLName))
-    //            {
-    //                BatchRenderTargets.Add(MTLName, BatchRenderTargetContext());
-    //                BatchRenderTargets[MTLName].bIsDirty = true;
-    //            }
-    //            if (BatchRenderTargets[MTLName].bIsDirty)
-    //            {
-    //                BatchRenderTargets[MTLName].StaticMeshes.Add({ i, element.element });
-    //            }
-    //                
-    //            // Material의 변경, Transform의 변경, Culling에 의한 삭제에 따라 Targets 초기화 (BatchRenderTargets[MTLName].Empty();)
-    //        }
-    //    }
-
-    //});
-    
-    for (auto iter : TObjectRange<UStaticMeshComponent>())
-    {
-        if (Cast<UGizmoBaseComponent>(iter)) continue;
-
-        for (uint32 i = 0; i < iter->GetNumMaterials(); i++)
-        {
-            UMaterial* Material = iter->GetMaterial(i);
-            FString MTLName = Material->GetMaterialInfo().MTLName;
-            if (!BatchRenderTargets.Contains(MTLName))
-            {
-                BatchRenderTargets.Add(MTLName, BatchRenderTargetContext());
-                BatchRenderTargets[MTLName].bIsDirty = true;
-            }
-            if (BatchRenderTargets[MTLName].bIsDirty)
-            {
-                BatchRenderTargets[MTLName].StaticMeshes.Add({ i, iter });
-            }
-                
-            // Material의 변경, Transform의 변경, Culling에 의한 삭제에 따라 Targets 초기화 (BatchRenderTargets[MTLName].Empty();)
-        }
-
-        FMatrix Model = JungleMath::CreateModelMatrix(
-            iter->GetWorldLocation(),
-            iter->GetWorldRotation(),
-            iter->GetWorldScale()
-            );
-    
-        FBoundingBox localBoundingBox = iter->AABB;
-        FBoundingBox WorldBoundingBox = FBoundingBox::TransformBy(localBoundingBox, iter->GetWorldLocation(), Model);
-        //if (Frustum.IsBoxVisible(WorldBoundingBox))
-        //{
-        //    StaticMeshObjs.Add(iter);
-        //}
-        
-        const FMatrix viewMatrix = ActiveViewport->GetViewMatrix();
-        const FMatrix projMatrix = ActiveViewport->GetProjectionMatrix();
-        const D3D11_VIEWPORT viewport = ActiveViewport->GetD3DViewport();
-        const FVector minBounds = WorldBoundingBox.min;
-        const FVector maxBounds = WorldBoundingBox.max;
-        
-        float screenCoverage = FBoundingBox::ComputeBoundingBoxScreenCoverage(
-            minBounds, maxBounds, viewMatrix, projMatrix, viewport.Width, viewport.Height
-        );
-        
-        if (0.5f <= screenCoverage && screenCoverage <= 1.f)
-        {
-            iter->SetLODLevel(0);
-        }
-        else if (0.1f <= screenCoverage && screenCoverage <= 0.5f)
-        {
-            iter->SetLODLevel(1);
-        }
-        else
-        {
-            iter->SetLODLevel(2);
-        }
-    }
+    //     FBoundingBox localBoundingBox = iter->AABB;
+    //     if (Frustum.IsBoxVisible(FBoundingBox::TransformBy(localBoundingBox,iter->GetWorldLocation(), Model)))
+    //     {
+    //         StaticMeshObjs.Add(iter);
+    //     }
+    // }
     
     for (const auto iter : TObjectRange<UGizmoBaseComponent>())
     {
         GizmoObjs.Add(iter);
     }
 
-    for (const auto iter : TObjectRange<UBillboardComponent>())
-    {
-        BillboardObjs.Add(iter);
-    }
+    //for (const auto iter : TObjectRange<UBillboardComponent>())
+    //{
+    //    BillboardObjs.Add(iter);
+    //}
 
-    for (const auto iter : TObjectRange<ULightComponentBase>())
-    {
-        LightObjs.Add(iter);
-    }
+    //for (const auto iter : TObjectRange<ULightComponentBase>())
+    //{
+    //    LightObjs.Add(iter);
+    //}
     
-    CreateBatchRenderCache();
+    //CreateBatchRenderCache();
 }
 
 void FRenderer::ClearRenderArr()
@@ -1230,13 +1449,27 @@ void FRenderer::Render(UWorld* World, const std::shared_ptr<FEditorViewportClien
     Graphics->ChangeRasterizer(ActiveViewport->GetViewMode());
     ChangeViewMode(ActiveViewport->GetViewMode());  // 완료 - Lit 없앰, Current 비교하여 ConstantBuffer Update X, 연산 짧음.
     //UpdateLightBuffer();
+    uint32 startTime, endTime;
 
+    if (GetAsyncKeyState(VK_RBUTTON) & 0x8000 || bWasOcculusionQueried) 
+    {
+        //ResolveOcclusionQueries();
+        bWasOcculusionQueried = false;
+    }
+    
     // UISOO TODO: 여기 Set LineShader
     UPrimitiveBatch::GetInstance().RenderBatchLine(ActiveViewport->GetViewMatrix(), ActiveViewport->GetProjectionMatrix());
-
+    
+    startTime = FPlatformTime::Cycles64();
     // UISOO TODO: 여기 Set StaticMeshShader
-    if (ActiveViewport->GetShowFlag() & static_cast<uint64>(EEngineShowFlags::SF_Primitives))
-        RenderStaticMeshes(World, ActiveViewport);
+    if (ActiveViewport->GetShowFlag() & static_cast<uint64>(EEngineShowFlags::SF_Primitives)) {
+        // RenderStaticMeshes(World, ActiveViewport);
+        RenderBakedBuffer();
+    }
+    
+    
+    endTime = FPlatformTime::Cycles64();
+    FWindowsPlatformTime::GElapsedMap["renderStaticMesh"] = FWindowsPlatformTime::ToMilliseconds(endTime - startTime);
 
     // UISOO TODO: Depth Stencil 바인딩 중
     RenderGizmos(World, ActiveViewport);
@@ -1246,13 +1479,20 @@ void FRenderer::Render(UWorld* World, const std::shared_ptr<FEditorViewportClien
         RenderBillboards(World, ActiveViewport);
     
     //RenderLight(World, ActiveViewport);
+
+    if (GetAsyncKeyState(VK_RBUTTON) & 0x8000) 
+    {
+        //IssueOcclusionQueries(ActiveViewport);
+        bWasOcculusionQueried = true;
+    }
+
+    
     
     ClearRenderArr();
 }
 
 void FRenderer::RenderStaticMeshes(UWorld* World, std::shared_ptr<FEditorViewportClient> ActiveViewport)
 {    
-    // TODO: 리팩토링 - Shader는 Material에 종속되어야됨.
     PrepareShader();
     // for (UStaticMeshComponent* StaticMeshComp : StaticMeshObjs)
     // {
@@ -1340,16 +1580,18 @@ void FRenderer::RenderStaticMeshes(UWorld* World, std::shared_ptr<FEditorViewpor
         UINT offset = 0;
         UINT stride = sizeof(FVertexSimple);
 
-        const auto Buffers = GetCachedBuffers(MaterialName);
-
-        for (const auto& [VertexBuffer, IndexBufferInfo] : Buffers)
+        const auto Buffers = CachedBuffers[MaterialName];
+        
+        for (const auto& [BufferIndex, BufferInfo] : Buffers)
         {
-            if (VertexBuffer == nullptr || IndexBufferInfo.Key == 0 || IndexBufferInfo.Value == nullptr)
+            ID3D11Buffer* VertexBuffer = BufferInfo.Key;
+            ID3D11Buffer* IndexBuffer = BufferInfo.Value.Value;
+            uint32 IndexCount = BufferInfo.Value.Key;
+            
+            if (VertexBuffer == nullptr || IndexCount == 0 || IndexBuffer == nullptr)
                 continue;
             
             DXGI_FORMAT IndexBufferFormat = DXGI_FORMAT_R32_UINT;
-            uint32 IndexCount = IndexBufferInfo.Key;
-            ID3D11Buffer* IndexBuffer = IndexBufferInfo.Value;
             Graphics->DeviceContext->IASetVertexBuffers(0, 1, &VertexBuffer, &stride, &offset);
             Graphics->DeviceContext->IASetIndexBuffer(IndexBuffer, IndexBufferFormat, 0);
             Graphics->DeviceContext->DrawIndexed(IndexCount, 0, 0);
@@ -1467,6 +1709,61 @@ void FRenderer::RenderBillboards(UWorld* World, std::shared_ptr<FEditorViewportC
         }
     }
     PrepareShader();
+}
+
+void FRenderer::UpdateBatchRenderTarget(std::shared_ptr<FEditorViewportClient> ActiveViewport)
+{
+    if (GEngineLoop.GetWorld() == nullptr)
+        return;
+    
+    // LevelEditor->GetActiveViewportClient()
+
+    //BatchRenderTargets.Empty();
+
+    uint64 startTime, endTime;
+    startTime = FPlatformTime::Cycles64();
+
+    // Prepare
+    const auto ocTree = GEngineLoop.GetWorld()->GetOcTree();
+    ocTree.PrepareCull([&](const FOctreeElement<UStaticMeshComponent>& element) {
+        UStaticMeshComponent* pStaticMeshComp = element.element;
+        pStaticMeshComp->bIsVisible = false;
+    });
+
+    // Octree의 FrustumCull을 호출하여, 프러스텀 내에 있는 요소들에 대해 처리합니다.
+    const FFrustum Frustum(ActiveViewport->GetViewMatrix(), ActiveViewport->GetProjectionMatrix());
+    ocTree.FrustumCull(Frustum);
+
+    // Occlusion
+    FVector cameraPos = ActiveViewport->ViewTransformPerspective.GetLocation();
+    ocTree.OcclusionCull(cameraPos);
+
+    // Execute Callback
+    ocTree.ExecuteCallbackForVisible([&](const FOctreeElement<UStaticMeshComponent>& element) {
+        UStaticMeshComponent* pStaticMeshComp = element.element;
+        pStaticMeshComp->bIsVisible = true;
+        //if ( !pStaticMeshComp->bIsVisible )
+        //    return;
+        //if ( Cast<UGizmoBaseComponent>(pStaticMeshComp) )
+        //    return;
+        //// StaticMeshObjs.Add(pStaticMeshComp);
+        //for ( uint32 i = 0; i < pStaticMeshComp->GetNumMaterials(); i++ ) {
+        //    auto Material = pStaticMeshComp->GetMaterial(i);
+        //    // LOD TODO: Texture 다른 거로 넣어주기
+        //    auto MTLName = Material->GetMaterialInfo().MTLName;
+        //    if ( !BatchRenderTargets.Contains(MTLName) ) {
+        //        BatchRenderTargets.Add(MTLName, BatchRenderTargetContext());
+        //        BatchRenderTargets[MTLName].bIsDirty = true;
+        //    }
+        //    if ( BatchRenderTargets[MTLName].bIsDirty ) {
+        //        BatchRenderTargets[MTLName].StaticMeshes.Add({ i, pStaticMeshComp });
+        //    }
+        //    // Material의 변경, Transform의 변경, Culling에 의한 삭제에 따라 Targets 초기화 (BatchRenderTargets[MTLName].Empty();
+        //}
+    });
+
+    endTime = FPlatformTime::Cycles64();
+    FWindowsPlatformTime::GElapsedMap["Culling"] = FWindowsPlatformTime::ToMilliseconds(endTime - startTime);
 }
 
 void FRenderer::SetTopology(const D3D11_PRIMITIVE_TOPOLOGY InPrimitiveTopology)
@@ -1596,9 +1893,15 @@ void FRenderer::SetPSConstantBuffers(uint32 StartSlot, uint32 NumBuffers, ID3D11
     Graphics->DeviceContext->PSSetConstantBuffers(StartSlot, NumBuffers, &InConstantBufferPtr);
 }
 
-TArray<TPair<ID3D11Buffer*, TPair<uint32, ID3D11Buffer*>>> FRenderer::GetCachedBuffers(const FString& InMaterialName)
+
+void FRenderer::IssueOcclusionQueries(const std::shared_ptr<FEditorViewportClient>& ActiveViewport)
 {
-    return CachedBuffers[InMaterialName];
+    OcclusionRenderer->IssueQueries(this, ActiveViewport);
+}
+
+void FRenderer::ResolveOcclusionQueries()
+{
+    OcclusionRenderer->ResolveQueries();
 }
 
 void FRenderer::RenderLight(UWorld* World, std::shared_ptr<FEditorViewportClient> ActiveViewport)
@@ -1610,3 +1913,4 @@ void FRenderer::RenderLight(UWorld* World, std::shared_ptr<FEditorViewportClient
         UPrimitiveBatch::GetInstance().RenderOBB(Light->GetBoundingBox(), Light->GetWorldLocation(), Model);
     }
 }
+

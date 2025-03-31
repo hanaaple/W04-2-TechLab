@@ -65,12 +65,12 @@ void UGizmoBaseComponent::TickComponent(float DeltaTime)
                 (activeViewport->ViewTransformPerspective.GetLocation() - PickedActor->GetRootComponent()->GetLocalLocation()).Magnitude()
             );
             scaler *= 0.1f;
-            RelativeScale3D = FVector( scaler,scaler,scaler);
+            SetScale(FVector( scaler,scaler,scaler));
         }
         else
         {
             float scaler = activeViewport->orthoSize * 0.1f;
-            RelativeScale3D = FVector( scaler,scaler,scaler);
+            SetScale(FVector( scaler,scaler,scaler));
         }
     }
 }

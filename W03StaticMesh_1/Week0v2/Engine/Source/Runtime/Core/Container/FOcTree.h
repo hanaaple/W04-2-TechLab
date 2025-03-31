@@ -31,7 +31,7 @@ struct FOctreeNode  : public std::enable_shared_from_this<FOctreeNode<T>>
     TArray<FOctreeElement<T>> Elements;            // 이 노드에 속하는 요소들 (leaf인 경우)
     std::shared_ptr<FOctreeNode<T>> Children[8];            // 8개 자식 노드 (leaf가 아니라면 사용)
     bool IsLeaf;                        // leaf 여부
-
+    int ChildrenCullFlags;
     FOctreeNode(const FBoundingBox& InBounds)
         : Bounds(InBounds), IsLeaf(true)
     {
@@ -80,10 +80,23 @@ public:
         QueryCollisionRay(Root, origin, direction, Callback);
     }
 
-    template<typename Fn>
-    void FrustumCull(const FFrustum& frustum, Fn Callback) const
+    void FrustumCull(const FFrustum& frustum) const
     {
-        FrustumCullRecursive(Root, frustum, Callback);
+        FrustumCullRecursive(Root, frustum);
+    }
+
+    void OcclusionCull(const FVector& cameraPos) const {
+        QueryOcclusion(Root, cameraPos);
+    }
+
+    template<typename Fn>
+    void PrepareCull(Fn Callback) const {
+        PrepareCullRecursive(Root, Callback);
+    }
+
+    template<typename Fn>
+    void ExecuteCallbackForVisible(Fn Callback) const {
+        ExecuteCallbackForVisibleRecursive(Root, Callback);
     }
 
     // Octree 클래스 내에 public 인터페이스로 추가
@@ -267,25 +280,67 @@ private:
     }
 
     template<typename Fn>
-    void FrustumCullRecursive(const std::shared_ptr<FOctreeNode<T>>& Node, const FFrustum &frustum, Fn Callback) const
+    void PrepareCullRecursive(const std::shared_ptr<FOctreeNode<T>>& Node, Fn Callback) const {
+        Node->ChildrenCullFlags = 0;
+        if ( Node->IsLeaf ) {
+            for ( const auto& elem : Node->Elements ) {
+                Callback(elem);
+            }
+        }
+        for (int i = 0; i < 8; ++i) {
+            if ( Node->Children[i] )
+                PrepareCullRecursive(Node->Children[i], Callback);
+        }
+    }
+
+    template<typename Fn>
+    void ExecuteCallbackForVisibleRecursive(const std::shared_ptr<FOctreeNode<T>>& Node, Fn Callback) const {
+        if ( Node->IsLeaf ) {
+            int i = 0;
+            for ( const auto& elem : Node->Elements ) {
+                if ( !(Node->ChildrenCullFlags & 1 << i) ) {
+                    Callback(elem);
+                }
+                ++i;
+            }
+        } else {
+            for ( int i = 0; i < 8; ++i ) {
+                if ( Node->Children[i] && !(Node->ChildrenCullFlags & 1 << i) ) {
+                    ExecuteCallbackForVisibleRecursive(Node->Children[i], Callback);
+                }
+            }
+        }
+    }
+
+    void FrustumCullRecursive(const std::shared_ptr<FOctreeNode<T>>& Node, const FFrustum &frustum) const
     {
-        if (!frustum.IsBoxVisible(Node->Bounds))
-            return;
+        //if (!frustum.IsBoxVisible(Node->Bounds))
+        //    return;
     
         if (Node->IsLeaf)
         {
-            for (const FOctreeElement<T> &elem : Node->Elements)
+            int i = 0;
+            for ( const auto& elem: Node->Elements )
             {
-                if (frustum.IsBoxVisible(elem.Bounds))
-                    Callback(elem);
+                if (!frustum.IsBoxVisible(elem.Bounds)) {
+                    Node->ChildrenCullFlags |= 1 << i;
+                }
+                ++i;
             }
             return;
         }
     
         for (int i = 0; i < 8; ++i)
         {
-            if (Node->Children[i])
-                FrustumCullRecursive(Node->Children[i], frustum, Callback);
+            if (Node->Children[i]) {
+                if ( frustum.IsBoxVisible(Node->Children[i]->Bounds) ) {
+                    FrustumCullRecursive(Node->Children[i], frustum);
+                } else {
+                    Node->ChildrenCullFlags |= 1 << i;
+                }
+                
+            }
+            
         }
     }
 
@@ -319,21 +374,104 @@ private:
         std::function<void(const FOctreeElement<T>&, float)> Callback
     ) const {
         float hitDistance = FLT_MAX;
-        if ( !Node->Bounds.Intersect(origin, direction, hitDistance) )
+        if ( !Node->Bounds.IntersectRay(origin, direction, hitDistance) )
             return;
 
         // 현재 노드의 요소 검사
         for ( const FOctreeElement<T>& elem : Node->Elements ) {
-            if ( elem.Bounds.Intersect(origin, direction, hitDistance) ) {
+            if ( elem.Bounds.IntersectRay(origin, direction, hitDistance) ) {
                 Callback(elem, hitDistance);
             }
             
         }
         // 자식 노드 탐색
         if ( !Node->IsLeaf ) {
-            for ( int i = 0; i < 8; ++i )
+            for ( int i = 0; i < 8; ++i ) {
+                if ( Node->ChildrenCullFlags & 1 << i )
+                    continue;
                 if ( Node->Children[i] )
                     QueryCollisionRay(Node->Children[i], origin, direction, Callback);
+            }
+        }
+    }
+
+    // Occlusion되지 않으면 ChildrenCullFlag 활성화
+    void QueryOcclusion(
+        const std::shared_ptr<FOctreeNode<T>> Node,
+        const FVector& cameraPos
+    ) const {
+
+        if ( Node->IsLeaf )
+            return;
+
+        // InOccludee가 나머지 7개의 BoundingBox에 가려지면 true.
+        auto IsOcclusions = [&cameraPos](
+            std::shared_ptr<FOctreeNode<T>> InNodes[], 
+            int InOccludeeIdx
+            )->bool {
+            constexpr float occluderScale = 0.8f;
+            constexpr float occludeeScale = 1.2f;
+            FBoundingBox scaled = InNodes[InOccludeeIdx]->Bounds.Expanded(occluderScale);
+            FVector& max = scaled.max;
+            FVector& min = scaled.min;
+            FVector occludeePoints[8] = {
+                FVector(max.x, max.y, max.z),
+                FVector(min.x, max.y, max.z),
+                FVector(max.x, min.y, max.z),
+                FVector(min.x, min.y, max.z),
+                FVector(max.x, max.y, min.z),
+                FVector(min.x, max.y, min.z),
+                FVector(max.x, min.y, min.z),
+                FVector(min.x, min.y, min.z),
+            };
+
+            // InOccludee의 AABB 8개 점과 InOccludee를 제외한 7개의 BoundingBox가 intersect하는지 테스트.
+            //int intersectFlags = 0;
+            //for ( int i = 0; i < 8; ++i ) {
+            //    FVector dir = (cameraPos - occludeePoints[i]).Normalize();
+            //    float hitDistance;
+            //    for ( int j = 0; j < 8; ++j ) {
+            //        if ( j == InOccludeeIdx )
+            //            continue;
+            //        FBoundingBox bb = InNodes[j]->Bounds.Expanded(occluderScale);
+            //        if ( bb.IntersectLine(occludeePoints[i], cameraPos) ) {
+            //            intersectFlags |= 1 << i;
+            //            break;
+            //        }
+            //    }
+            //}
+            int intersectFlags = 0;
+            for ( int j = 0; j < 8; ++j ) {
+                if ( j == InOccludeeIdx )
+                    continue;
+                FBoundingBox bb = InNodes[j]->Bounds.Expanded(occluderScale);
+                intersectFlags |= bb.IntersectLineMulti(occludeePoints, cameraPos);
+
+            }
+            return (intersectFlags == 0xff);
+        };
+
+        // Node 내에 카메라가 있으면 자식들 다 그려지는걸로 판정
+        FVector& max = Node->Bounds.max;
+        FVector& min = Node->Bounds.min;
+        bool bIsCameraConatined = false;
+
+        if ( min.x < cameraPos.x && cameraPos.x < max.x &&
+            min.y < cameraPos.y && cameraPos.y < max.y &&
+            min.z < cameraPos.z && cameraPos.z < max.z
+            ) {
+            bIsCameraConatined = true;
+        }
+        for ( int i = 0; i < 8; ++i ) {
+            if ( Node->ChildrenCullFlags & 1 << i )
+                continue;
+            if ( bIsCameraConatined ) {
+                QueryOcclusion(Node->Children[i], cameraPos);
+            } else if ( IsOcclusions(Node->Children, i) == false ) {
+                QueryOcclusion(Node->Children[i], cameraPos);
+            } else {
+                Node->ChildrenCullFlags |= 1 << i;
+            }
         }
     }
 };

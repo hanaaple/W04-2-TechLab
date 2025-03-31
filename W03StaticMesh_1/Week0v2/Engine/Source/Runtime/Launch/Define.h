@@ -180,13 +180,19 @@ public:
 	FVector max; // Maximum extents
 	float pad1;
     
-    bool Intersect(const FVector& rayOrigin, const FVector& rayDir, float& outDistance) const;
+    bool IntersectRay(const FVector& rayOrigin, const FVector& rayDir, float& outDistance) const;
+    bool IntersectLine(const FVector& p1, const FVector& p2) const;
+    int IntersectLineMulti(const FVector* p1, const FVector& p2) const;
 
     void ExpandToInclude(const FBoundingBox& Other);
 
     static FBoundingBox ComputeSceneBoundingBox(const TSet<class AActor*>& SpawnedActors);
 
     static FBoundingBox TransformBy(const FBoundingBox& localAABB, const FVector& center, const FMatrix& modelMatrix);
+
+    inline FBoundingBox Expanded(const float scale) const {
+        return FBoundingBox(min * scale, max * scale);
+    }
 
     FVector GetCenter() const
     {

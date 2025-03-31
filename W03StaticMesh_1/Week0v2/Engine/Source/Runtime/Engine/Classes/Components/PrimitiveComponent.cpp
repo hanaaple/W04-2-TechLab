@@ -20,7 +20,7 @@ void UPrimitiveComponent::TickComponent(float DeltaTime)
 
 int UPrimitiveComponent::CheckRayIntersection(const FVector& rayOrigin, const FVector& rayDirection, float& pfNearHitDistance)
 {
-    //if (!AABB.Intersect(rayOrigin, rayDirection, pfNearHitDistance)) return 0;
+    //if (!AABB.IntersectRay(rayOrigin, rayDirection, pfNearHitDistance)) return 0;
     int nIntersections = 0;
     //if (staticMesh == nullptr) return 0;
     //FVertexSimple* vertices = staticMesh->vertices.get();

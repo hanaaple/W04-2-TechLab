@@ -20,11 +20,16 @@ class FEditorViewportClient;
 class UBillboardComponent;
 class UStaticMeshComponent;
 class UGizmoBaseComponent;
-class FRenderer 
+class FOcclusionRenderer;
+class FRenderer
+
+#define UseBufferDynamic 0
+#define MaxBufferSize 64 * 1024 * 1024
 {
 
 private:
     float litFlag = 0;
+
 public:
     FGraphicsDevice* Graphics;
     ID3D11VertexShader* VertexShader = nullptr;
@@ -74,6 +79,8 @@ public:
     void CreateConstantBuffer();
     void CreateLightingConstantBuffer();
     void CreateLitUnlitBuffer();
+
+    ID3D11Buffer* CreateBuffer(void* Data, uint32 ByteWidth, D3D11_USAGE Usage, D3D11_CPU_ACCESS_FLAG Flag, D3D11_BIND_FLAG BindFlag);
     ID3D11Buffer* CreateVertexBuffer(FVertexSimple* vertices, UINT byteWidth) const;
     ID3D11Buffer* CreateVertexBuffer(const TArray<FVertexSimple>& vertices, UINT byteWidth) const;
     ID3D11Buffer* CreateIndexBuffer(uint32* indices, UINT byteWidth) const;
@@ -137,13 +144,18 @@ public: // line shader
     ID3D11ShaderResourceView* CreateConeSRV(ID3D11Buffer* pConeBuffer, UINT numCones);
 
     void CreateBatchRenderCache();
-    
+    void UpdateOrCreateBuffer(const FString& MaterialName, uint32 BufferIndex, FVertexSimple* VertexData, uint32 VertexDataSize, void* IndexData, uint32
+                              IndexDataSize, uint32 IndexDataCount, uint32 BufferSize);
+    void BakeBatchRenderBuffer();
+    void RenderBakedBuffer();
+    void ReleaseUnUsedBatchBuffer(const FString& MaterialName, uint32 ReleaseStartBufferIndex);
+
     void UpdateBoundingBoxBuffer(ID3D11Buffer* pBoundingBoxBuffer, const TArray<FBoundingBox>& BoundingBoxes, int numBoundingBoxes) const;
     void UpdateOBBBuffer(ID3D11Buffer* pBoundingBoxBuffer, const TArray<FOBB>& BoundingBoxes, int numBoundingBoxes) const;
     void UpdateConesBuffer(ID3D11Buffer* pConeBuffer, const TArray<FCone>& Cones, int numCones) const;
 
     //Render Pass Demo
-    void PrepareRender(std::shared_ptr<FEditorViewportClient> ActiveViewport);
+    void PrepareRender();
     void ClearRenderArr();
     void Render(UWorld* World, const std::shared_ptr<FEditorViewportClient>& ActiveViewport);
     void RenderStaticMeshes(UWorld* World, std::shared_ptr<FEditorViewportClient> ActiveViewport);
@@ -151,7 +163,10 @@ public: // line shader
     void RenderLight(UWorld* World, std::shared_ptr<FEditorViewportClient> ActiveViewport);
     void RenderBillboards(UWorld* World,std::shared_ptr<FEditorViewportClient> ActiveViewport);
 
-private:
+public:
+    void UpdateBatchRenderTarget(std::shared_ptr<FEditorViewportClient> ActiveViewport);
+    
+public:
     void SetTopology(const D3D11_PRIMITIVE_TOPOLOGY InPrimitiveTopology);
     void SetPSTextureSRV(uint32 StartSlot, uint32 NumViews, ID3D11ShaderResourceView* InSRV);
     void SetPSSamplerState(uint32 StartSlot, uint32 NumSamplers, ID3D11SamplerState* InSamplerState);
@@ -161,8 +176,6 @@ private:
     void SetVSConstantBuffers(uint32 StartSlot, uint32 NumBuffers, ID3D11Buffer* InConstantBufferPtr);
     void SetPSConstantBuffers(uint32 StartSlot, uint32 NumBuffers, ID3D11Buffer* InConstantBufferPtr);
 
-private:
-    TArray<TPair<ID3D11Buffer*, TPair<uint32, ID3D11Buffer*>>> GetCachedBuffers(const FString& InMaterialName);
     
 private:
     TArray<UStaticMeshComponent*> StaticMeshObjs;
@@ -209,6 +222,22 @@ private:
     TMap<uint32, TPair<uint32, ID3D11Buffer*>> CurrentVSConstantBuffers;
     TMap<uint32, TPair<uint32, ID3D11Buffer*>> CurrentPSConstantBuffers;
 
-    // Material
-    TMap<FString, TArray<TPair<ID3D11Buffer*, TPair<uint32, ID3D11Buffer*>>>> CachedBuffers; 
+    // Material, BufferIndex, VertexBuffer, IndexBufferCount, IndexBuffer
+    TMap<FString, TMap<uint32, TPair<ID3D11Buffer*, TPair<uint32, ID3D11Buffer*>>>> CachedBuffers;
+
+    struct VIBuffer {
+        TArray<ID3D11Buffer*> VertexBuffer;
+        TArray<ID3D11Buffer*> IndexBuffer;
+        uint32 Stride;
+        TArray<uint32> IndexCount;
+    };
+    TMap<FString, VIBuffer> BakedBuffers;
+    
+public:
+    void IssueOcclusionQueries(const std::shared_ptr<FEditorViewportClient>& ActiveViewport);
+    void ResolveOcclusionQueries();
+private:
+    FOcclusionRenderer* OcclusionRenderer = nullptr;
+    bool bWasOcculusionQueried = false;
 };
+
