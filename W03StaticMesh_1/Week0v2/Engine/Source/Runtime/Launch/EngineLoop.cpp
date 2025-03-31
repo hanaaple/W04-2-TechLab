@@ -136,7 +136,6 @@ int32 FEngineLoop::Init(HINSTANCE hInstance)
     GWorld = FObjectFactory::ConstructObject<UWorld>();
     GWorld->Initialize();
 
-    renderer.BakeBatchRenderBuffer();
 
     return 0;
 }
@@ -217,37 +216,39 @@ void FEngineLoop::Tick()
         FWindowsPlatformTime::GElapsedMap["Render"] = FWindowsPlatformTime::ToMilliseconds(endTime - startTime);
 
 
-        startTime = FPlatformTime::Cycles64();
+        //startTime = FPlatformTime::Cycles64();
         UIMgr->BeginFrame();
-        endTime = FPlatformTime::Cycles64();
+        //endTime = FPlatformTime::Cycles64();
         //elapsedTimes.UIBeginDuration = FWindowsPlatformTime::ToMilliseconds(endTime - startTime);
 
 
-        startTime = FPlatformTime::Cycles64();
+        //startTime = FPlatformTime::Cycles64();
         UnrealEditor->Render();
-        endTime = FPlatformTime::Cycles64();
+        //endTime = FPlatformTime::Cycles64();
         //elapsedTimes.UEDuration = FWindowsPlatformTime::ToMilliseconds(endTime - startTime);
 
-        startTime = FPlatformTime::Cycles64();
-        Console::GetInstance().Draw();
-        endTime = FPlatformTime::Cycles64();
+        //startTime = FPlatformTime::Cycles64();
+        //Console::GetInstance().Draw();
+        //endTime = FPlatformTime::Cycles64();
         //elapsedTimes.ConsoleDuration = FWindowsPlatformTime::ToMilliseconds(endTime - startTime);
 
+        
         ImGui::Begin("stat");
         for(auto& [name, elapsed]: FPlatformTime::GElapsedMap) {
             ImGui::Text("%s: %fms", name.c_str(), elapsed);
         }
         ImGui::End();
+        
 
-        startTime = FPlatformTime::Cycles64();
+        //startTime = FPlatformTime::Cycles64();
         UIMgr->EndFrame();
-        endTime = FPlatformTime::Cycles64();
+        //endTime = FPlatformTime::Cycles64();
         //elapsedTimes.UIEndDuration = FWindowsPlatformTime::ToMilliseconds(endTime - startTime);
 
         // Pending 처리된 오브젝트 제거
-        startTime = FPlatformTime::Cycles64();
+        //startTime = FPlatformTime::Cycles64();
         GUObjectArray.ProcessPendingDestroyObjects();
-        endTime = FPlatformTime::Cycles64();
+        //endTime = FPlatformTime::Cycles64();
         //elapsedTimes.pendingDestroyTime = FWindowsPlatformTime::ToMilliseconds(endTime - startTime);
 
         startTime = FPlatformTime::Cycles64();

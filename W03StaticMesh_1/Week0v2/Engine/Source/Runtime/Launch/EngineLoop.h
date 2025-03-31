@@ -11,7 +11,7 @@ class FEditorViewportClient;
 class SSplitterV;
 class SSplitterH;
 class SLevelEditor;
-
+class FPSEditorPanel;
 class FEngineLoop
 {
 public:

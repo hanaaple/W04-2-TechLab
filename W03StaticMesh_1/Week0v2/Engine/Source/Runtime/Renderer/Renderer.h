@@ -148,6 +148,7 @@ public: // line shader
                               IndexDataSize, uint32 IndexDataCount, uint32 BufferSize);
     void BakeBatchRenderBuffer();
     void RenderBakedBuffer();
+    void ReleaseBakedData();
     void ReleaseUnUsedBatchBuffer(const FString& MaterialName, uint32 ReleaseStartBufferIndex);
 
     void UpdateBoundingBoxBuffer(ID3D11Buffer* pBoundingBoxBuffer, const TArray<FBoundingBox>& BoundingBoxes, int numBoundingBoxes) const;

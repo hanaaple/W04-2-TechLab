@@ -14,7 +14,7 @@
 #include "tinyfiledialogs/tinyfiledialogs.h"
 #include "UnrealEd/EditorViewportClient.h"
 #include "PropertyEditor/ShowFlags.h"
-
+#include "UnrealEd/SceneMgr.h"
 void ControlEditorPanel::Render()
 {
     /* Pre Setup */
@@ -48,6 +48,7 @@ void ControlEditorPanel::Render()
     
     CreateMenuButton(IconSize, IconFont);
     
+    /*
     ImGui::SameLine();
     
     CreateFlagButton();
@@ -55,20 +56,29 @@ void ControlEditorPanel::Render()
     ImGui::SameLine();
 
     CreateModifyButton(IconSize, IconFont);
-
     ImGui::SameLine();
 
+    */
     /* Get Window Content Region */
-    float ContentWidth = ImGui::GetWindowContentRegionMax().x;
+    //float ContentWidth = ImGui::GetWindowContentRegionMax().x;
 
     /* Move Cursor X Position */
-    ImGui::SetCursorPosX(ContentWidth - (IconSize.x * 3.0f + 16.0f));
+    //ImGui::SetCursorPosX(ContentWidth - (IconSize.x * 3.0f + 16.0f));
     
-    ImGui::PushFont(IconFont);
-    CreateSRTButton(IconSize);
-    ImGui::PopFont();
+    //ImGui::PushFont(IconFont);
+    //CreateSRTButton(IconSize);
+    //ImGui::PopFont();
     
     ImGui::End();
+}
+
+const char* GetFileNameOnly(const char* FilePath)
+{
+    const char* lastSlash = std::strrchr(FilePath, '/');
+    if (!lastSlash)
+        lastSlash = std::strrchr(FilePath, '\\'); // 윈도우 경로도 처리
+
+    return lastSlash ? lastSlash + 1 : FilePath;
 }
 
 void ControlEditorPanel::CreateMenuButton(ImVec2 ButtonSize, ImFont* IconFont)
@@ -103,7 +113,15 @@ void ControlEditorPanel::CreateMenuButton(ImVec2 ButtonSize, ImFont* IconFont)
                 ImGui::End();
                 return;
             }
-
+            else
+            {
+                FSceneMgr::NewSceneData();
+                FSceneMgr::LoadSceneData(GetFileNameOnly(FileName));
+                
+                GEngineLoop.GetWorld()->LoadWorld();
+                GEngineLoop.renderer.ReleaseBakedData();
+                GEngineLoop.renderer.BakeBatchRenderBuffer();
+            }
             // TODO: Load Scene
         }
 
