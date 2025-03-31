@@ -1260,8 +1260,11 @@ void FRenderer::RenderBakedBuffer() {
             const OBJ::FStaticMeshRenderData* renderData = pStaticMeshComp->GetStaticMesh()->GetRenderData();
             const uint32 indicesCount = renderData->Indices.Num();
             
+            // if next meshcomp is visible
+            bool bIsNextVisible = (iter + 1 != BatchRenderTargetContext.StaticMeshes.end()) && !(iter + 1)->Value->bIsVisible;
+
             // if meshcomp is not visible
-            if (!pStaticMeshComp->bIsVisible/* && !(iter + 1)->Value->bIsVisible */) {
+            if (!pStaticMeshComp->bIsVisible && bIsNextVisible ) {
                 if (length > 0)
                     Graphics->DeviceContext->DrawIndexed(length, offset, 0);
 
@@ -1324,7 +1327,7 @@ void FRenderer::UpdateBoundingBoxBuffer(ID3D11Buffer* pBoundingBoxBuffer, const 
     if (!pBoundingBoxBuffer) return;
     D3D11_MAPPED_SUBRESOURCE mappedResource;
     Graphics->DeviceContext->Map(pBoundingBoxBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
-    const auto pData = static_cast<FBoundingBox*>(mappedResource.pData);
+    auto pData = reinterpret_cast<FBoundingBox*>(mappedResource.pData);
     for (int i = 0; i < BoundingBoxes.Num(); ++i)
     {
         pData[i] = BoundingBoxes[i];
