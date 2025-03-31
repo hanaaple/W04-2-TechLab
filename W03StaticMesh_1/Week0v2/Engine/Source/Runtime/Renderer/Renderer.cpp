@@ -1255,10 +1255,12 @@ void FRenderer::RenderBakedBuffer()
         Graphics->DeviceContext->Unmap(MaterialConstantBuffer, 0); // GPU�� �ٽ� ��밡���ϰ� �����
     }
 
+
+
     // Render
     for ( auto& [MaterialName, BatchRenderTargetContext] : BatchRenderTargets )
     {
-
+        uint32 LODIdx = 0;
         uint32 bufferIdx = 0;
         uint32 offset = 0;
         uint32 length = 0;
@@ -1276,24 +1278,27 @@ void FRenderer::RenderBakedBuffer()
             SetPSSamplerState(0, 1, nullptr);
         }
 
-        for ( auto iter = BatchRenderTargetContext.StaticMeshes.begin(); iter != BatchRenderTargetContext.StaticMeshes.end(); ++iter )
+        Graphics->DeviceContext->IASetVertexBuffers(0, 1, &BakedLODBuffers[MaterialName][LODIdx].VertexBuffer[bufferIdx], &stride, &vertexOffset);
+        Graphics->DeviceContext->IASetIndexBuffer(BakedLODBuffers[MaterialName][LODIdx].IndexBuffer[bufferIdx], DXGI_FORMAT_R32_UINT, 0);
+
+        auto& Meshes = BatchRenderTargetContext.StaticMeshes;
+
+        for ( int i = 0; i < Meshes.Num(); ++i )
         {
-            const UStaticMeshComponent* pStaticMeshComp = iter->Value;
-            auto renderDatas = pStaticMeshComp->GetStaticMesh()->GetLODDatas();
+            const UStaticMeshComponent* pStaticMeshComp = Meshes[i].Value;
+            const auto& renderDatas = pStaticMeshComp->GetStaticMesh()->GetLODDatas();
             const uint32 lodLevel = pStaticMeshComp->GetLODLevel();
             const uint32 indicesCount = renderDatas[lodLevel]->Indices.Num();
-
-            Graphics->DeviceContext->IASetVertexBuffers(0, 1, &BakedLODBuffers[MaterialName][lodLevel].VertexBuffer[bufferIdx], &stride, &vertexOffset);
-            Graphics->DeviceContext->IASetIndexBuffer(BakedLODBuffers[MaterialName][lodLevel].IndexBuffer[bufferIdx], DXGI_FORMAT_R32_UINT, 0);
             
             // if next meshcomp is visible
-            const bool bIsNextVisible = (iter + 1 != BatchRenderTargetContext.StaticMeshes.end()) && !(iter + 1)->Value->bIsVisible;
+            const bool bIsNextVisible = (i + 1 < Meshes.Num()) && !Meshes[i+1].Value->bIsVisible;
 
             // if meshcomp is not visible
             if (!pStaticMeshComp->bIsVisible && bIsNextVisible )
             {
-                if (length > 0)
+                if (length > 0) {
                     Graphics->DeviceContext->DrawIndexed(length, offset, 0);
+                }
 
                 offset += length + indicesCount;
                 length = 0;
@@ -1774,44 +1779,12 @@ void FRenderer::UpdateBatchRenderTarget(const std::shared_ptr<FEditorViewportCli
     ocTree.ExecuteCallbackForVisible([&](const FOctreeElement<UStaticMeshComponent>& element) {
         UStaticMeshComponent* pStaticMeshComp = element.element;
         pStaticMeshComp->bIsVisible = true;
-        //if ( !pStaticMeshComp->bIsVisible )
-        //    return;
-        //if ( Cast<UGizmoBaseComponent>(pStaticMeshComp) )
-        //    return;
-        //// StaticMeshObjs.Add(pStaticMeshComp);
-        //for ( uint32 i = 0; i < pStaticMeshComp->GetNumMaterials(); i++ ) {
-        //    auto Material = pStaticMeshComp->GetMaterial(i);
-        //    // LOD TODO: Texture 다른 거로 넣어주기
-        //    auto MTLName = Material->GetMaterialInfo().MTLName;
-        //    if ( !BatchRenderTargets.Contains(MTLName) ) {
-        //        BatchRenderTargets.Add(MTLName, BatchRenderTargetContext());
-        //        BatchRenderTargets[MTLName].bIsDirty = true;
-        //    }
-        //    if ( BatchRenderTargets[MTLName].bIsDirty ) {
-        //        BatchRenderTargets[MTLName].StaticMeshes.Add({ i, pStaticMeshComp });
-        //    }
-        //    // Material의 변경, Transform의 변경, Culling에 의한 삭제에 따라 Targets 초기화 (BatchRenderTargets[MTLName].Empty();
-        //}
-    });
 
-    for (auto pStaticMeshComp : TObjectRange<UStaticMeshComponent>())
-    {
-        if (pStaticMeshComp->bIsVisible == true)
-        {
-            FBoundingBox aabb = pStaticMeshComp->AABB;
-            const auto viewport = ActiveViewport->GetD3DViewport();
-            float screenCoverage = FBoundingBox::ComputeBoundingBoxScreenCoverage(aabb.min, aabb.max, ActiveViewport->GetViewMatrix(), ActiveViewport->GetProjectionMatrix(), viewport.Width, viewport.Height);
-            pStaticMeshComp->SetLODLevel(0);
-            // if (0.75f <= screenCoverage && screenCoverage <= 1.0f)
-            // {
-            //     pStaticMeshComp->SetLODLevel(0);
-            // }
-            // else if (0.0f <= screenCoverage && screenCoverage < 0.75f)
-            // {
-            //     pStaticMeshComp->SetLODLevel(1);
-            // }
-        }
-    }
+        //FBoundingBox aabb = pStaticMeshComp->AABB;
+        //const auto viewport = ActiveViewport->GetD3DViewport();
+        //float screenCoverage = FBoundingBox::ComputeBoundingBoxScreenCoverage(aabb.min, aabb.max, ActiveViewport->GetViewMatrix(), ActiveViewport->GetProjectionMatrix(), viewport.Width, viewport.Height);
+        pStaticMeshComp->SetLODLevel(0);
+    });
 
     endTime = FPlatformTime::Cycles64();
     FWindowsPlatformTime::GElapsedMap["Culling"] = FWindowsPlatformTime::ToMilliseconds(endTime - startTime);
