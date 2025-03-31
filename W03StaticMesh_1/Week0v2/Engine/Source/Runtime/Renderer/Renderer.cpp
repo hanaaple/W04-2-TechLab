@@ -1139,130 +1139,106 @@ void FRenderer::UpdateOrCreateBuffer(const FString& MaterialName, uint32 BufferI
 
 void FRenderer::BakeBatchRenderBuffer()
 {
-    // Lookup Actors
+    // 액터 조회
     TSet<AActor*> Actors = GEngineLoop.GetWorld()->GetActors();
-    for (AActor* actor : Actors)
+    for (const auto pStaticMeshComp : TObjectRange<UStaticMeshComponent>())
     {
-        UStaticMeshComponent* pStaticMeshComp = actor->GetComponentByClass<UStaticMeshComponent>();
-        if ( Cast<UGizmoBaseComponent>(pStaticMeshComp) )
-            return;
-        // StaticMeshObjs.Add(pStaticMeshComp);
-        for ( uint32 i = 0; i < pStaticMeshComp->GetNumMaterials(); ++i )
-            {
+        if (Cast<UGizmoBaseComponent>(pStaticMeshComp))
+            continue; // return 대신 continue 사용
+
+        for (uint32 i = 0; i < pStaticMeshComp->GetNumMaterials(); ++i)
+        {
             UMaterial* Material = pStaticMeshComp->GetMaterial(i);
             // LOD TODO: Texture 다른 거로 넣어주기
             const FString& MTLName = Material->GetMaterialInfo().MTLName;
-            if ( !BatchRenderTargets.Contains(MTLName) )
+            if (!BatchRenderTargets.Contains(MTLName))
             {
                 BatchRenderTargets.Add(MTLName, BatchRenderTargetContext());
                 BatchRenderTargets[MTLName].bIsDirty = true;
             }
             BatchRenderTargets[MTLName].StaticMeshes.Add({ i, pStaticMeshComp });
-            // Material의 변경, Transform의 변경, Culling에 의한 삭제에 따라 Targets 초기화 (BatchRenderTargets[MTLName].Empty();
         }
     }
 
-    for ( auto& [MaterialName, BatchRenderTargetContext] : BatchRenderTargets )
+    // 각 Material에 대해 LOD별 누적 데이터를 별도로 관리
+    for (auto& [MaterialName, BatchRenderTargetContext] : BatchRenderTargets)
     {
-        TArray<FVertexSimple> VertexData = {};
-        TArray<uint32> IndexData = {};
-        uint32 VertexOffset = 0;
+        // 예제에서는 LOD 레벨을 3으로 가정 (필요시 동적 결정 가능)
+        const int32 LODCount = 3;
         BakedLODBuffers[MaterialName].Empty();
-        BakedLODBuffers[MaterialName].SetNum(3);
+        BakedLODBuffers[MaterialName].SetNum(LODCount);
 
-        
-        for (auto& [_, pStaticMeshComp]: BatchRenderTargetContext.StaticMeshes)
+        // 각 LOD별 누적 정점/인덱스 데이터와 누적 버텍스 오프셋을 초기화
+        TArray<TArray<FVertexSimple>> AccumVertexData;
+        TArray<TArray<uint32>> AccumIndexData;
+        TArray<uint32> AccumVertexOffset;
+        AccumVertexData.SetNum(LODCount);
+        AccumIndexData.SetNum(LODCount);
+        AccumVertexOffset.Init(0, LODCount);
+
+        // 해당 Material에 속한 StaticMeshComponent들의 데이터를 누적합니다.
+        for (auto& [MaterialIndex, pStaticMeshComp] : BatchRenderTargetContext.StaticMeshes)
         {
+            // 각 메시의 LOD 데이터를 가져옴
             auto LODRenderDatas = pStaticMeshComp->GetStaticMesh()->GetLODDatas();
-            for (int lodLevel = 0; lodLevel < LODRenderDatas.Num(); ++lodLevel)
-            {   
+            const int32 MeshLODCount = LODRenderDatas.Num();
+            for (int32 lodLevel = 0; lodLevel < MeshLODCount && lodLevel < LODCount; ++lodLevel)
+            {
+                // 해당 LOD의 정점과 인덱스 데이터
                 const TArray<FVertexSimple>& Vertices = pStaticMeshComp->LODVertices[lodLevel];
                 TArray<uint32> Indices = pStaticMeshComp->GetStaticMesh()->GetRenderData(lodLevel)->Indices;
-                for (int i = 0; i < Indices.Num(); ++i)
+
+                // 인덱스에 현재 누적된 버텍스 오프셋을 적용
+                for (int32 i = 0; i < Indices.Num(); ++i)
                 {
-                    Indices[i] += VertexOffset;
+                    Indices[i] += AccumVertexOffset[lodLevel];
                 }
 
-                VertexData.Append(Vertices);
-                IndexData.Append(Indices);
-                VertexOffset += Vertices.Num();
+                // 해당 LOD 누적 데이터에 추가
+                AccumVertexData[lodLevel].Append(Vertices);
+                AccumIndexData[lodLevel].Append(Indices);
+                AccumVertexOffset[lodLevel] += Vertices.Num();
 
-                if (sizeof(FVertexSimple) * Vertices.Num() > MaxBufferSize || sizeof(uint32) * Indices.Num() > MaxBufferSize)
+                // 누적 데이터의 총 메모리 사용량이 MaxBufferSize를 초과하면 flush
+                if (sizeof(FVertexSimple) * AccumVertexData[lodLevel].Num() > MaxBufferSize ||
+                    sizeof(uint32) * AccumIndexData[lodLevel].Num() > MaxBufferSize)
                 {
-                    BakedLODBuffers[MaterialName][lodLevel].VertexBuffer.Add(CreateVertexBuffer(VertexData, sizeof(FVertexSimple) * VertexData.Num()));
-                    BakedLODBuffers[MaterialName][lodLevel].IndexBuffer.Add(CreateIndexBuffer(IndexData, sizeof(uint32) * Indices.Num()));
+                    BakedLODBuffers[MaterialName][lodLevel].VertexBuffer.Add(
+                        CreateVertexBuffer(AccumVertexData[lodLevel], sizeof(FVertexSimple) * AccumVertexData[lodLevel].Num()));
+                    BakedLODBuffers[MaterialName][lodLevel].IndexBuffer.Add(
+                        CreateIndexBuffer(AccumIndexData[lodLevel], sizeof(uint32) * AccumIndexData[lodLevel].Num()));
                     BakedLODBuffers[MaterialName][lodLevel].Stride = sizeof(FVertexSimple);
-                    BakedLODBuffers[MaterialName][lodLevel].IndexCount.Add(IndexData.Num());
+                    BakedLODBuffers[MaterialName][lodLevel].IndexCount.Add(AccumIndexData[lodLevel].Num());
 
-                    VertexData.Empty();
-                    IndexData.Empty();
-                    VertexOffset = 0;
+                    // 해당 LOD의 누적 데이터 초기화
+                    AccumVertexData[lodLevel].Empty();
+                    AccumIndexData[lodLevel].Empty();
+                    AccumVertexOffset[lodLevel] = 0;
                 }
+            }
+        }
 
-                BakedLODBuffers[MaterialName][lodLevel].VertexBuffer.Add(CreateVertexBuffer(VertexData, sizeof(FVertexSimple) * VertexData.Num()));
-                BakedLODBuffers[MaterialName][lodLevel].IndexBuffer.Add(CreateIndexBuffer(IndexData, sizeof(uint32) * Indices.Num()));
+        // 모든 메시 처리가 끝난 후, 각 LOD별 남은 데이터를 flush
+        for (int32 lodLevel = 0; lodLevel < LODCount; ++lodLevel)
+        {
+            if (AccumVertexData[lodLevel].Num() > 0 && AccumIndexData[lodLevel].Num() > 0)
+            {
+                BakedLODBuffers[MaterialName][lodLevel].VertexBuffer.Add(
+                    CreateVertexBuffer(AccumVertexData[lodLevel], sizeof(FVertexSimple) * AccumVertexData[lodLevel].Num()));
+                BakedLODBuffers[MaterialName][lodLevel].IndexBuffer.Add(
+                    CreateIndexBuffer(AccumIndexData[lodLevel], sizeof(uint32) * AccumIndexData[lodLevel].Num()));
                 BakedLODBuffers[MaterialName][lodLevel].Stride = sizeof(FVertexSimple);
-                BakedLODBuffers[MaterialName][lodLevel].IndexCount.Add(IndexData.Num());
+                BakedLODBuffers[MaterialName][lodLevel].IndexCount.Add(AccumIndexData[lodLevel].Num());
             }
         }
     }
-    // // bake render buffers
-    // for ( auto& [MaterialName, BatchRenderTargetContext] : BatchRenderTargets ) {
-    //
-    //     TArray<FVertexSimple> VertexData = {};
-    //     TArray<uint32> IndexData = {};
-    //     uint32 VertexOffset = 0;
-    //     BakedBuffers[MaterialName] = {
-    //         .VertexBuffer = {},
-    //         .IndexBuffer = {},
-    //     };
-    //
-    //
-    //
-    //     for (auto& [_, pStaticMeshComp]: BatchRenderTargetContext.StaticMeshes) {
-    //         const OBJ::FStaticMeshRenderData* renderData = pStaticMeshComp->GetStaticMesh()->GetRenderData();
-    //
-    //         const TArray<FVertexSimple>& Vertices = pStaticMeshComp->Vertices;
-    //         TArray<uint32> Indices = TArray<uint32>(renderData->Indices);
-    //         for (int i = 0; i < Indices.Num(); ++i) {
-    //             Indices[i] += VertexOffset;
-    //         }
-    //         VertexData.Append(Vertices);
-    //         IndexData.Append(Indices);
-    //         VertexOffset += Vertices.Num();
-    //
-    //         if ( sizeof(FVertexSimple) * VertexData.Num() > MaxBufferSize || 
-    //             sizeof(uint32) * IndexData.Num() > MaxBufferSize
-    //             ) {
-    //             BakedBuffers[MaterialName].VertexBuffer.Add(
-    //                 CreateVertexBuffer(VertexData, sizeof(FVertexSimple) * VertexData.Num())
-    //             );
-    //             BakedBuffers[MaterialName].IndexBuffer.Add(
-    //                 CreateIndexBuffer(IndexData, sizeof(uint32) * IndexData.Num())
-    //             );
-    //             BakedBuffers[MaterialName].Stride = sizeof(FVertexSimple);
-    //             BakedBuffers[MaterialName].IndexCount.Add(IndexData.Num());
-    //             VertexData.Empty();
-    //             IndexData.Empty();
-    //             VertexOffset = 0;
-    //         }
-    //     }
-    //
-    //     BakedBuffers[MaterialName].VertexBuffer.Add(
-    //         CreateVertexBuffer(VertexData, sizeof(FVertexSimple) * VertexData.Num())
-    //     );
-    //     BakedBuffers[MaterialName].IndexBuffer.Add(
-    //         CreateIndexBuffer(IndexData, sizeof(uint32) * IndexData.Num())
-    //     );
-    //     BakedBuffers[MaterialName].Stride = sizeof(FVertexSimple);
-    //     BakedBuffers[MaterialName].IndexCount.Add(IndexData.Num());
-    // }
 }
+
 
 void FRenderer::RenderBakedBuffer()
 {
-    uint32 stride = sizeof(FVertexSimple);
-    uint32 vertexOffset = 0;
+    constexpr uint32 stride = sizeof(FVertexSimple);
+    constexpr uint32 vertexOffset = 0;
 
     PrepareShader();
 
@@ -1302,7 +1278,7 @@ void FRenderer::RenderBakedBuffer()
 
         for ( auto iter = BatchRenderTargetContext.StaticMeshes.begin(); iter != BatchRenderTargetContext.StaticMeshes.end(); ++iter )
         {
-            UStaticMeshComponent* pStaticMeshComp = iter->Value;
+            const UStaticMeshComponent* pStaticMeshComp = iter->Value;
             auto renderDatas = pStaticMeshComp->GetStaticMesh()->GetLODDatas();
             const uint32 lodLevel = pStaticMeshComp->GetLODLevel();
             const uint32 indicesCount = renderDatas[lodLevel]->Indices.Num();
@@ -1311,7 +1287,7 @@ void FRenderer::RenderBakedBuffer()
             Graphics->DeviceContext->IASetIndexBuffer(BakedLODBuffers[MaterialName][lodLevel].IndexBuffer[bufferIdx], DXGI_FORMAT_R32_UINT, 0);
             
             // if next meshcomp is visible
-            bool bIsNextVisible = (iter + 1 != BatchRenderTargetContext.StaticMeshes.end()) && !(iter + 1)->Value->bIsVisible;
+            const bool bIsNextVisible = (iter + 1 != BatchRenderTargetContext.StaticMeshes.end()) && !(iter + 1)->Value->bIsVisible;
 
             // if meshcomp is not visible
             if (!pStaticMeshComp->bIsVisible && bIsNextVisible )
@@ -1344,84 +1320,6 @@ void FRenderer::RenderBakedBuffer()
             }
         }
     }
-    // uint32 stride = sizeof(FVertexSimple);
-    // uint32 vertexOffset = 0;
-    //
-    // PrepareShader();
-    //
-    // // MaterialConstant
-    // if ( MaterialConstantBuffer ) {
-    //     D3D11_MAPPED_SUBRESOURCE ConstantBufferMSR; // GPU�� �޸� �ּ� ����
-    //
-    //     Graphics->DeviceContext->Map(MaterialConstantBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &ConstantBufferMSR); // update constant buffer every frame
-    //     {
-    //         FMaterialConstants* constants = static_cast<FMaterialConstants*>(ConstantBufferMSR.pData);
-    //         constants->DiffuseColor = { 0, 0, 0 };
-    //     }
-    //     Graphics->DeviceContext->Unmap(MaterialConstantBuffer, 0); // GPU�� �ٽ� ��밡���ϰ� �����
-    // }
-    //
-    // // Render
-    // for ( auto& [MaterialName, BatchRenderTargetContext] : BatchRenderTargets ) {
-    //
-    //     uint32 bufferIdx = 0;
-    //     uint32 offset = 0;
-    //     uint32 length = 0;
-    //
-    //     Graphics->DeviceContext->IASetVertexBuffers(0, 1,
-    //         &BakedBuffers[MaterialName].VertexBuffer[bufferIdx], &stride, &vertexOffset);
-    //     Graphics->DeviceContext->IASetIndexBuffer(
-    //         BakedBuffers[MaterialName].IndexBuffer[bufferIdx], DXGI_FORMAT_R32_UINT, 0);
-    //
-    //     // Set Material
-    //     UMaterial* Material = FManagerOBJ::GetMaterial(MaterialName);
-    //     const auto& MaterialInfo = Material->GetMaterialInfo();
-    //     if ( MaterialInfo.bHasTexture == true ) {
-    //         std::shared_ptr<FTexture> texture = FEngineLoop::resourceMgr.GetTexture(MaterialInfo.DiffuseTexturePath);
-    //
-    //         SetPSTextureSRV(0, 1, texture->TextureSRV);
-    //         SetPSSamplerState(0, 1, texture->SamplerState);
-    //     } else {
-    //         SetPSTextureSRV(0, 1, nullptr);
-    //         SetPSSamplerState(0, 1, nullptr);
-    //     }
-    //
-    //     for ( auto iter = BatchRenderTargetContext.StaticMeshes.begin(); iter != BatchRenderTargetContext.StaticMeshes.end(); ++iter ) {
-    //         UStaticMeshComponent* pStaticMeshComp = iter->Value;
-    //         const OBJ::FStaticMeshRenderData* renderData = pStaticMeshComp->GetStaticMesh()->GetRenderData();
-    //         const uint32 indicesCount = renderData->Indices.Num();
-    //         
-    //         // if next meshcomp is visible
-    //         bool bIsNextVisible = (iter + 1 != BatchRenderTargetContext.StaticMeshes.end()) && !(iter + 1)->Value->bIsVisible;
-    //
-    //         // if meshcomp is not visible
-    //         if (!pStaticMeshComp->bIsVisible && bIsNextVisible ) {
-    //             if (length > 0)
-    //                 Graphics->DeviceContext->DrawIndexed(length, offset, 0);
-    //
-    //             offset += length + indicesCount;
-    //             length = 0;
-    //         } else {
-    //             length += indicesCount;
-    //         }
-    //
-    //         // if end of array
-    //         if (offset + length >= BakedBuffers[MaterialName].IndexCount[bufferIdx]) {
-    //             if ( length > 0 )
-    //                 Graphics->DeviceContext->DrawIndexed(length, offset, 0);
-    //
-    //             offset = 0;
-    //             length = 0;
-    //             ++bufferIdx;
-    //             if ( BakedBuffers[MaterialName].VertexBuffer.Num() > bufferIdx ) {
-    //                 Graphics->DeviceContext->IASetVertexBuffers(0, 1,
-    //                     &BakedBuffers[MaterialName].VertexBuffer[bufferIdx], &stride, &vertexOffset);
-    //                 Graphics->DeviceContext->IASetIndexBuffer(
-    //                     BakedBuffers[MaterialName].IndexBuffer[bufferIdx], DXGI_FORMAT_R32_UINT, 0);
-    //             }
-    //         }
-    //     }
-    // }
 }
 
 void FRenderer::ReleaseUnUsedBatchBuffer(const FString& MaterialName, uint32 ReleaseStartBufferIndex)

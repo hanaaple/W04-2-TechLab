@@ -150,12 +150,12 @@ void FEngineLoop::Render()
     if (LevelEditor->IsMultiViewport())
     {
         std::shared_ptr<FEditorViewportClient> viewportClient = GetLevelEditor()->GetActiveViewportClient();
-        for (int i = 0; i < 4; ++i)
-        {
-            LevelEditor->SetViewportClient(i);
-            renderer.PrepareRender();
-            renderer.Render(GetWorld(),LevelEditor->GetActiveViewportClient());
-        }
+        //for (int i = 0; i < 4; ++i)
+        //{
+        //    LevelEditor->SetViewportClient(i);
+        //    renderer.PrepareRender();
+        //    renderer.Render(GetWorld(),LevelEditor->GetActiveViewportClient());
+        //}
         GetLevelEditor()->SetViewportClient(viewportClient);
     }
     else
