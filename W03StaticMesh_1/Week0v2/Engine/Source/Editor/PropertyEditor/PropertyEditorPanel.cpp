@@ -799,7 +799,7 @@ void PropertyEditorPanel::DrawActorHierarchyRecursive(USceneComponent* TargetSce
 
     if (bWasSelected)
     {
-        SelectedCount++;
+        //SelectedCount++;
         ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0.2f, 0.6f, 0.8f, 1.0f));
     }
 
@@ -835,7 +835,7 @@ void PropertyEditorPanel::DrawActorHierarchyRecursive(USceneComponent* TargetSce
     // Push된 스타일이 있으면 Pop
     if (bWasSelected)
     {
-        SelectedCount--;
+        //SelectedCount--;
         ImGui::PopStyleColor();
     }
 }
