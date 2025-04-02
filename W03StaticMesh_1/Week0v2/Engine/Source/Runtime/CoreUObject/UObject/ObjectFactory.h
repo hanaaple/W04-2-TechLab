@@ -66,8 +66,8 @@ public:
         UClass* InClass = T::StaticClass();
         FName Name = InClass->GetDefaultObjectName();
         uint32 id = UEngineStatics::GenUUID();
-
-        T* Obj = new T;  // TODO: FPlatformMemory::Malloc으로 변경, placement new 사용시 Free방법 생각하기
+         void* RawMemory = FPlatformMemory::Malloc<EAT_Object>(sizeof(T));
+         T* Obj = new(RawMemory) T();
         Obj->ClassPrivate = InClass;
         Obj->NamePrivate = Name;
         Obj->UUID = id;

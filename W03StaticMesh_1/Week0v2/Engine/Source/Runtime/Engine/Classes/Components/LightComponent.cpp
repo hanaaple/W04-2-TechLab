@@ -37,10 +37,7 @@ UObject* ULightComponentBase::Duplicate()
     ULightComponentBase* duplicate = Cast<ULightComponentBase>(FObjectFactory::DuplicateObject(this, this->GetClass()));
     duplicate->color = this->color;
     duplicate->radius = this->radius;
-        
     duplicate->AABB = this->AABB;
-    duplicate->texture2D = Cast<UBillboardComponent>(FObjectFactory::DuplicateObject(this->texture2D, this->texture2D->GetClass()));
-
     Super::Duplicate();
 
     return duplicate;

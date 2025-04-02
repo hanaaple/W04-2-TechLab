@@ -153,28 +153,29 @@ bool UWorld::DestroyActor(AActor* ThisActor)
 
 UObject* UWorld::Duplicate()
 {
-    UWorld* dup = Cast<UWorld>(FObjectFactory::DuplicateObject(this, this->GetClass()));
-    dup->ActorsArray.Empty();
-    for (const auto item : this->ActorsArray)
-    {
-        dup->ActorsArray.Add(Cast<AActor>(FObjectFactory::DuplicateObject(item, item->GetClass())));
-    }
-
-    dup->PendingBeginPlayActors.Empty();
-    for (const auto item : this->PendingBeginPlayActors)
-    {
-        dup->PendingBeginPlayActors.Add(Cast<AActor>(FObjectFactory::DuplicateObject(item, item->GetClass())));
-    }
-
-    dup->SelectedActor = Cast<AActor>(FObjectFactory::DuplicateObject(this->SelectedActor, this->SelectedActor->GetClass()));
-
-    dup->pickingGizmo = Cast<USceneComponent>(FObjectFactory::DuplicateObject(this->pickingGizmo, this->pickingGizmo->GetClass()));
-
-    dup->worldGizmo = FObjectFactory::DuplicateObject(this->worldGizmo, this->worldGizmo->GetClass());
+    // UWorld* dup = Cast<UWorld>(FObjectFactory::DuplicateObject(this, this->GetClass()));
+    // dup->Level..Empty();
+    // for (const auto item : this->ActorsArray)
+    // {
+    //     dup->ActorsArray.Add(Cast<AActor>(FObjectFactory::DuplicateObject(item, item->GetClass())));
+    // }
+    //
+    // dup->PendingBeginPlayActors.Empty();
+    // for (const auto item : this->PendingBeginPlayActors)
+    // {
+    //     dup->PendingBeginPlayActors.Add(Cast<AActor>(FObjectFactory::DuplicateObject(item, item->GetClass())));
+    // }
+    //
+    // dup->SelectedActor = Cast<AActor>(FObjectFactory::DuplicateObject(this->SelectedActor, this->SelectedActor->GetClass()));
+    //
+    // dup->pickingGizmo = Cast<USceneComponent>(FObjectFactory::DuplicateObject(this->pickingGizmo, this->pickingGizmo->GetClass()));
+    //
+    // dup->worldGizmo = FObjectFactory::DuplicateObject(this->worldGizmo, this->worldGizmo->GetClass());
+    //
+    // Super::Duplicate();
     
-    Super::Duplicate();
-    
-    return dup;
+    //return dup;
+    return nullptr;
 }
 
 void UWorld::SetPickingGizmo(UObject* Object)

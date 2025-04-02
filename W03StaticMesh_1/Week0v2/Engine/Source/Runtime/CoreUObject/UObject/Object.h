@@ -54,6 +54,7 @@ public:
 
     /** this가 SomeBase인지, SomeBase의 자식 클래스인지 확인합니다. */
     bool IsA(const UClass* SomeBase) const;
+    virtual UObject* Duplicate();
 
     template <typename T>
         requires std::derived_from<T, UObject>
@@ -63,7 +64,7 @@ public:
     }
 
 public:
-    void* operator new(size_t size);
+    // void* operator new(size_t size);
 
     void operator delete(void* ptr, size_t size);
 
