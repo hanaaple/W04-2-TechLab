@@ -7,6 +7,7 @@
 #include "Engine/FLoaderOBJ.h"
 #include "Classes/Components/StaticMeshComponent.h"
 #include "Components/SkySphereComponent.h"
+#include "UObject/UObjectGlobals.h"
 
 
 void UWorld::Initialize(EWorldType::Type worldType)
@@ -80,8 +81,10 @@ void UWorld::ReleaseBaseObject()
 void UWorld::Tick(float DeltaTime)
 {
 	// camera->TickComponent(DeltaTime);
-	EditorPlayer->Tick(DeltaTime);
-	LocalGizmo->Tick(DeltaTime);
+    if (EditorPlayer)
+        EditorPlayer->Tick(DeltaTime);
+    if (LocalGizmo)
+        LocalGizmo->Tick(DeltaTime);
 
     // SpawnActor()에 의해 Actor가 생성된 경우, 여기서 BeginPlay 호출
     for (AActor* Actor : PendingBeginPlayActors)
@@ -157,7 +160,8 @@ bool UWorld::DestroyActor(AActor* ThisActor)
 UObject* UWorld::Duplicate()
 {
      UWorld* dup = Cast<UWorld>(FObjectFactory::DuplicateObject(this, this->GetClass()));
-     dup->Level = Cast<ULevel>(Level->Duplicate());
+    
+    dup->Level = Cast<ULevel>(Level->Duplicate());
     
      dup->PendingBeginPlayActors.Empty();
      for (const auto item : this->PendingBeginPlayActors)
@@ -165,23 +169,28 @@ UObject* UWorld::Duplicate()
          dup->PendingBeginPlayActors.Add(Cast<AActor>(item->Duplicate()));
      }
 
-    if (this->SelectedActor != nullptr)
-         dup->SelectedActor = Cast<AActor>(this->SelectedActor->Duplicate());
+    dup->SelectedActor = nullptr;
+    // if (this->SelectedActor != nullptr)
+    //      dup->SelectedActor = Cast<AActor>(this->SelectedActor->Duplicate());
 
-    if (this->SelectedComponent != nullptr)
-        dup->SelectedComponent = Cast<UActorComponent>(this->SelectedComponent->Duplicate());
+    dup->SelectedComponent = nullptr;
+    // if (this->SelectedComponent != nullptr)
+    //     dup->SelectedComponent = Cast<UActorComponent>(this->SelectedComponent->Duplicate());
 
-    if (this->pickingGizmo != nullptr)
-         dup->pickingGizmo = Cast<USceneComponent>(this->pickingGizmo->Duplicate());
-
+    // if (this->pickingGizmo != nullptr)
+    //      dup->pickingGizmo = Cast<USceneComponent>(this->pickingGizmo->Duplicate());
+    dup->pickingGizmo = nullptr;
+    
     if (this->camera != nullptr)
         dup->camera = Cast<UCameraComponent>(this->camera->Duplicate());
 
-    if (this->EditorPlayer != nullptr)
-        dup->EditorPlayer = Cast<AEditorPlayer>(this->EditorPlayer->Duplicate());
+    dup->EditorPlayer = nullptr;
+    // if (this->EditorPlayer != nullptr)
+    //     dup->EditorPlayer = Cast<AEditorPlayer>(this->EditorPlayer->Duplicate());
 
-    if (this->worldGizmo != nullptr)
-         dup->worldGizmo = Cast<UObject>(this->worldGizmo->Duplicate());
+    dup->worldGizmo = nullptr;
+    // if (this->worldGizmo != nullptr)
+    //      dup->worldGizmo = Cast<UObject>(this->worldGizmo->Duplicate());
     
     
     return dup;

@@ -12,12 +12,20 @@ void ULevel::Tick(float DeltaTime)
 
 UObject* ULevel::Duplicate()
 {
-    ULevel* DuplicatedLevel = Cast<ULevel>(FObjectFactory::DuplicateObject(this));
+    ULevel* DuplicatedLevel = Cast<ULevel>(FObjectFactory::DuplicateObject(this, this->GetClass()));
+    TArray<AActor*> Origin = this->Actors;
+    TArray<AActor*> DuplicatedActors;
+    // (&DuplicatedLevel)
     DuplicatedLevel->Actors.Empty();
-    for (AActor* Actor: Actors)
+    for (int i = 0; i < Actors.Num(); i++)
     {
-        DuplicatedLevel->Actors.Add(Cast<AActor>(Actor->Duplicate()));
+        // DuplicatedActors.Add(Cast<AActor>(Actors[i]->Duplicate()));
+        AActor* abc = Cast<AActor>(Actors[i]->Duplicate());
+        DuplicatedActors.Add(abc);
     }
+
+    DuplicatedLevel->Actors = DuplicatedActors;
+    this->Actors = Origin;
     return DuplicatedLevel;
 }
 

@@ -49,8 +49,9 @@ private:
 
     ULevel* Level;
 
+public:
     EWorldType::Type WorldType;
-    
+private:
     /** World에서 관리되는 모든 Actor의 목록 */
     // TSet<AActor*> ActorsArray;
     /** Actor가 Spawn되었고, 아직 BeginPlay가 호출되지 않은 Actor들 */

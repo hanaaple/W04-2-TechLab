@@ -8,6 +8,7 @@
 #include "slate/Widgets/Layout/SSplitter.h"
 #include "LevelEditor/SLevelEditor.h"
 #include "Renderer/Renderer.h"
+#include "UObject/UObjectGlobals.h"
 
 
 extern LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
@@ -128,7 +129,7 @@ int32 FEditorEngine::Init(HINSTANCE hInstance)
     LevelEditor = new SLevelEditor();
     LevelEditor->Initialize();
 
-    GWorld = new UWorld;
+    GWorld = FObjectFactory::ConstructObject<UWorld>();
     GWorld->Initialize(EWorldType::Editor);
 
     return 0;
@@ -292,17 +293,17 @@ void FEditorEngine::WindowInit(HINSTANCE hInstance)
 
 void FEditorEngine::StartPIE()
 {
-    GWorld = GWorld;
-    
+    OriginWorld = GWorld;
+    GWorld = Cast<UWorld>(GWorld->Duplicate());
+    GWorld->WorldType = EWorldType::PIE;
     ULevel* TargetLevel = GEngineLoop.GetWorld()->GetLevel();
     TargetLevel->LevelState = ELevelState::Play;
 }
 
 void FEditorEngine::EndPIE()
 {
-    GWorld = GWorld;
-    ULevel* TargetLevel = GEngineLoop.GetWorld()->GetLevel();
-    TargetLevel->LevelState = ELevelState::Stop;
+    FPlatformMemory::Free<EAT_Object>(GWorld, sizeof(GWorld));
+    GWorld = OriginWorld;
 }
 
 void FEditorEngine::Pause()

@@ -43,7 +43,7 @@ public:
 
 private:
     UWorld* GWorld;
-
+    UWorld* OriginWorld = nullptr;
     // ImGUI
     UImGuiManager* UIMgr;
     // Slate

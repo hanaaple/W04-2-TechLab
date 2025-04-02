@@ -65,6 +65,7 @@ void ViewportControlEditorPanel::Render()
     ImGui::SetCursorPosX(ContentWidth - (IconSize.x * 3.0f + 16.0f));
     
     ImGui::PushFont(IconFont);
+    
     CreateSRTButton(IconSize);
     ImGui::PopFont();
     
@@ -325,7 +326,8 @@ void ViewportControlEditorPanel::CreateFlagButton() const
 void ViewportControlEditorPanel::CreateSRTButton(ImVec2 ButtonSize) const
 {
     AEditorPlayer* Player = GEngineLoop.GetWorld()->GetEditorPlayer();
-
+    if (Player == nullptr)
+        return;
     ImVec4 ActiveColor = ImVec4(0.00f, 0.00f, 0.85f, 1.0f);
     
     ControlMode ControlMode = Player->GetControlMode();

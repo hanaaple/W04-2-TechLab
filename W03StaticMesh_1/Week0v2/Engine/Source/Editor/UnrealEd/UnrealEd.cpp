@@ -29,7 +29,10 @@ void UnrealEd::Render() const
 {
     for (const auto& Panel : Panels)
     {
-        Panel.Value->Render();
+        if (GEngineLoop.GetWorld()->GetWorldType() != EWorldType::PIE || (GEngineLoop.GetWorld()->GetWorldType() == EWorldType::PIE && Panel.Key == "WorldControlPanel"))
+        {
+            Panel.Value->Render();
+        }
     }
 }
 
