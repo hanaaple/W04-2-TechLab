@@ -26,7 +26,7 @@ void ViewportControlEditorPanel::Render()
     float PanelHeight = 45.0f;
 
     PanelPosX = 1.0f;
-    PanelPosY = 100.0f;
+    PanelPosY = 50.0f;
 
     ImVec2 MinSize(300, 50);
     ImVec2 MaxSize(FLT_MAX, 50);
@@ -225,104 +225,6 @@ void ViewportControlEditorPanel::CreateModifyButton(ImVec2 ButtonSize, ImFont* I
             GEngineLoop.GetLevelEditor()->GetActiveViewportClient()->SetCameraSpeedScalar(CameraSpeed);
         }
         
-        ImGui::EndPopup();
-    }
-
-    ImGui::SameLine();
-    
-    ImGui::PushFont(IconFont);
-    if (ImGui::Button("\ue9c8", ButtonSize))
-    {
-        ImGui::OpenPopup("PrimitiveControl");
-    }
-    ImGui::PopFont();
-
-    if (ImGui::BeginPopup("PrimitiveControl"))
-    {
-        struct Primitive {
-            const char* label;
-            int obj;
-        };
-
-        static const Primitive primitives[] = {
-            { .label= "Cube",      .obj= OBJ_CUBE },
-            { .label= "Sphere",    .obj= OBJ_SPHERE },
-            { .label= "SpotLight", .obj= OBJ_SpotLight },
-            { .label= "Particle",  .obj= OBJ_PARTICLE },
-            { .label= "Text",      .obj= OBJ_Text }
-        };
-
-        for (const auto& primitive : primitives)
-        {
-            if (ImGui::Selectable(primitive.label))
-            {
-                // GEngineLoop.GetWorld()->SpawnObject(static_cast<OBJECTS>(primitive.obj));
-                UWorld* World = GEngineLoop.GetWorld();
-                AActor* SpawnedActor = nullptr;
-                switch (static_cast<OBJECTS>(primitive.obj))
-                {
-                case OBJ_SPHERE:
-                {
-                    SpawnedActor = World->SpawnActor<AActor>();
-                    SpawnedActor->SetActorLabel(TEXT("OBJ_SPHERE"));
-                    SpawnedActor->AddComponent<USphereComp>();
-                    break;
-                }
-                case OBJ_CUBE:
-                {
-                    AStaticMeshActor* TempActor = World->SpawnActor<AStaticMeshActor>();
-                    TempActor->SetActorLabel(TEXT("OBJ_CUBE"));
-                    UStaticMeshComponent* MeshComp = TempActor->GetStaticMeshComponent();
-                    FManagerOBJ::CreateStaticMesh("Assets/helloBlender.obj");
-                    MeshComp->SetStaticMesh(FManagerOBJ::GetStaticMesh(L"helloBlender.obj"));
-                    break;
-                }
-                case OBJ_SpotLight:
-                {
-                    SpawnedActor = World->SpawnActor<AActor>();
-                    SpawnedActor->SetActorLabel(TEXT("OBJ_SpotLight"));
-                    SpawnedActor->AddComponent<ULightComponentBase>();
-                    auto BillBoardComponent = SpawnedActor->AddComponent<UBillboardComponent>();
-                    BillBoardComponent->SetTexture(L"Assets/Texture/spotLight.png");
-                    //BillBoardComponent->InitializeComponent();
-                    //a->SetTexture(L"Assets/Texture/spotLight.png");
-                    break;
-                }
-                case OBJ_PARTICLE:
-                {
-                    SpawnedActor = World->SpawnActor<AActor>();
-                    SpawnedActor->SetActorLabel(TEXT("OBJ_PARTICLE"));
-                    UParticleSubUVComp* ParticleComponent = SpawnedActor->AddComponent<UParticleSubUVComp>();
-                    ParticleComponent->SetTexture(L"Assets/Texture/T_Explosion_SubUV.png");
-                    ParticleComponent->SetRowColumnCount(6, 6);
-                    ParticleComponent->SetLocalScale(FVector(10.0f, 10.0f, 1.0f));
-                    ParticleComponent->Activate();
-                    break;
-                }
-                case OBJ_Text:
-                {
-                    SpawnedActor = World->SpawnActor<AActor>();
-                    SpawnedActor->SetActorLabel(TEXT("OBJ_Text"));
-                    UText* TextComponent = SpawnedActor->AddComponent<UText>();
-                    TextComponent->SetTexture(L"Assets/Texture/font.png");
-                    TextComponent->SetRowColumnCount(106, 106);
-                    TextComponent->SetText(L"안녕하세요 Jungle 1");
-                    break;
-                }
-                case OBJ_TRIANGLE:
-                case OBJ_CAMERA:
-                case OBJ_PLAYER:
-                case OBJ_END:
-                    break;
-                }
-        
-                if (SpawnedActor)
-                {
-                    World->SetPickedActor(SpawnedActor);
-                    World->SetPickedComponent(nullptr);
-                }
-            }
-        }
         ImGui::EndPopup();
     }
 }
