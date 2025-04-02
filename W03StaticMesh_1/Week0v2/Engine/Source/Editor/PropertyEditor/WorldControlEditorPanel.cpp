@@ -137,7 +137,7 @@ void WorldControlEditorPanel::CreateLevelEditorPlayButton(ImVec2 ButtonSize, ImF
     {
         ImGui::PushStyleColor(ImGuiCol_Text, ActiveGray);
         // Pause
-        if (ImGui::Button(ICON_PAUSE, ButtonSize))
+        if (ImGui::Button(ICON_FA_PAUSE, ButtonSize))
         {
             // GEngineLoop.GetLevelEditor()->GetActiveViewportClient()->SetGridSize(GridScale);
             TargetLevel->LevelState = ELevelState::Pause;
