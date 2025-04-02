@@ -20,9 +20,9 @@ void UTextUUID::SetUUID(uint32 UUID)
     SetText(std::to_wstring(UUID));
 }
 
-void UTextUUID::CopyPropertiesFrom(UObject* Source)
+void UTextUUID::CopyPropertiesFrom(UObject* Source, TMap<UObject*, UObject*>& DupMap)
 {
-    Super::CopyPropertiesFrom(Source);
+    Super::CopyPropertiesFrom(Source, DupMap);
 }
 
 

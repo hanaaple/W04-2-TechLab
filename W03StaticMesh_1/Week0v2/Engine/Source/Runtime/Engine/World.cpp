@@ -155,30 +155,30 @@ bool UWorld::DestroyActor(AActor* ThisActor)
     return true;
 }
 
-void UWorld::CopyPropertiesFrom(UObject* Source)
+void UWorld::CopyPropertiesFrom(UObject* Source, TMap<UObject*, UObject*>& DupMap)
 {
-    Super::CopyPropertiesFrom(Source);
+    Super::CopyPropertiesFrom(Source, DupMap);
     const UWorld* SourceUWorld = Cast<UWorld>(Source);
     if (SourceUWorld)
     {
         for (auto item : SourceUWorld->ActorsArray)
         {
-            ActorsArray.Add(FObjectFactory::DuplicateObject(item));
+            ActorsArray.Add(FObjectFactory::DuplicateObject(item, item->GetClass(), DupMap));
         }
 
         for (auto item : SourceUWorld->PendingBeginPlayActors)
         {
-            PendingBeginPlayActors.Add(FObjectFactory::DuplicateObject(item));
+            PendingBeginPlayActors.Add(FObjectFactory::DuplicateObject(item, item->GetClass(), DupMap));
         }
 
-        SelectedActor = FObjectFactory::DuplicateObject(SourceUWorld->SelectedActor);
+        SelectedActor = FObjectFactory::DuplicateObject(SourceUWorld->SelectedActor, SourceUWorld->SelectedActor->GetClass(), DupMap);
 
-        pickingGizmo = FObjectFactory::DuplicateObject(SourceUWorld->pickingGizmo);
-        camera = FObjectFactory::DuplicateObject(SourceUWorld->camera);
-        EditorPlayer = FObjectFactory::DuplicateObject(SourceUWorld->EditorPlayer);
+        pickingGizmo = FObjectFactory::DuplicateObject(SourceUWorld->pickingGizmo, SourceUWorld->pickingGizmo->GetClass(), DupMap);
+        camera = FObjectFactory::DuplicateObject(SourceUWorld->camera, SourceUWorld->camera->GetClass(), DupMap);
+        EditorPlayer = FObjectFactory::DuplicateObject(SourceUWorld->EditorPlayer, SourceUWorld->EditorPlayer->GetClass(), DupMap);
 
-        worldGizmo = FObjectFactory::DuplicateObject(SourceUWorld->worldGizmo);
-        LocalGizmo = FObjectFactory::DuplicateObject(SourceUWorld->LocalGizmo);
+        worldGizmo = FObjectFactory::DuplicateObject(SourceUWorld->worldGizmo, SourceUWorld->worldGizmo->GetClass(), DupMap);
+        LocalGizmo = FObjectFactory::DuplicateObject(SourceUWorld->LocalGizmo, SourceUWorld->LocalGizmo->GetClass(), DupMap);
     }
 }
 

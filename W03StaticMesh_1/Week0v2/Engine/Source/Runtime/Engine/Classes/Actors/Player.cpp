@@ -504,17 +504,19 @@ void AEditorPlayer::ControlScale(USceneComponent* pObj, UGizmoBaseComponent* Giz
     }
 }
 
-void AEditorPlayer::CopyPropertiesFrom(UObject* Source)
+void AEditorPlayer::CopyPropertiesFrom(UObject* Source, TMap<UObject*, UObject*>& DupMap)
 {
-    Super::CopyPropertiesFrom(Source);
+    Super::CopyPropertiesFrom(Source, DupMap);
 
     AEditorPlayer* SourceEditorPlayer = Cast<AEditorPlayer>(Source);
+    if (SourceEditorPlayer)
+    {
+        bLeftMouseDown = SourceEditorPlayer->bLeftMouseDown;
+        bRightMouseDown = SourceEditorPlayer->bRightMouseDown;
+        bSpaceDown = SourceEditorPlayer->bSpaceDown;
 
-    bLeftMouseDown = SourceEditorPlayer->bLeftMouseDown;
-    bRightMouseDown = SourceEditorPlayer->bRightMouseDown;
-    bSpaceDown = SourceEditorPlayer->bSpaceDown;
-
-    m_LastMousePos = SourceEditorPlayer->m_LastMousePos;
-    cMode = SourceEditorPlayer->cMode;
-    cdMode = SourceEditorPlayer->cdMode;
+        m_LastMousePos = SourceEditorPlayer->m_LastMousePos;
+        cMode = SourceEditorPlayer->cMode;
+        cdMode = SourceEditorPlayer->cdMode;
+    }
 }

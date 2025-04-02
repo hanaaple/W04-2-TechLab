@@ -102,7 +102,7 @@ public:
     }
 public:
     // 가상 복사 함수: 기본 UObject 멤버를 복사합니다.
-    virtual void CopyPropertiesFrom(UObject* Source);
+    virtual void CopyPropertiesFrom(UObject* Source, TMap<UObject*, UObject*>& DupMap);
 };
 
 

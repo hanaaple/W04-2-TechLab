@@ -118,10 +118,10 @@ void UCameraComponent::RotatePitch(float _Value)
 		RelativeRotation.y = 90.0f;
 }
 
-void UCameraComponent::CopyPropertiesFrom(UObject* Source)
+void UCameraComponent::CopyPropertiesFrom(UObject* Source, TMap<UObject*, UObject*>& DupMap)
 {
-    Super::CopyPropertiesFrom(Source);
-    UCameraComponent* SourceUCameraComponent = reinterpret_cast<UCameraComponent*>(Source);
+    Super::CopyPropertiesFrom(Source, DupMap);
+    const UCameraComponent* SourceUCameraComponent = reinterpret_cast<UCameraComponent*>(Source);
     if (SourceUCameraComponent)
     {
         mouseSpeed = SourceUCameraComponent->mouseSpeed;

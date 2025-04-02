@@ -55,7 +55,7 @@ public:
 
     template <typename T> 
         requires std::derived_from<T, UActorComponent>
-    T* AddComponent(T* InComponent);
+    T* DuplicateComponent(T* InComponent);
 
     /** Actor가 가지고 있는 Component를 제거합니다. */
     void RemoveOwnedComponent(UActorComponent* Component);
@@ -119,7 +119,7 @@ public:
 
 public:
     // 가상 복사 함수: 기본 UObject 멤버를 복사합니다.
-    void CopyPropertiesFrom(UObject* Source) override;
+    void CopyPropertiesFrom(UObject* Source, TMap<UObject*, UObject*>& DupMap) override;
 
 private:
     /** 에디터상에 보이는 Actor의 이름 */
@@ -157,7 +157,7 @@ T* AActor::AddComponent()
 
 template <typename T>
     requires std::derived_from<T, UActorComponent>
-T* AActor::AddComponent(T* InComponent)
+T* AActor::DuplicateComponent(T* InComponent)
 {
     OwnedComponents.Add(InComponent);
     InComponent->Owner = this;
@@ -174,9 +174,6 @@ T* AActor::AddComponent(T* InComponent)
             NewSceneComp->SetupAttachment(RootComponent);
         }
     }
-
-    // TODO: RegisterComponent() 생기면 제거
-    InComponent->InitializeComponent();
 
     return InComponent;
 }

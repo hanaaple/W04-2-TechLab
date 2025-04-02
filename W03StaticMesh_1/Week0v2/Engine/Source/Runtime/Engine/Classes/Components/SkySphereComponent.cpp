@@ -29,9 +29,9 @@ void USkySphereComponent::TickComponent(float DeltaTime)
     Super::TickComponent(DeltaTime);
 }
 
-void USkySphereComponent::CopyPropertiesFrom(UObject* Source)
+void USkySphereComponent::CopyPropertiesFrom(UObject* Source, TMap<UObject*, UObject*>& DupMap)
 {
-    Super::CopyPropertiesFrom(Source);
+    Super::CopyPropertiesFrom(Source, DupMap);
 
     const USkySphereComponent* SourceUSkySphereComponent = Cast<USkySphereComponent>(Source);
     if (SourceUSkySphereComponent)

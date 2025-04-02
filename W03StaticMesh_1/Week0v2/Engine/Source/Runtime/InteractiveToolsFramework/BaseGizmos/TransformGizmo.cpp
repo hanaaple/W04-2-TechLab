@@ -95,26 +95,26 @@ void UTransformGizmo::Tick(float DeltaTime)
     }
 }
 
-void UTransformGizmo::CopyPropertiesFrom(UObject* Source)
+void UTransformGizmo::CopyPropertiesFrom(UObject* Source, TMap<UObject*, UObject*>& DupMap)
 {
-    Super::CopyPropertiesFrom(Source);
+    Super::CopyPropertiesFrom(Source, DupMap);
     const UTransformGizmo* SourceTransformGizmo = Cast<UTransformGizmo>(Source);
 
     if (SourceTransformGizmo != nullptr)
     {
         for (const auto item : SourceTransformGizmo->ArrowArr)
         {
-            ArrowArr.Add(FObjectFactory::DuplicateObject(item));
+            ArrowArr.Add(FObjectFactory::DuplicateObject(item, item->GetClass(), DupMap));
         }
 
         for (const auto item : SourceTransformGizmo->RectangleArr)
         {
-            RectangleArr.Add(FObjectFactory::DuplicateObject(item));
+            RectangleArr.Add(FObjectFactory::DuplicateObject(item, item->GetClass(), DupMap));
         }
 
         for (const auto item : SourceTransformGizmo->CircleArr)
         {
-            CircleArr.Add(FObjectFactory::DuplicateObject(item));
+            CircleArr.Add(FObjectFactory::DuplicateObject(item, item->GetClass(), DupMap));
         }
     }
 }

@@ -77,28 +77,50 @@ public:
         UE_LOG(LogLevel::Display, "Created New Object : %s", Name.ToString());
         return Obj;
     }
+    
+    // UObject 포인터를 키, 복제된 UObject 포인터를 값으로 저장합니다.
+    using DuplicationMap = TMap<UObject*, UObject*>;
 
     template<typename T>
     static T* DuplicateObject(T* InDuplicated, const UClass* InClass = nullptr)
     {
-        if (InDuplicated == nullptr) return nullptr;
-
-        if (InClass == nullptr)
-        {
-            InClass = T::StaticClass();
-        }
-
-        uint32 id = UEngineStatics::GenUUID();
-        FString Name = T::StaticClass()->GetName() + "__Duplicated" + std::to_string(id);
-        
-        T* Obj = new T;
-
-        // InName(InDuplicated의 이름)을 기반으로 HashMap에서 Object 찾고 -> Property들 복사(포인터 복사 할 때 아마 Duplicated 따로 지정해줘야 할듯?)
-        Obj->CopyPropertiesFrom(StaticFindObjectFastInternal(nullptr, nullptr, InDuplicated->GetFName(), true));
-        Obj->UUID = id;
-        Obj->NamePrivate = Name;
-        GUObjectArray.AddObject(Obj);
-
-        return Obj;
+        DuplicationMap DupMap;
+        return DuplicateObject<T>(InDuplicated, InClass, DupMap);
     }
+    
+    template<typename T>
+    static T* DuplicateObject(T* InDuplicated, const UClass* InClass, DuplicationMap& DupMap)
+     {
+         if (InDuplicated == nullptr)
+             return nullptr;
+
+         // 이미 복제된 객체가 있는지 확인
+         auto Found = DupMap.Find(InDuplicated);
+         if (Found != nullptr)
+         {
+             return Cast<T>(*Found);
+         }
+
+         if (InClass == nullptr)
+         {
+             InClass = T::StaticClass();
+         }
+
+         uint32 id = UEngineStatics::GenUUID();
+         FString Name = InClass->GetName() + "__Duplicated" + std::to_string(id);
+    
+         // 새 객체 생성
+         T* Obj = new T();
+    
+         // 복제 맵에 등록하여 재귀 호출 시 순환 참조를 방지
+         DupMap[InDuplicated] = Obj;
+
+         // 객체의 속성 복사 (DupMap을 전달)
+         Obj->CopyPropertiesFrom(InDuplicated, DupMap);
+         Obj->UUID = id;
+         Obj->NamePrivate = Name;
+         GUObjectArray.AddObject(Obj);
+
+         return Obj;
+     }
 };

@@ -2,9 +2,9 @@
 
 #include "UObject/Casts.h"
 
-void UMaterial::CopyPropertiesFrom(UObject* Source)
+void UMaterial::CopyPropertiesFrom(UObject* Source, TMap<UObject*, UObject*>& DupMap)
 {
-    Super::CopyPropertiesFrom(Source);
+    Super::CopyPropertiesFrom(Source, DupMap);
     UMaterial* SourceUMaterial = Cast<UMaterial>(Source);
     if (SourceUMaterial)
     {

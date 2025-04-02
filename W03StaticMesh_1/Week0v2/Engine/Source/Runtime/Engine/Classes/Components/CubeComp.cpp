@@ -36,7 +36,7 @@ void UCubeComp::TickComponent(float DeltaTime)
 
 }
 
-void UCubeComp::CopyPropertiesFrom(UObject* Source)
+void UCubeComp::CopyPropertiesFrom(UObject* Source, TMap<UObject*, UObject*>& DupMap)
 {
-    Super::CopyPropertiesFrom(Source);
+    Super::CopyPropertiesFrom(Source, DupMap);
 }

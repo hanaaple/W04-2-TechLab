@@ -113,9 +113,9 @@ void UBillboardComponent::CreateQuadTextureVertexBuffer()
 	}
 }
 
-void UBillboardComponent::CopyPropertiesFrom(UObject* Source)
+void UBillboardComponent::CopyPropertiesFrom(UObject* Source, TMap<UObject*, UObject*>& DupMap)
 {
-    Super::CopyPropertiesFrom(Source);
+    Super::CopyPropertiesFrom(Source, DupMap);
     const UBillboardComponent* SourceUBillboardComponent = Cast<UBillboardComponent>(Source);
     if (SourceUBillboardComponent)
     {
@@ -127,7 +127,7 @@ void UBillboardComponent::CopyPropertiesFrom(UObject* Source)
         finalIndexV = SourceUBillboardComponent->finalIndexV;
         Texture = SourceUBillboardComponent->Texture;
         
-        m_parent = FObjectFactory::DuplicateObject(SourceUBillboardComponent->m_parent);
+        m_parent = FObjectFactory::DuplicateObject(SourceUBillboardComponent->m_parent, SourceUBillboardComponent->m_parent->GetClass(), DupMap);
     }
     
 }

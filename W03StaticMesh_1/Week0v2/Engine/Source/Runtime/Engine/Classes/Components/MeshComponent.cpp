@@ -58,15 +58,15 @@ void UMeshComponent::GetUsedMaterials(TArray<UMaterial*>& Out) const
     }
 }
 
-void UMeshComponent::CopyPropertiesFrom(UObject* Source)
+void UMeshComponent::CopyPropertiesFrom(UObject* Source, TMap<UObject*, UObject*>& DupMap)
 {
-    Super::CopyPropertiesFrom(Source);
+    Super::CopyPropertiesFrom(Source, DupMap);
     const UMeshComponent* SourceUMeshComponent = Cast<UMeshComponent>(Source);
     if (SourceUMeshComponent)
     {
         for (const auto item : SourceUMeshComponent->OverrideMaterials)
         {
-            OverrideMaterials.Add(FObjectFactory::DuplicateObject(item));
+            OverrideMaterials.Add(FObjectFactory::DuplicateObject(item, item->GetClass(), DupMap));
         }
     }
 }

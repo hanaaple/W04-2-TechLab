@@ -26,9 +26,9 @@ void UGizmoArrowComponent::TickComponent(float DeltaTime)
 
 }
 
-void UGizmoArrowComponent::CopyPropertiesFrom(UObject* Source)
+void UGizmoArrowComponent::CopyPropertiesFrom(UObject* Source, TMap<UObject*, UObject*>& DupMap)
 {
-    Super::CopyPropertiesFrom(Source);
+    Super::CopyPropertiesFrom(Source, DupMap);
     const UGizmoArrowComponent* SourceUGizmoComponent = Cast<UGizmoArrowComponent>(Source);
     if (SourceUGizmoComponent)
     {

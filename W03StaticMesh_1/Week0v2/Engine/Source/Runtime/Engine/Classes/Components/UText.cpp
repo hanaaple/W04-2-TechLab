@@ -64,9 +64,9 @@ int UText::CheckRayIntersection(FVector& rayOrigin, FVector& rayDirection, float
 	return CheckPickingOnNDC(quad,pfNearHitDistance);
 }
 
-void UText::CopyPropertiesFrom(UObject* Source)
+void UText::CopyPropertiesFrom(UObject* Source, TMap<UObject*, UObject*>& DupMap)
 {
-    Super::CopyPropertiesFrom(Source);
+    Super::CopyPropertiesFrom(Source, DupMap);
 
     const UText* SourceUText = Cast<UText>(Source);
     if (SourceUText)

@@ -75,9 +75,9 @@ void UGizmoBaseComponent::TickComponent(float DeltaTime)
     }
 }
 
-void UGizmoBaseComponent::CopyPropertiesFrom(UObject* Source)
+void UGizmoBaseComponent::CopyPropertiesFrom(UObject* Source, TMap<UObject*, UObject*>& DupMap)
 {
-    Super::CopyPropertiesFrom(Source);
+    Super::CopyPropertiesFrom(Source, DupMap);
     const UGizmoBaseComponent* SourceUGizmoComponent = Cast<UGizmoBaseComponent>(Source);
     if (SourceUGizmoComponent)
     {

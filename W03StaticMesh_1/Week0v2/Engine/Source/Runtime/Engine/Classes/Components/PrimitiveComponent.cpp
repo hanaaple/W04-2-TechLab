@@ -99,9 +99,9 @@ bool UPrimitiveComponent::IntersectRayTriangle(const FVector& rayOrigin, const F
     return false;
 }
 
-void UPrimitiveComponent::CopyPropertiesFrom(UObject* Source)
+void UPrimitiveComponent::CopyPropertiesFrom(UObject* Source, TMap<UObject*, UObject*>& DupMap)
 {
-    USceneComponent::CopyPropertiesFrom(Source);
+    USceneComponent::CopyPropertiesFrom(Source, DupMap);
     const UPrimitiveComponent* SourcePrimitvieComponent = Cast<UPrimitiveComponent>(Source);
     if (SourcePrimitvieComponent)
     {

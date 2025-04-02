@@ -136,21 +136,30 @@ bool AActor::SetActorScale(const FVector& NewScale)
     return false;
 }
 
-void AActor::CopyPropertiesFrom(UObject* Source)
+void AActor::CopyPropertiesFrom(UObject* Source, TMap<UObject*, UObject*>& DupMap)
 {
-    Super::CopyPropertiesFrom(Source);
+    Super::CopyPropertiesFrom(Source, DupMap);
 
     const AActor* SourceActor = Cast<AActor>(Source);
     if (SourceActor != nullptr)
     {
-        Owner = FObjectFactory::DuplicateObject(SourceActor->GetOwner());
+        if (SourceActor->GetOwner() != nullptr)
+        {
+            Owner = FObjectFactory::DuplicateObject(SourceActor->GetOwner(), SourceActor->GetOwner()->GetClass(), DupMap);
+        }
         bActorIsBeingDestroyed = SourceActor->bActorIsBeingDestroyed;
         
-        RootComponent = FObjectFactory::DuplicateObject(SourceActor->GetRootComponent());
+        RootComponent = FObjectFactory::DuplicateObject(SourceActor->RootComponent, SourceActor->RootComponent->GetClass(), DupMap);
+        OwnedComponents.Add(RootComponent);
+        
         for (const auto comp : SourceActor->GetComponents())
         {
-            const auto CopiedComp = FObjectFactory::DuplicateObject(comp, comp->GetClass());
-            AddComponent(CopiedComp);
+            if (SourceActor->RootComponent == comp)
+            {
+                continue;
+            }
+            const auto CopiedComp = FObjectFactory::DuplicateObject(comp, comp->GetClass(), DupMap);
+            DuplicateComponent(CopiedComp);
         }
         ActorLabel = SourceActor->GetActorLabel();
     }

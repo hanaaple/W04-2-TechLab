@@ -25,7 +25,7 @@ void UGizmoRectangleComponent::TickComponent(float DeltaTime)
     Super::TickComponent(DeltaTime);
 }
 
-void UGizmoRectangleComponent::CopyPropertiesFrom(UObject* Source)
+void UGizmoRectangleComponent::CopyPropertiesFrom(UObject* Source, TMap<UObject*, UObject*>& DupMap)
 {
-    Super::CopyPropertiesFrom(Source);
+    Super::CopyPropertiesFrom(Source, DupMap);
 }

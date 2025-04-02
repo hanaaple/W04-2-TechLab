@@ -25,7 +25,7 @@ bool UObject::IsA(const UClass* SomeBase) const
     return ThisClass->IsChildOf(SomeBase);
 }
 
-void UObject::CopyPropertiesFrom(UObject* Source)
+void UObject::CopyPropertiesFrom(UObject* Source, TMap<UObject*, UObject*>& DupMap)
 {
     // 기본 멤버들 복사
     ClassPrivate = Source->ClassPrivate;

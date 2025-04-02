@@ -69,9 +69,9 @@ void USceneComponent::AddScale(FVector _added)
 
 }
 
-void USceneComponent::CopyPropertiesFrom(UObject* Source)
+void USceneComponent::CopyPropertiesFrom(UObject* Source, TMap<UObject*, UObject*>& DupMap)
 {
-    Super::CopyPropertiesFrom(Source);
+    Super::CopyPropertiesFrom(Source, DupMap);
     const USceneComponent* SourceUScenenComponent = Cast<USceneComponent>(Source);
     if (SourceUScenenComponent)
     {
@@ -80,11 +80,18 @@ void USceneComponent::CopyPropertiesFrom(UObject* Source)
         RelativeScale3D = SourceUScenenComponent->RelativeScale3D;
         QuatRotation = SourceUScenenComponent->QuatRotation;
 
-        AttachParent = FObjectFactory::DuplicateObject(SourceUScenenComponent->AttachParent);
+        if (SourceUScenenComponent->AttachParent != nullptr)
+        {
+            AttachParent = FObjectFactory::DuplicateObject(SourceUScenenComponent->AttachParent, SourceUScenenComponent->AttachParent->GetClass(), DupMap);
+        }
+        else
+        {
+            AttachParent = nullptr;
+        }
 
         for (const auto item : AttachChildren)
         {
-            AttachChildren.Add(FObjectFactory::DuplicateObject(item));
+            AttachChildren.Add(FObjectFactory::DuplicateObject(item, item->GetClass(), DupMap));
         }
     }
 }

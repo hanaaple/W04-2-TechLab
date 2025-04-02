@@ -36,9 +36,9 @@ void ULightComponentBase::SetRadius(float r)
     radius = r;
 }
 
-void ULightComponentBase::CopyPropertiesFrom(UObject* Source)
+void ULightComponentBase::CopyPropertiesFrom(UObject* Source, TMap<UObject*, UObject*>& DupMap)
 {
-    Super::CopyPropertiesFrom(Source);
+    Super::CopyPropertiesFrom(Source, DupMap);
 
     const ULightComponentBase* SourceLight = Cast<ULightComponentBase>(Source);
     if (SourceLight)
@@ -47,7 +47,7 @@ void ULightComponentBase::CopyPropertiesFrom(UObject* Source)
         radius = SourceLight->radius;
         
         AABB = SourceLight->AABB;
-        texture2D = FObjectFactory::DuplicateObject(SourceLight->texture2D);
+        texture2D = FObjectFactory::DuplicateObject(SourceLight->texture2D, SourceLight->texture2D->GetClass(), DupMap);
     }
 }
 

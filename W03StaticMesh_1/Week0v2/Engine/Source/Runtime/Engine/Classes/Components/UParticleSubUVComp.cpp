@@ -78,9 +78,9 @@ void UParticleSubUVComp::SetRowColumnCount(int _cellsPerRow, int _cellsPerColumn
 	CreateSubUVVertexBuffer();
 }
 
-void UParticleSubUVComp::CopyPropertiesFrom(UObject* Source)
+void UParticleSubUVComp::CopyPropertiesFrom(UObject* Source, TMap<UObject*, UObject*>& DupMap)
 {
-    Super::CopyPropertiesFrom(Source);
+    Super::CopyPropertiesFrom(Source, DupMap);
     const UParticleSubUVComp* SourceUParticleSubUVComp = Cast<UParticleSubUVComp>(Source);
     if (SourceUParticleSubUVComp)
     {
