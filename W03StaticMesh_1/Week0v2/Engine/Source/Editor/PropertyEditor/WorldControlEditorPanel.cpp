@@ -130,7 +130,7 @@ void WorldControlEditorPanel::CreateLevelEditorPlayButton(ImVec2 ButtonSize, ImF
         if (ImGui::Button(ICON_FA_PLAY, ButtonSize))
         {
             // GEngineLoop.GetLevelEditor()->GetActiveViewportClient()->SetGridSize(GridScale);
-            TargetLevel->LevelState = ELevelState::Play;
+            GEngineLoop.StartPIE();
         }
     }
     else if (TargetLevel->LevelState == ELevelState::Play)
@@ -166,6 +166,7 @@ void WorldControlEditorPanel::CreateLevelEditorPlayButton(ImVec2 ButtonSize, ImF
         if (ImGui::Button(ICON_FA_STOP, ButtonSize)) // Slider
         {
             // GEngineLoop.GetLevelEditor()->GetActiveViewportClient()->SetGridSize(GridScale);
+            GEngineLoop.EndPIE();
         }
     }
     else
@@ -175,6 +176,7 @@ void WorldControlEditorPanel::CreateLevelEditorPlayButton(ImVec2 ButtonSize, ImF
         if (ImGui::Button(ICON_FA_STOP, ButtonSize)) // Slider
         {
             // GEngineLoop.GetLevelEditor()->GetActiveViewportClient()->SetGridSize(GridScale);
+            GEngineLoop.EndPIE();
         }
     }
     ImGui::PopStyleColor();

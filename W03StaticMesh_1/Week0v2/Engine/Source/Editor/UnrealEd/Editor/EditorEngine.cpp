@@ -289,3 +289,30 @@ void FEditorEngine::WindowInit(HINSTANCE hInstance)
         nullptr, nullptr, hInstance, nullptr
     );
 }
+
+void FEditorEngine::StartPIE()
+{
+    GWorld = GWorld;
+    
+    ULevel* TargetLevel = GEngineLoop.GetWorld()->GetLevel();
+    TargetLevel->LevelState = ELevelState::Play;
+}
+
+void FEditorEngine::EndPIE()
+{
+    GWorld = GWorld;
+    ULevel* TargetLevel = GEngineLoop.GetWorld()->GetLevel();
+    TargetLevel->LevelState = ELevelState::Stop;
+}
+
+void FEditorEngine::Pause()
+{
+    ULevel* TargetLevel = GEngineLoop.GetWorld()->GetLevel();
+    TargetLevel->LevelState = ELevelState::Pause;
+}
+
+void FEditorEngine::Resume()
+{
+    ULevel* TargetLevel = GEngineLoop.GetWorld()->GetLevel();
+    TargetLevel->LevelState = ELevelState::Play;;
+}

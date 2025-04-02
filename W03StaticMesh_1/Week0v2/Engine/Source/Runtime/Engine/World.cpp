@@ -14,6 +14,7 @@ void UWorld::Initialize(EWorldType::Type worldType)
     // TODO: Load Scene
     CreateBaseObject();
     Level = FObjectFactory::ConstructObject<ULevel>();
+    Level->LevelState = ELevelState::Stop;
     //SpawnObject(OBJ_CUBE);
     FManagerOBJ::CreateStaticMesh("Assets/Dodge/Dodge.obj");
 

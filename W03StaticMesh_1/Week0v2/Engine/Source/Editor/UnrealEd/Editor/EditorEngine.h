@@ -58,4 +58,8 @@ public:
     UWorld* GetWorld() const { return GWorld; }
     SLevelEditor* GetLevelEditor() const { return LevelEditor; }
     UnrealEd* GetUnrealEditor() const { return UnrealEditor; }
+    void StartPIE();
+    void EndPIE();
+    void Pause();
+    void Resume();
 };
