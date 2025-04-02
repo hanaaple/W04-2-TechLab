@@ -126,14 +126,15 @@ public:
     PROPERTY(float, CameraSpeedScalar);
     PROPERTY(float, GridSize);
     PROPERTY(float, ViewFOV);
-    PROPERTY(ELevelViewportType, ViewportType);
     PROPERTY(EViewModeIndex, ViewMode);
     PROPERTY(uint64, ShowFlag);
-    
+
+    ELevelViewportType GetViewportType() { return ViewportType; }
+    virtual void SetViewportType(ELevelViewportType viewportType) { ViewportType = viewportType; }
     FViewport* GetViewport() { return Viewport; }
     D3D11_VIEWPORT& GetD3DViewport();
     bool IsOrtho() const { return !IsPerspective(); };
-    bool IsPerspective() const { return ViewMode == LVT_Perspective; };
+    bool IsPerspective() const { return ViewportType == LVT_Perspective; };
     static void SetOthoSize(float _Value);
     void ResizeViewport(const DXGI_SWAP_CHAIN_DESC& swapchaindesc);
 
