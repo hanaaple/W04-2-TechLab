@@ -21,7 +21,7 @@ void UWorld::Initialize()
     UStaticMeshComponent* dodge = SpawnedActor->AddComponent<UStaticMeshComponent>();
     dodge->SetStaticMesh(FManagerOBJ::GetStaticMesh(L"Dodge.obj"));
 
-    AActor* duplicatedActor = FObjectFactory::DuplicateObject(SpawnedActor, SpawnedActor->GetClass());
+    AActor* duplicatedActor = Cast<AActor>(SpawnedActor->Duplicate());
 
     AddtoActorsArray(duplicatedActor);
 }
@@ -32,14 +32,14 @@ void UWorld::CreateBaseObject()
     {
         EditorPlayer = FObjectFactory::ConstructObject<AEditorPlayer>();;
     }
-
+    
     if (camera == nullptr)
     {
         camera = FObjectFactory::ConstructObject<UCameraComponent>();
         camera->SetLocation(FVector(8.0f, 8.0f, 8.f));
         camera->SetRotation(FVector(0.0f, 45.0f, -135.0f));
     }
-
+    
     if (LocalGizmo == nullptr)
     {
         LocalGizmo = FObjectFactory::ConstructObject<UTransformGizmo>();
@@ -77,9 +77,9 @@ void UWorld::ReleaseBaseObject()
 void UWorld::Tick(float DeltaTime)
 {
 
-	camera->TickComponent(DeltaTime);
-	EditorPlayer->Tick(DeltaTime);
-	LocalGizmo->Tick(DeltaTime);
+	// camera->TickComponent(DeltaTime);
+	// EditorPlayer->Tick(DeltaTime);
+	// LocalGizmo->Tick(DeltaTime);
 
     // SpawnActor()에 의해 Actor가 생성된 경우, 여기서 BeginPlay 호출
     for (AActor* Actor : PendingBeginPlayActors)
@@ -155,31 +155,30 @@ bool UWorld::DestroyActor(AActor* ThisActor)
     return true;
 }
 
-void UWorld::CopyPropertiesFrom(UObject* Source, TMap<UObject*, UObject*>& DupMap)
+UObject* UWorld::Duplicate()
 {
-    Super::CopyPropertiesFrom(Source, DupMap);
-    const UWorld* SourceUWorld = Cast<UWorld>(Source);
-    if (SourceUWorld)
+    UWorld* dup = Cast<UWorld>(FObjectFactory::DuplicateObject(this, this->GetClass()));
+    dup->ActorsArray.Empty();
+    for (const auto item : this->ActorsArray)
     {
-        for (auto item : SourceUWorld->ActorsArray)
-        {
-            ActorsArray.Add(FObjectFactory::DuplicateObject(item, item->GetClass(), DupMap));
-        }
-
-        for (auto item : SourceUWorld->PendingBeginPlayActors)
-        {
-            PendingBeginPlayActors.Add(FObjectFactory::DuplicateObject(item, item->GetClass(), DupMap));
-        }
-
-        SelectedActor = FObjectFactory::DuplicateObject(SourceUWorld->SelectedActor, SourceUWorld->SelectedActor->GetClass(), DupMap);
-
-        pickingGizmo = FObjectFactory::DuplicateObject(SourceUWorld->pickingGizmo, SourceUWorld->pickingGizmo->GetClass(), DupMap);
-        camera = FObjectFactory::DuplicateObject(SourceUWorld->camera, SourceUWorld->camera->GetClass(), DupMap);
-        EditorPlayer = FObjectFactory::DuplicateObject(SourceUWorld->EditorPlayer, SourceUWorld->EditorPlayer->GetClass(), DupMap);
-
-        worldGizmo = FObjectFactory::DuplicateObject(SourceUWorld->worldGizmo, SourceUWorld->worldGizmo->GetClass(), DupMap);
-        LocalGizmo = FObjectFactory::DuplicateObject(SourceUWorld->LocalGizmo, SourceUWorld->LocalGizmo->GetClass(), DupMap);
+        dup->ActorsArray.Add(Cast<AActor>(FObjectFactory::DuplicateObject(item, item->GetClass())));
     }
+
+    dup->PendingBeginPlayActors.Empty();
+    for (const auto item : this->PendingBeginPlayActors)
+    {
+        dup->PendingBeginPlayActors.Add(Cast<AActor>(FObjectFactory::DuplicateObject(item, item->GetClass())));
+    }
+
+    dup->SelectedActor = Cast<AActor>(FObjectFactory::DuplicateObject(this->SelectedActor, this->SelectedActor->GetClass()));
+
+    dup->pickingGizmo = Cast<USceneComponent>(FObjectFactory::DuplicateObject(this->pickingGizmo, this->pickingGizmo->GetClass()));
+
+    dup->worldGizmo = FObjectFactory::DuplicateObject(this->worldGizmo, this->worldGizmo->GetClass());
+    
+    Super::Duplicate();
+    
+    return dup;
 }
 
 void UWorld::SetPickingGizmo(UObject* Object)

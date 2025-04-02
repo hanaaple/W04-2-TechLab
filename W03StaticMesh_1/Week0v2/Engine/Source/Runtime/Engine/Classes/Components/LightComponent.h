@@ -18,8 +18,8 @@ public:
     FVector4 GetColor() const;
     float GetRadius() const;
     void SetRadius(float r);
-    // 가상 복사 함수: 기본 UObject 멤버를 복사합니다.
-    void CopyPropertiesFrom(UObject* Source, TMap<UObject*, UObject*>& DupMap) override;
+
+    UObject* Duplicate() override;
 private:
     FVector4 color;
     float radius;

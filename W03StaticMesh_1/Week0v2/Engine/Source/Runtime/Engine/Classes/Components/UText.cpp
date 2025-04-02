@@ -64,26 +64,25 @@ int UText::CheckRayIntersection(FVector& rayOrigin, FVector& rayDirection, float
 	return CheckPickingOnNDC(quad,pfNearHitDistance);
 }
 
-void UText::CopyPropertiesFrom(UObject* Source, TMap<UObject*, UObject*>& DupMap)
+UObject* UText::Duplicate()
 {
-    Super::CopyPropertiesFrom(Source, DupMap);
-
-    const UText* SourceUText = Cast<UText>(Source);
-    if (SourceUText)
+    UText* dup = Cast<UText>(FObjectFactory::DuplicateObject(this, this->GetClass()));
+    dup->vertexTextBuffer = this->vertexTextBuffer;
+    dup->numTextVertices = this->numTextVertices;
+    dup->text = this->text;
+    dup->quad.Empty();
+    for (auto item : this->quad)
     {
-        vertexTextBuffer = SourceUText->vertexTextBuffer;
-        numTextVertices = SourceUText->numTextVertices;
-        text = SourceUText->text;
-        for (auto item : SourceUText->quad)
-        {
-            quad.Add(item);
-        }
-        RowCount = SourceUText->RowCount;
-        ColumnCount = SourceUText->ColumnCount;
-
-        quadWidth = SourceUText->quadWidth;
-        quadHeight = SourceUText->quadHeight;
+        dup->quad.Add(item);
     }
+    dup->RowCount = this->RowCount;
+    dup->ColumnCount = this->ColumnCount;
+
+    dup->quadWidth = this->quadWidth;
+    dup->quadHeight = this->quadHeight;
+    Super::Duplicate();
+
+    return dup;
 }
 
 

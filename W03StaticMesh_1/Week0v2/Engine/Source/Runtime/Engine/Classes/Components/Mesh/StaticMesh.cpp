@@ -63,13 +63,12 @@ void UStaticMesh::SetData(OBJ::FStaticMeshRenderData* renderData)
     }
 }
 
-void UStaticMesh::CopyPropertiesFrom(UObject* Source, TMap<UObject*, UObject*>& DupMap)
+UObject* UStaticMesh::Duplicate()
 {
-    Super::CopyPropertiesFrom(Source, DupMap);
-    UStaticMesh* SourceUStaticMesh = Cast<UStaticMesh>(Source);
-    if (SourceUStaticMesh)
-    {
-        staticMeshRenderData = SourceUStaticMesh->staticMeshRenderData;
-        materials = SourceUStaticMesh->materials;
-    }
+    UStaticMesh* dup = Cast<UStaticMesh>(FObjectFactory::DuplicateObject(this, this->GetClass()));
+    dup->staticMeshRenderData = this->staticMeshRenderData;
+    dup->materials = this->materials;
+    Super::Duplicate();
+
+    return dup;
 }

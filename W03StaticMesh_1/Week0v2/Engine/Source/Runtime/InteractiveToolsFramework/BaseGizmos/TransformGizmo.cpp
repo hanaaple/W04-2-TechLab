@@ -95,26 +95,29 @@ void UTransformGizmo::Tick(float DeltaTime)
     }
 }
 
-void UTransformGizmo::CopyPropertiesFrom(UObject* Source, TMap<UObject*, UObject*>& DupMap)
+UObject* UTransformGizmo::Duplicate()
 {
-    Super::CopyPropertiesFrom(Source, DupMap);
-    const UTransformGizmo* SourceTransformGizmo = Cast<UTransformGizmo>(Source);
+    UTransformGizmo* Duplicated = Cast<UTransformGizmo>(FObjectFactory::DuplicateObject(this, this->GetClass()));
 
-    if (SourceTransformGizmo != nullptr)
+    Duplicated->ArrowArr.Empty();
+    for (const auto item : this->ArrowArr)
     {
-        for (const auto item : SourceTransformGizmo->ArrowArr)
-        {
-            ArrowArr.Add(FObjectFactory::DuplicateObject(item, item->GetClass(), DupMap));
-        }
-
-        for (const auto item : SourceTransformGizmo->RectangleArr)
-        {
-            RectangleArr.Add(FObjectFactory::DuplicateObject(item, item->GetClass(), DupMap));
-        }
-
-        for (const auto item : SourceTransformGizmo->CircleArr)
-        {
-            CircleArr.Add(FObjectFactory::DuplicateObject(item, item->GetClass(), DupMap));
-        }
+        Duplicated->ArrowArr.Add(Cast<UStaticMeshComponent>( FObjectFactory::DuplicateObject(item, item->GetClass())));
     }
+
+    Duplicated->RectangleArr.Empty();
+    for (const auto item : this->RectangleArr)
+    {
+       Duplicated->RectangleArr.Add(Cast<UStaticMeshComponent>(FObjectFactory::DuplicateObject(item, item->GetClass())));
+    }
+
+    Duplicated->CircleArr.Empty();
+    for (const auto item : this->CircleArr)
+    {
+        Duplicated->CircleArr.Add(Cast<UStaticMeshComponent>(FObjectFactory::DuplicateObject(item, item->GetClass())));
+    }
+    
+    Super::Duplicate();
+
+    return Duplicated;
 }

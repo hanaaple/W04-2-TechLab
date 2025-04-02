@@ -113,23 +113,22 @@ void UBillboardComponent::CreateQuadTextureVertexBuffer()
 	}
 }
 
-void UBillboardComponent::CopyPropertiesFrom(UObject* Source, TMap<UObject*, UObject*>& DupMap)
+UObject* UBillboardComponent::Duplicate()
 {
-    Super::CopyPropertiesFrom(Source, DupMap);
-    const UBillboardComponent* SourceUBillboardComponent = Cast<UBillboardComponent>(Source);
-    if (SourceUBillboardComponent)
-    {
-        vertexTextureBuffer = SourceUBillboardComponent->vertexTextureBuffer;
-        indexTextureBuffer = SourceUBillboardComponent->indexTextureBuffer;
-        numVertices = SourceUBillboardComponent->numVertices;
-        numIndices = SourceUBillboardComponent->numIndices;
-        finalIndexU = SourceUBillboardComponent->finalIndexU;
-        finalIndexV = SourceUBillboardComponent->finalIndexV;
-        Texture = SourceUBillboardComponent->Texture;
-        
-        m_parent = FObjectFactory::DuplicateObject(SourceUBillboardComponent->m_parent, SourceUBillboardComponent->m_parent->GetClass(), DupMap);
-    }
+    UBillboardComponent* dup = Cast<UBillboardComponent>(FObjectFactory::DuplicateObject(this, this->GetClass()));
+    dup->vertexTextureBuffer = vertexTextureBuffer;
+    dup->indexTextureBuffer = indexTextureBuffer;
+    dup->numVertices = numVertices;
+    dup->numIndices = numIndices;
+    dup->finalIndexU = finalIndexU;
+    dup->finalIndexV = finalIndexV;
+    dup->Texture = Texture;
+
+    m_parent = Cast<USceneComponent>(FObjectFactory::DuplicateObject(this->m_parent, this->m_parent->GetClass()));
     
+    Super::Duplicate();
+
+    return dup;
 }
 
 bool UBillboardComponent::CheckPickingOnNDC(const TArray<FVector>& checkQuad, float& hitDistance)

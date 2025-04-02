@@ -136,31 +136,33 @@ bool AActor::SetActorScale(const FVector& NewScale)
     return false;
 }
 
-void AActor::CopyPropertiesFrom(UObject* Source, TMap<UObject*, UObject*>& DupMap)
+UObject* AActor::Duplicate()
 {
-    Super::CopyPropertiesFrom(Source, DupMap);
-
-    const AActor* SourceActor = Cast<AActor>(Source);
-    if (SourceActor != nullptr)
+    AActor* DuplicatedActor = Cast<AActor>( FObjectFactory::DuplicateObject(this, this->GetClass()));
+    if (this->Owner != nullptr)
     {
-        if (SourceActor->GetOwner() != nullptr)
-        {
-            Owner = FObjectFactory::DuplicateObject(SourceActor->GetOwner(), SourceActor->GetOwner()->GetClass(), DupMap);
-        }
-        bActorIsBeingDestroyed = SourceActor->bActorIsBeingDestroyed;
-        
-        RootComponent = FObjectFactory::DuplicateObject(SourceActor->RootComponent, SourceActor->RootComponent->GetClass(), DupMap);
-        OwnedComponents.Add(RootComponent);
-        
-        for (const auto comp : SourceActor->GetComponents())
-        {
-            if (SourceActor->RootComponent == comp)
-            {
-                continue;
-            }
-            const auto CopiedComp = FObjectFactory::DuplicateObject(comp, comp->GetClass(), DupMap);
-            DuplicateComponent(CopiedComp);
-        }
-        ActorLabel = SourceActor->GetActorLabel();
+        DuplicatedActor->Owner = Cast<AActor>(FObjectFactory::DuplicateObject(this->Owner, this->Owner->GetClass()));
     }
+    DuplicatedActor->bActorIsBeingDestroyed = this->bActorIsBeingDestroyed;
+
+    if (this->RootComponent != nullptr)
+    {
+        DuplicatedActor->RootComponent = Cast<USceneComponent>(FObjectFactory::DuplicateObject(this->RootComponent, this->RootComponent->GetClass()));
+        DuplicatedActor->OwnedComponents.Add(RootComponent);
+        DuplicatedActor->DuplicateComponent(DuplicatedActor->RootComponent);
+    }
+    for (const auto comp : this->OwnedComponents)
+    {
+        if (this->RootComponent == comp)
+        {
+            continue;
+        }
+        const auto CopiedComp = Cast<UActorComponent> (FObjectFactory::DuplicateObject(comp, comp->GetClass()));
+        DuplicatedActor->DuplicateComponent(CopiedComp);
+    }
+    DuplicatedActor->ActorLabel = this->ActorLabel;
+    
+    Super::Duplicate();
+
+    return DuplicatedActor;
 }

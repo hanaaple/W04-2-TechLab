@@ -29,14 +29,11 @@ void USkySphereComponent::TickComponent(float DeltaTime)
     Super::TickComponent(DeltaTime);
 }
 
-void USkySphereComponent::CopyPropertiesFrom(UObject* Source, TMap<UObject*, UObject*>& DupMap)
+UObject* USkySphereComponent::Duplicate()
 {
-    Super::CopyPropertiesFrom(Source, DupMap);
-
-    const USkySphereComponent* SourceUSkySphereComponent = Cast<USkySphereComponent>(Source);
-    if (SourceUSkySphereComponent)
-    {
-        UOffset = SourceUSkySphereComponent->UOffset;
-        VOffset = SourceUSkySphereComponent->VOffset;
-    }
+    USkySphereComponent* dup = Cast<USkySphereComponent>(FObjectFactory::DuplicateObject(this, this->GetClass()));
+    dup->UOffset = this->UOffset;
+    dup->VOffset = this->VOffset;
+    Super::Duplicate();
+    return dup;
 }

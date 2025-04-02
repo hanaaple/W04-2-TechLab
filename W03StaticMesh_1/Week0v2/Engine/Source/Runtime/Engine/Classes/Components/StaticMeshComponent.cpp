@@ -112,13 +112,12 @@ int UStaticMeshComponent::CheckRayIntersection(FVector& rayOrigin, FVector& rayD
     return nIntersections;
 }
 
-void UStaticMeshComponent::CopyPropertiesFrom(UObject* Source, TMap<UObject*, UObject*>& DupMap)
+UObject* UStaticMeshComponent::Duplicate()
 {
-    Super::CopyPropertiesFrom(Source, DupMap);
-    const UStaticMeshComponent* SourceUStaticMeshComponent = Cast<UStaticMeshComponent>(Source);
-    if (SourceUStaticMeshComponent)
-    {
-        staticMesh = SourceUStaticMeshComponent->staticMesh;
-        selectedSubMeshIndex = SourceUStaticMeshComponent->selectedSubMeshIndex;
-    }
+    UStaticMeshComponent* dup = Cast<UStaticMeshComponent>(FObjectFactory::DuplicateObject(this, this->GetClass()));
+    dup->staticMesh = this->staticMesh;
+    dup->selectedSubMeshIndex = this->selectedSubMeshIndex;
+    Super::Duplicate();
+    
+    return dup;
 }

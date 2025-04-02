@@ -35,11 +35,6 @@ bool UClass::IsChildOf(const UClass* SomeBase) const
     return false;
 }
 
-void UClass::CopyPropertiesFrom(UObject* Source, TMap<UObject*, UObject*>& DupMap)
-{
-    Super::CopyPropertiesFrom(Source, DupMap);
-}
-
 UObject* UClass::CreateDefaultObject()
 {
     if (ClassDefaultObject == nullptr)

@@ -37,20 +37,23 @@ void UActorComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
     bHasBegunPlay = false;
 }
 
-void UActorComponent::CopyPropertiesFrom(UObject* Source, TMap<UObject*, UObject*>& DupMap)
+UObject* UActorComponent::Duplicate()
 {
-    Super::CopyPropertiesFrom(Source, DupMap);
-    UActorComponent* SourceActorComponent = Cast<UActorComponent>(Source);
-    
-    if (SourceActorComponent)
+    UActorComponent* duplicated = Cast<UActorComponent>(FObjectFactory::DuplicateObject(this, this->GetClass()));
+    if (this->Owner)
     {
-        Owner = FObjectFactory::DuplicateObject(SourceActorComponent->Owner, SourceActorComponent->Owner->GetClass(), DupMap);
-        bHasBeenInitialized = SourceActorComponent->bHasBeenInitialized;
-        bHasBegunPlay = SourceActorComponent->bHasBegunPlay;
-        bIsBeingDestroyed = SourceActorComponent->bIsBeingDestroyed;
-        bIsActive = SourceActorComponent->bIsActive;
-        bAutoActive = SourceActorComponent->bAutoActive;
+        duplicated->Owner = Cast<AActor>(FObjectFactory::DuplicateObject(this->Owner, this->Owner->GetClass()));
     }
+
+    duplicated->bHasBeenInitialized = this->bHasBeenInitialized;
+    duplicated->bHasBegunPlay = this->bHasBegunPlay;
+    duplicated->bIsBeingDestroyed = this->bIsBeingDestroyed;
+    duplicated->bIsActive = this->bIsActive;
+    duplicated->bAutoActive = this->bAutoActive;
+    
+    Super::Duplicate();
+
+    return duplicated;
 }
 
 void UActorComponent::DestroyComponent()

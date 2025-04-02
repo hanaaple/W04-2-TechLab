@@ -118,21 +118,20 @@ void UCameraComponent::RotatePitch(float _Value)
 		RelativeRotation.y = 90.0f;
 }
 
-void UCameraComponent::CopyPropertiesFrom(UObject* Source, TMap<UObject*, UObject*>& DupMap)
+UObject* UCameraComponent::Duplicate()
 {
-    Super::CopyPropertiesFrom(Source, DupMap);
-    const UCameraComponent* SourceUCameraComponent = reinterpret_cast<UCameraComponent*>(Source);
-    if (SourceUCameraComponent)
-    {
-        mouseSpeed = SourceUCameraComponent->mouseSpeed;
-        lastMousePos = SourceUCameraComponent->lastMousePos;
-        bRightMouseDown = SourceUCameraComponent->bRightMouseDown;
-        zAxis = SourceUCameraComponent->zAxis;
-        xAxis = SourceUCameraComponent->xAxis;
-        yAxis = SourceUCameraComponent->yAxis;
+    UCameraComponent* Duplicate = Cast<UCameraComponent>(FObjectFactory::DuplicateObject(this, this->GetClass()));
+    Duplicate->mouseSpeed = this->mouseSpeed;
+    Duplicate->lastMousePos = this->lastMousePos;
+    Duplicate->bRightMouseDown = this->bRightMouseDown;
+    Duplicate->zAxis = this-> zAxis;
+    Duplicate->xAxis =  this->xAxis;
+    Duplicate->yAxis =  this->yAxis;
+    Duplicate->FOV = this->FOV;
+    Duplicate->nearClip = this->nearClip;
+    Duplicate->farClip = this->farClip;
+    
+    Super::Duplicate();
 
-        FOV = SourceUCameraComponent->FOV;
-        nearClip = SourceUCameraComponent->nearClip;
-        farClip = SourceUCameraComponent->farClip;
-    }
+    return Duplicate;
 }

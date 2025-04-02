@@ -69,31 +69,29 @@ void USceneComponent::AddScale(FVector _added)
 
 }
 
-void USceneComponent::CopyPropertiesFrom(UObject* Source, TMap<UObject*, UObject*>& DupMap)
+
+UObject* USceneComponent::Duplicate()
 {
-    Super::CopyPropertiesFrom(Source, DupMap);
-    const USceneComponent* SourceUScenenComponent = Cast<USceneComponent>(Source);
-    if (SourceUScenenComponent)
+    USceneComponent* duplicated = Cast<USceneComponent>(FObjectFactory::DuplicateObject(this, this->GetClass()));
+    duplicated->RelativeLocation = this->RelativeLocation;
+    duplicated->RelativeRotation = this->RelativeRotation;
+    duplicated->RelativeScale3D = this->RelativeScale3D;
+    duplicated->QuatRotation = this->QuatRotation;
+
+    if (this->AttachParent != nullptr)
     {
-        RelativeLocation = SourceUScenenComponent->RelativeLocation;
-        RelativeRotation = SourceUScenenComponent->RelativeRotation;
-        RelativeScale3D = SourceUScenenComponent->RelativeScale3D;
-        QuatRotation = SourceUScenenComponent->QuatRotation;
-
-        if (SourceUScenenComponent->AttachParent != nullptr)
-        {
-            AttachParent = FObjectFactory::DuplicateObject(SourceUScenenComponent->AttachParent, SourceUScenenComponent->AttachParent->GetClass(), DupMap);
-        }
-        else
-        {
-            AttachParent = nullptr;
-        }
-
-        for (const auto item : AttachChildren)
-        {
-            AttachChildren.Add(FObjectFactory::DuplicateObject(item, item->GetClass(), DupMap));
-        }
+        duplicated->AttachParent = Cast<USceneComponent>(FObjectFactory::DuplicateObject(this->AttachParent, this->AttachParent->GetClass()));
     }
+
+    duplicated->AttachChildren.Empty();
+    for (const auto item : AttachChildren)
+    {
+        duplicated->AttachChildren.Add(Cast<USceneComponent>(FObjectFactory::DuplicateObject(item, item->GetClass())));
+    }
+    
+    UActorComponent::Duplicate();
+
+    return duplicated;
 }
 
 FVector USceneComponent::GetWorldRotation()

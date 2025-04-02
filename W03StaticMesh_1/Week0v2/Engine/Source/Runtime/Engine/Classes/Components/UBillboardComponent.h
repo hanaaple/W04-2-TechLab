@@ -28,8 +28,7 @@ public:
     float finalIndexU = 0.0f;
     float finalIndexV = 0.0f;
     std::shared_ptr<FTexture> Texture;
-    // 가상 복사 함수: 기본 UObject 멤버를 복사합니다.
-    void CopyPropertiesFrom(UObject* Source, TMap<UObject*, UObject*>& DupMap) override;
+    UObject* Duplicate() override;
 protected:
 
 

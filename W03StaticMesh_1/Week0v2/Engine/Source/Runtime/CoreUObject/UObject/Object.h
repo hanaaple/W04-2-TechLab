@@ -70,19 +70,19 @@ public:
     }
 
 public:
-    void* operator new(const size_t size)
-    {
-        UE_LOG(LogLevel::Display, "UObject Created : %d", size);
-
-        void* RawMemory = FPlatformMemory::Malloc<EAT_Object>(size);
-        UE_LOG(
-            LogLevel::Display,
-            "TotalAllocationBytes : %d, TotalAllocationCount : %d",
-            FPlatformMemory::GetAllocationBytes<EAT_Object>(),
-            FPlatformMemory::GetAllocationCount<EAT_Object>()
-        );
-        return RawMemory;
-    }
+    // void* operator new(const size_t size)
+    // {
+    //     UE_LOG(LogLevel::Display, "UObject Created : %d", size);
+    //
+    //     void* RawMemory = FPlatformMemory::Malloc<EAT_Object>(size);
+    //     UE_LOG(
+    //         LogLevel::Display,
+    //         "TotalAllocationBytes : %d, TotalAllocationCount : %d",
+    //         FPlatformMemory::GetAllocationBytes<EAT_Object>(),
+    //         FPlatformMemory::GetAllocationCount<EAT_Object>()
+    //     );
+    //     return RawMemory;
+    // }
 
     void operator delete(void* ptr, const size_t size)
     {
@@ -102,7 +102,7 @@ public:
     }
 public:
     // 가상 복사 함수: 기본 UObject 멤버를 복사합니다.
-    virtual void CopyPropertiesFrom(UObject* Source, TMap<UObject*, UObject*>& DupMap);
+    virtual UObject* Duplicate();
 };
 
 

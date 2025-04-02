@@ -1,6 +1,7 @@
 #include "PrimitiveComponent.h"
 
 #include "UObject/Casts.h"
+#include "UObject/ObjectFactory.h"
 
 UPrimitiveComponent::UPrimitiveComponent()
 {
@@ -99,13 +100,12 @@ bool UPrimitiveComponent::IntersectRayTriangle(const FVector& rayOrigin, const F
     return false;
 }
 
-void UPrimitiveComponent::CopyPropertiesFrom(UObject* Source, TMap<UObject*, UObject*>& DupMap)
+UObject* UPrimitiveComponent::Duplicate()
 {
-    USceneComponent::CopyPropertiesFrom(Source, DupMap);
-    const UPrimitiveComponent* SourcePrimitvieComponent = Cast<UPrimitiveComponent>(Source);
-    if (SourcePrimitvieComponent)
-    {
-        AABB = SourcePrimitvieComponent->AABB;
-        m_Type = SourcePrimitvieComponent->m_Type;
-    }
+    UPrimitiveComponent* dup = Cast<UPrimitiveComponent>(FObjectFactory::DuplicateObject(this, this->GetClass()));
+    dup->AABB = this->AABB;
+    dup->m_Type = this->m_Type;
+    Super::Duplicate();
+
+    return dup;
 }

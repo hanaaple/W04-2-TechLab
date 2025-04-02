@@ -27,12 +27,11 @@ bool UGizmoCircleComponent::IntersectsRay(const FVector& rayOrigin, const FVecto
     return (inner * inner < intersectionToDiscCenterSquared && intersectionToDiscCenterSquared < 1);
 }
 
-void UGizmoCircleComponent::CopyPropertiesFrom(UObject* Source, TMap<UObject*, UObject*>& DupMap)
+UObject* UGizmoCircleComponent::Duplicate()
 {
-    Super::CopyPropertiesFrom(Source, DupMap);
-    const UGizmoCircleComponent* SourceUGizmoComponent = Cast<UGizmoCircleComponent>(Source);
-    if (SourceUGizmoComponent)
-    {
-        inner = SourceUGizmoComponent->inner;
-    }
+    UGizmoCircleComponent* dup = Cast<UGizmoCircleComponent>(FObjectFactory::DuplicateObject(this, this->GetClass()));
+    dup->inner = this->inner;
+    Super::Duplicate();
+
+    return dup;
 }

@@ -41,7 +41,7 @@ public:
     /** World에 존재하는 Actor를 제거합니다. */
     bool DestroyActor(AActor* ThisActor);
     // 가상 복사 함수: 기본 UObject 멤버를 복사합니다.
-    void CopyPropertiesFrom(UObject* Source, TMap<UObject*, UObject*>& DupMap) override; 
+    UObject* Duplicate() override;
 
 private:
     const FString defaultMapName = "Default";
@@ -79,7 +79,6 @@ public:
     USceneComponent* GetPickingGizmo() const { return pickingGizmo; }
     void SetPickingGizmo(UObject* Object);
 };
-
 
 template <typename T>
     requires std::derived_from<T, AActor>

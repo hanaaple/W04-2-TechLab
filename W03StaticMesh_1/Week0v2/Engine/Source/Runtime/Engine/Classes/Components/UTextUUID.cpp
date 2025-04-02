@@ -1,5 +1,8 @@
 #include "UTextUUID.h"
 
+#include "UObject/Casts.h"
+#include "UObject/ObjectFactory.h"
+
 UTextUUID::UTextUUID()
 {
     SetScale(FVector(0.1f, 0.25f, 0.25f));
@@ -20,9 +23,12 @@ void UTextUUID::SetUUID(uint32 UUID)
     SetText(std::to_wstring(UUID));
 }
 
-void UTextUUID::CopyPropertiesFrom(UObject* Source, TMap<UObject*, UObject*>& DupMap)
+UObject* UTextUUID::Duplicate()
 {
-    Super::CopyPropertiesFrom(Source, DupMap);
+    UTextUUID* dup = Cast<UTextUUID>(FObjectFactory::DuplicateObject(this, this->GetClass()));
+    Super::Duplicate();
+
+    return dup;
 }
 
 

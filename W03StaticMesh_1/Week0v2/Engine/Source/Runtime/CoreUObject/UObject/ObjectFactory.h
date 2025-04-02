@@ -80,16 +80,14 @@ public:
     
     // UObject 포인터를 키, 복제된 UObject 포인터를 값으로 저장합니다.
     using DuplicationMap = TMap<UObject*, UObject*>;
-
-    template<typename T>
-    static T* DuplicateObject(T* InDuplicated, const UClass* InClass = nullptr)
+    
+    static UObject* DuplicateObject(UObject* InDuplicated, const UClass* InClass = nullptr)
     {
         DuplicationMap DupMap;
-        return DuplicateObject<T>(InDuplicated, InClass, DupMap);
+        return DuplicateObject(InDuplicated, InClass, DupMap);
     }
     
-    template<typename T>
-    static T* DuplicateObject(T* InDuplicated, const UClass* InClass, DuplicationMap& DupMap)
+    static UObject* DuplicateObject(UObject* InDuplicated, const UClass* InClass, DuplicationMap& DupMap)
      {
          if (InDuplicated == nullptr)
              return nullptr;
@@ -98,29 +96,24 @@ public:
          auto Found = DupMap.Find(InDuplicated);
          if (Found != nullptr)
          {
-             return Cast<T>(*Found);
-         }
-
-         if (InClass == nullptr)
-         {
-             InClass = T::StaticClass();
+             return *Found;
          }
 
          uint32 id = UEngineStatics::GenUUID();
          FString Name = InClass->GetName() + "__Duplicated" + std::to_string(id);
-    
-         // 새 객체 생성
-         T* Obj = new T();
-    
+
+        void* RawMemory = FPlatformMemory::Malloc<EAT_Object>(InClass->GetClassSize());
+        UObject* ObjectPtr = new (RawMemory) UObject();
+        memcpy(RawMemory, InDuplicated, InClass->GetClassSize());
+        
          // 복제 맵에 등록하여 재귀 호출 시 순환 참조를 방지
-         DupMap[InDuplicated] = Obj;
+         DupMap[InDuplicated] = ObjectPtr;
 
          // 객체의 속성 복사 (DupMap을 전달)
-         Obj->CopyPropertiesFrom(InDuplicated, DupMap);
-         Obj->UUID = id;
-         Obj->NamePrivate = Name;
-         GUObjectArray.AddObject(Obj);
+         ObjectPtr->UUID = id;
+         ObjectPtr->NamePrivate = Name;
+         GUObjectArray.AddObject(ObjectPtr);
 
-         return Obj;
+         return ObjectPtr;
      }
 };

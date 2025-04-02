@@ -35,9 +35,8 @@ public:
      * Called from AActor::EndPlay only
      */
     virtual void EndPlay(const EEndPlayReason::Type EndPlayReason);
-
-    // 가상 복사 함수: 기본 UObject 멤버를 복사합니다.
-    void CopyPropertiesFrom(UObject* Source, TMap<UObject*, UObject*>& DupMap) override;
+    
+    UObject* Duplicate() override;
 public:
     /** 이 컴포넌트를 소유하고 있는 Actor를 반환합니다. */
     AActor* GetOwner() const { return Owner; }

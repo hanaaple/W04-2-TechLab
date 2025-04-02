@@ -28,7 +28,12 @@ void USphereComp::TickComponent(float DeltaTime)
     Super::TickComponent(DeltaTime);
 }
 
-void USphereComp::CopyPropertiesFrom(UObject* Source, TMap<UObject*, UObject*>& DupMap)
+UObject* USphereComp::Duplicate()
 {
-    Super::CopyPropertiesFrom(Source, DupMap);
+    USphereComp* dup = Cast<USphereComp>(FObjectFactory::DuplicateObject(this, this->GetClass()));
+    
+    Super::Duplicate();
+
+    return dup;
 }
+

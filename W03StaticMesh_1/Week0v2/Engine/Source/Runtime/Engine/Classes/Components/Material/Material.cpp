@@ -1,13 +1,11 @@
 #include "Material.h"
 
 #include "UObject/Casts.h"
-
-void UMaterial::CopyPropertiesFrom(UObject* Source, TMap<UObject*, UObject*>& DupMap)
+#include "UObject/ObjectFactory.h"
+UObject* UMaterial::Duplicate()
 {
-    Super::CopyPropertiesFrom(Source, DupMap);
-    UMaterial* SourceUMaterial = Cast<UMaterial>(Source);
-    if (SourceUMaterial)
-    {
-        materialInfo = SourceUMaterial->materialInfo;
-    }
+    UMaterial* dup = Cast<UMaterial>(FObjectFactory::DuplicateObject(this, this->GetClass()));
+    dup->materialInfo = materialInfo;
+    Super::Duplicate();
+    return dup;
 }

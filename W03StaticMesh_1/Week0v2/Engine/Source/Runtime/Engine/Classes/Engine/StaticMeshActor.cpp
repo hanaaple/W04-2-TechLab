@@ -8,12 +8,10 @@ AStaticMeshActor::AStaticMeshActor()
     RootComponent = StaticMeshComponent;
 }
 
-void AStaticMeshActor::CopyPropertiesFrom(UObject* Source, TMap<UObject*, UObject*>& DupMap)
+UObject* AStaticMeshActor::Duplicate()
 {
-    AActor::CopyPropertiesFrom(Source, DupMap);
-    const AStaticMeshActor* SourceStaticMeshActor = Cast<AStaticMeshActor>(Source);
-    if (SourceStaticMeshActor != nullptr)
-    {
-        StaticMeshComponent = FObjectFactory::DuplicateObject(SourceStaticMeshActor->StaticMeshComponent, SourceStaticMeshActor->StaticMeshComponent->GetClass(), DupMap);
-    }
+    AStaticMeshActor* duplicated = Cast<AStaticMeshActor>(FObjectFactory::DuplicateObject(this, this->GetClass()));
+    duplicated->StaticMeshComponent = Cast<UStaticMeshComponent>(FObjectFactory::DuplicateObject(this->StaticMeshComponent, this->StaticMeshComponent->GetClass()));
+    Super::Duplicate();
+    return duplicated;
 }
