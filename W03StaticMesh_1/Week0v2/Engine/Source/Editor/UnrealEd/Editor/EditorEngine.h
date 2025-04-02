@@ -7,7 +7,7 @@
 class UnrealEd;
 class UImGuiManager;
 class UWorld;
-class FEditorViewportClient;
+// class FEditorViewportClient;
 class SSplitterV;
 class SSplitterH;
 class SLevelEditor;

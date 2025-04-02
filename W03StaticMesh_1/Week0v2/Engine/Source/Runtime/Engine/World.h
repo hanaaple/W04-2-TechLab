@@ -22,7 +22,7 @@ class UWorld : public UObject
 public:
     UWorld() = default;
 
-    void Initialize();
+    void Initialize(EWorldType::Type);
     void CreateBaseObject();
     void ReleaseBaseObject();
     void Tick(float DeltaTime);
@@ -67,7 +67,7 @@ public:
     UTransformGizmo* LocalGizmo = nullptr;
     UCameraComponent* GetCamera() const { return camera; }
     AEditorPlayer* GetEditorPlayer() const { return EditorPlayer; }
-
+    EWorldType::Type GetWorldType() const { return WorldType; }
 
     // EditorManager 같은데로 보내기
     AActor* GetSelectedActor() const { return SelectedActor; }

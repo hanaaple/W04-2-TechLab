@@ -51,6 +51,7 @@ FMatrix& FPIEViewportClient::GetProjectionMatrix()
             farPlane
         );
     }
+    return Projection;
 }
 
 void FPIEViewportClient::SetMainCamera(UCameraComponent* camera)

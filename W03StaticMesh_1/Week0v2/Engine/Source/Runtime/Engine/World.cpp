@@ -9,7 +9,7 @@
 #include "Components/SkySphereComponent.h"
 
 
-void UWorld::Initialize()
+void UWorld::Initialize(EWorldType::Type worldType)
 {
     // TODO: Load Scene
     CreateBaseObject();
@@ -22,6 +22,7 @@ void UWorld::Initialize()
     USkySphereComponent* skySphere = SpawnedActor->AddComponent<USkySphereComponent>();
     skySphere->SetStaticMesh(FManagerOBJ::GetStaticMesh(L"SkySphere.obj"));
     skySphere->GetStaticMesh()->GetMaterials()[0]->Material->SetDiffuse(FVector((float)32/255, (float)171/255, (float)191/255));
+    WorldType = worldType;
 }
 
 void UWorld::CreateBaseObject()
