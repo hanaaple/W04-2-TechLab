@@ -17,7 +17,8 @@ public:
         const FVector& v0, const FVector& v1, const FVector& v2, float& hitDistance
     );
     FBoundingBox AABB;
-
+    // 가상 복사 함수: 기본 UObject 멤버를 복사합니다.
+    void CopyPropertiesFrom(UObject* Source) override;
 private:
     FString m_Type;
 

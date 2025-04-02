@@ -74,3 +74,13 @@ void UGizmoBaseComponent::TickComponent(float DeltaTime)
         }
     }
 }
+
+void UGizmoBaseComponent::CopyPropertiesFrom(UObject* Source)
+{
+    Super::CopyPropertiesFrom(Source);
+    const UGizmoBaseComponent* SourceUGizmoComponent = Cast<UGizmoBaseComponent>(Source);
+    if (SourceUGizmoComponent)
+    {
+        gizmoType = SourceUGizmoComponent->gizmoType;
+    }
+}

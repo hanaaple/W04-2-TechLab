@@ -24,6 +24,9 @@ public:
         materialInfo.TransparencyScalar = TransparencyIn;
         materialInfo.bTransparent = (TransparencyIn < 1.0f);
     }
+
+    // 가상 복사 함수: 기본 UObject 멤버를 복사합니다.
+    void CopyPropertiesFrom(UObject* Source) override;
 private:
     FObjMaterialInfo materialInfo;
 };

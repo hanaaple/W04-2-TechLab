@@ -35,3 +35,8 @@ void UCubeComp::TickComponent(float DeltaTime)
     Super::TickComponent(DeltaTime);
 
 }
+
+void UCubeComp::CopyPropertiesFrom(UObject* Source)
+{
+    Super::CopyPropertiesFrom(Source);
+}

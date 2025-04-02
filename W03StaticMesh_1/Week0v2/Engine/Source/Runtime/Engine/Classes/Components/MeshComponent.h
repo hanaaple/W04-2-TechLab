@@ -18,6 +18,8 @@ public:
     virtual void SetMaterialByName(FName MaterialSlotName, class UMaterial* Material);
     virtual void GetUsedMaterials(TArray<UMaterial*>& Out) const;
 #pragma endregion
+    // 가상 복사 함수: 기본 UObject 멤버를 복사합니다.
+    void CopyPropertiesFrom(UObject* Source) override;
 protected:
     TArray<UMaterial*> OverrideMaterials;
 public:

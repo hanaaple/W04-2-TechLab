@@ -17,7 +17,8 @@ public:
     OBJ::FStaticMeshRenderData* GetRenderData() const { return staticMeshRenderData; }
 
     void SetData(OBJ::FStaticMeshRenderData* renderData);
-
+    // 가상 복사 함수: 기본 UObject 멤버를 복사합니다.
+    void CopyPropertiesFrom(UObject* Source) override;
 private:
     OBJ::FStaticMeshRenderData* staticMeshRenderData = nullptr;
     TArray<FStaticMaterial*> materials;

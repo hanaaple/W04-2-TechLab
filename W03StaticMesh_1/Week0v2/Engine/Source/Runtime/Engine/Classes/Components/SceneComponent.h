@@ -21,6 +21,8 @@ public:
     void AddRotation(FVector _added);
     void AddScale(FVector _added);
 
+    // 가상 복사 함수: 기본 UObject 멤버를 복사합니다.
+    void CopyPropertiesFrom(UObject* Source) override;
 protected:
     FVector RelativeLocation;
     FVector RelativeRotation;
@@ -40,12 +42,11 @@ public:
     FVector GetLocalScale() const { return RelativeScale3D; }
     FVector GetLocalLocation() const { return RelativeLocation; }
 
-    void SetLocation(FVector _newLoc) { RelativeLocation = _newLoc; }
+    void SetLocation(const FVector _newLoc) { RelativeLocation = _newLoc; }
     virtual void SetRotation(FVector _newRot);
-    void SetRotation(FQuat _newRot) { QuatRotation = _newRot; }
-    void SetScale(FVector _newScale) { RelativeScale3D = _newScale; }
+    void SetRotation(const FQuat _newRot) { QuatRotation = _newRot; }
+    void SetScale(const FVector _newScale) { RelativeScale3D = _newScale; }
     void SetupAttachment(USceneComponent* InParent);
-
 private:
     class UTextUUID* uuidText = nullptr;
 

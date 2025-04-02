@@ -62,3 +62,14 @@ void UStaticMesh::SetData(OBJ::FStaticMeshRenderData* renderData)
         materials.Add(newMaterialSlot);
     }
 }
+
+void UStaticMesh::CopyPropertiesFrom(UObject* Source)
+{
+    Super::CopyPropertiesFrom(Source);
+    UStaticMesh* SourceUStaticMesh = Cast<UStaticMesh>(Source);
+    if (SourceUStaticMesh)
+    {
+        staticMeshRenderData = SourceUStaticMesh->staticMeshRenderData;
+        materials = SourceUStaticMesh->materials;
+    }
+}

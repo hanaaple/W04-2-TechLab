@@ -94,3 +94,27 @@ void UTransformGizmo::Tick(float DeltaTime)
             SetActorRotation(FVector(0.0f, 0.0f, 0.0f));
     }
 }
+
+void UTransformGizmo::CopyPropertiesFrom(UObject* Source)
+{
+    Super::CopyPropertiesFrom(Source);
+    const UTransformGizmo* SourceTransformGizmo = Cast<UTransformGizmo>(Source);
+
+    if (SourceTransformGizmo != nullptr)
+    {
+        for (const auto item : SourceTransformGizmo->ArrowArr)
+        {
+            ArrowArr.Add(FObjectFactory::DuplicateObject(item));
+        }
+
+        for (const auto item : SourceTransformGizmo->RectangleArr)
+        {
+            RectangleArr.Add(FObjectFactory::DuplicateObject(item));
+        }
+
+        for (const auto item : SourceTransformGizmo->CircleArr)
+        {
+            CircleArr.Add(FObjectFactory::DuplicateObject(item));
+        }
+    }
+}

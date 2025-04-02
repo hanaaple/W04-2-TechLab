@@ -5,15 +5,22 @@
 
 void FUObjectArray::AddObject(UObject* Object)
 {
-    ObjObjects.Add(Object);
-    AddToClassMap(Object);
+    ObjObjects.Add(Object->GetUUID(), Object);
+    HashObject(Object);
+    //AddToClassMap(Object);
 }
 
 void FUObjectArray::MarkRemoveObject(UObject* Object)
 {
-    ObjObjects.Remove(Object);
-    RemoveFromClassMap(Object);  // UObjectHashTable에서 Object를 제외
+    ObjObjects.Remove(Object->GetUUID());
+    UnHashObject(Object);
+    //RemoveFromClassMap(Object);  // UObjectHashTable에서 Object를 제외
     PendingDestroyObjects.AddUnique(Object);
+}
+
+UObject* FUObjectArray::GetObjectByUUID(const int32 UUID)
+{
+    return ObjObjects[UUID];
 }
 
 void FUObjectArray::ProcessPendingDestroyObjects()

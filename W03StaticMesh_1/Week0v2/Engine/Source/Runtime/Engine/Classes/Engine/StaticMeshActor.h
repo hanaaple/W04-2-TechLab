@@ -11,6 +11,8 @@ public:
 
     UStaticMeshComponent* GetStaticMeshComponent() const { return StaticMeshComponent; }
 
+    // 가상 복사 함수: 기본 UObject 멤버를 복사합니다.
+    void CopyPropertiesFrom(UObject* Source) override;
 private:
     UStaticMeshComponent* StaticMeshComponent = nullptr;
 };

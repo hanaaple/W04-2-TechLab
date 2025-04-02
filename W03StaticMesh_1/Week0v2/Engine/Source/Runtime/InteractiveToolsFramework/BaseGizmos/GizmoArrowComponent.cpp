@@ -26,6 +26,16 @@ void UGizmoArrowComponent::TickComponent(float DeltaTime)
 
 }
 
+void UGizmoArrowComponent::CopyPropertiesFrom(UObject* Source)
+{
+    Super::CopyPropertiesFrom(Source);
+    const UGizmoArrowComponent* SourceUGizmoComponent = Cast<UGizmoArrowComponent>(Source);
+    if (SourceUGizmoComponent)
+    {
+        Dir = SourceUGizmoComponent->Dir;
+    }
+}
+
 // void UGizmoArrowComponent::Render()
 // {
 // #pragma region GizmoDepth

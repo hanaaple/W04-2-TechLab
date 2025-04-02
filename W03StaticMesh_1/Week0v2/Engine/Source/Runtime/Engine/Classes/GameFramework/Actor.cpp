@@ -1,4 +1,4 @@
-﻿#include "Actor.h"
+#include "Actor.h"
 
 #include "World.h"
 
@@ -134,4 +134,24 @@ bool AActor::SetActorScale(const FVector& NewScale)
         return true;
     }
     return false;
+}
+
+void AActor::CopyPropertiesFrom(UObject* Source)
+{
+    Super::CopyPropertiesFrom(Source);
+
+    const AActor* SourceActor = Cast<AActor>(Source);
+    if (SourceActor != nullptr)
+    {
+        Owner = FObjectFactory::DuplicateObject(SourceActor->GetOwner());
+        bActorIsBeingDestroyed = SourceActor->bActorIsBeingDestroyed;
+        
+        RootComponent = FObjectFactory::DuplicateObject(SourceActor->GetRootComponent());
+        for (const auto comp : SourceActor->GetComponents())
+        {
+            const auto CopiedComp = FObjectFactory::DuplicateObject(comp, comp->GetClass());
+            AddComponent(CopiedComp);
+        }
+        ActorLabel = SourceActor->GetActorLabel();
+    }
 }

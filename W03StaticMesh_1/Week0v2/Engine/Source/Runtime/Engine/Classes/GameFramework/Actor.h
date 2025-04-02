@@ -1,11 +1,11 @@
-﻿#pragma once
+#pragma once
+#include "UObject/Object.h"
+#include "UObject/ObjectMacros.h"
+#include <concepts>
 #include "Components/SceneComponent.h"
 #include "Container/Set.h"
 #include "Engine/EngineTypes.h"
-#include "UObject/Casts.h"
-#include "UObject/Object.h"
 #include "UObject/ObjectFactory.h"
-#include "UObject/ObjectMacros.h"
 
 
 class UActorComponent;
@@ -53,6 +53,10 @@ public:
         requires std::derived_from<T, UActorComponent>
     T* AddComponent();
 
+    template <typename T> 
+        requires std::derived_from<T, UActorComponent>
+    T* AddComponent(T* InComponent);
+
     /** Actor가 가지고 있는 Component를 제거합니다. */
     void RemoveOwnedComponent(UActorComponent* Component);
 
@@ -62,6 +66,8 @@ public:
     template<typename T>
         requires std::derived_from<T, UActorComponent>
     T* GetComponentByClass();
+
+
 
     void InitializeComponents();
     void UninitializeComponents();
@@ -111,6 +117,10 @@ public:
     /** Actor의 Label을 설정합니다. */
     void SetActorLabel(const FString& NewActorLabel);
 
+public:
+    // 가상 복사 함수: 기본 UObject 멤버를 복사합니다.
+    void CopyPropertiesFrom(UObject* Source) override;
+
 private:
     /** 에디터상에 보이는 Actor의 이름 */
     FString ActorLabel;
@@ -118,7 +128,8 @@ private:
 };
 
 
-template <typename T> requires std::derived_from<T, UActorComponent>
+template <typename T>
+    requires std::derived_from<T, UActorComponent>
 T* AActor::AddComponent()
 {
     T* Component = FObjectFactory::ConstructObject<T>();
@@ -144,7 +155,34 @@ T* AActor::AddComponent()
     return Component;
 }
 
-template <typename T> requires std::derived_from<T, UActorComponent>
+template <typename T>
+    requires std::derived_from<T, UActorComponent>
+T* AActor::AddComponent(T* InComponent)
+{
+    OwnedComponents.Add(InComponent);
+    InComponent->Owner = this;
+
+    // 만약 SceneComponent를 상속 받았다면
+    if (USceneComponent* NewSceneComp = Cast<USceneComponent>(InComponent))
+    {
+        if (RootComponent == nullptr)
+        { 
+            RootComponent = NewSceneComp;
+        }
+        else
+        {
+            NewSceneComp->SetupAttachment(RootComponent);
+        }
+    }
+
+    // TODO: RegisterComponent() 생기면 제거
+    InComponent->InitializeComponent();
+
+    return InComponent;
+}
+
+template <typename T>
+    requires std::derived_from<T, UActorComponent>
 T* AActor::GetComponentByClass()
 {
     for (UActorComponent* Component : OwnedComponents)

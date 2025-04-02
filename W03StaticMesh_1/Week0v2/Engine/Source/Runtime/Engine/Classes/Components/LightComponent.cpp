@@ -2,6 +2,8 @@
 #include "UBillboardComponent.h"
 #include "Math/JungleMath.h"
 #include "UnrealEd/PrimitiveBatch.h"
+#include "UObject/Casts.h"
+#include "UObject/ObjectFactory.h"
 
 ULightComponentBase::ULightComponentBase()
 {
@@ -32,6 +34,21 @@ float ULightComponentBase::GetRadius() const
 void ULightComponentBase::SetRadius(float r)
 {
     radius = r;
+}
+
+void ULightComponentBase::CopyPropertiesFrom(UObject* Source)
+{
+    Super::CopyPropertiesFrom(Source);
+
+    const ULightComponentBase* SourceLight = Cast<ULightComponentBase>(Source);
+    if (SourceLight)
+    {
+        color = SourceLight->color;
+        radius = SourceLight->radius;
+        
+        AABB = SourceLight->AABB;
+        texture2D = FObjectFactory::DuplicateObject(SourceLight->texture2D);
+    }
 }
 
 void ULightComponentBase::InitializeLight()

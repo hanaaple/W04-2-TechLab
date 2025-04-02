@@ -15,7 +15,7 @@ private:
     UObject& operator=(const UObject&) = delete;
     UObject(UObject&&) = delete;
     UObject& operator=(UObject&&) = delete;
-
+    
 public:
     using Super = UObject;
     using ThisClass = UObject;
@@ -32,6 +32,8 @@ private:
 
     FName NamePrivate;
     UClass* ClassPrivate = nullptr;
+    UObject* OuterPrivate = nullptr;
+
 
 public:
     UObject();
@@ -54,6 +56,7 @@ public:
     uint32 GetInternalIndex() const { return InternalIndex; }
 
     UClass* GetClass() const { return ClassPrivate; }
+    UObject* GetOuter() const { return OuterPrivate; }
 
 
     /** this가 SomeBase인지, SomeBase의 자식 클래스인지 확인합니다. */
@@ -67,7 +70,7 @@ public:
     }
 
 public:
-    void* operator new(size_t size)
+    void* operator new(const size_t size)
     {
         UE_LOG(LogLevel::Display, "UObject Created : %d", size);
 
@@ -81,7 +84,7 @@ public:
         return RawMemory;
     }
 
-    void operator delete(void* ptr, size_t size)
+    void operator delete(void* ptr, const size_t size)
     {
         UE_LOG(LogLevel::Display, "UObject Deleted : %d", size);
         FPlatformMemory::Free<EAT_Object>(ptr, size);
@@ -97,5 +100,9 @@ public:
 
         return result;
     }
-private:
+public:
+    // 가상 복사 함수: 기본 UObject 멤버를 복사합니다.
+    virtual void CopyPropertiesFrom(UObject* Source);
 };
+
+

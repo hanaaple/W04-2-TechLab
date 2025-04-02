@@ -117,3 +117,22 @@ void UCameraComponent::RotatePitch(float _Value)
 	if (RelativeRotation.y > 90.0f)
 		RelativeRotation.y = 90.0f;
 }
+
+void UCameraComponent::CopyPropertiesFrom(UObject* Source)
+{
+    Super::CopyPropertiesFrom(Source);
+    UCameraComponent* SourceUCameraComponent = reinterpret_cast<UCameraComponent*>(Source);
+    if (SourceUCameraComponent)
+    {
+        mouseSpeed = SourceUCameraComponent->mouseSpeed;
+        lastMousePos = SourceUCameraComponent->lastMousePos;
+        bRightMouseDown = SourceUCameraComponent->bRightMouseDown;
+        zAxis = SourceUCameraComponent->zAxis;
+        xAxis = SourceUCameraComponent->xAxis;
+        yAxis = SourceUCameraComponent->yAxis;
+
+        FOV = SourceUCameraComponent->FOV;
+        nearClip = SourceUCameraComponent->nearClip;
+        farClip = SourceUCameraComponent->farClip;
+    }
+}

@@ -23,11 +23,13 @@ public:
 
     ID3D11Buffer* vertexTextureBuffer;
     ID3D11Buffer* indexTextureBuffer;
-    UINT numVertices;
-    UINT numIndices;
+    uint32 numVertices;
+    uint32 numIndices;
     float finalIndexU = 0.0f;
     float finalIndexV = 0.0f;
     std::shared_ptr<FTexture> Texture;
+    // 가상 복사 함수: 기본 UObject 멤버를 복사합니다.
+    void CopyPropertiesFrom(UObject* Source) override;
 protected:
 
 

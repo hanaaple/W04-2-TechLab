@@ -35,9 +35,13 @@ public:
     template <typename T>
         requires std::derived_from<T, AActor>
     T* SpawnActor();
+    
+    void AddtoActorsArray(AActor* spawnedActor);
 
     /** World에 존재하는 Actor를 제거합니다. */
     bool DestroyActor(AActor* ThisActor);
+    // 가상 복사 함수: 기본 UObject 멤버를 복사합니다.
+    void CopyPropertiesFrom(UObject* Source) override; 
 
 private:
     const FString defaultMapName = "Default";

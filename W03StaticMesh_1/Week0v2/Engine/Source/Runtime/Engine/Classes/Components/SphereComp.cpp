@@ -27,3 +27,8 @@ void USphereComp::TickComponent(float DeltaTime)
 {
     Super::TickComponent(DeltaTime);
 }
+
+void USphereComp::CopyPropertiesFrom(UObject* Source)
+{
+    Super::CopyPropertiesFrom(Source);
+}

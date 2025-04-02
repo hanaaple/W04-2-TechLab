@@ -64,6 +64,28 @@ int UText::CheckRayIntersection(FVector& rayOrigin, FVector& rayDirection, float
 	return CheckPickingOnNDC(quad,pfNearHitDistance);
 }
 
+void UText::CopyPropertiesFrom(UObject* Source)
+{
+    Super::CopyPropertiesFrom(Source);
+
+    const UText* SourceUText = Cast<UText>(Source);
+    if (SourceUText)
+    {
+        vertexTextBuffer = SourceUText->vertexTextBuffer;
+        numTextVertices = SourceUText->numTextVertices;
+        text = SourceUText->text;
+        for (auto item : SourceUText->quad)
+        {
+            quad.Add(item);
+        }
+        RowCount = SourceUText->RowCount;
+        ColumnCount = SourceUText->ColumnCount;
+
+        quadWidth = SourceUText->quadWidth;
+        quadHeight = SourceUText->quadHeight;
+    }
+}
+
 
 void UText::SetText(FWString _text)
 {

@@ -177,6 +177,43 @@ public:
         ESearchDir::Type SearchDir = ESearchDir::FromStart, int32 StartPosition = -1
     ) const;
 
+    /**
+     * FindLastChar
+     * 문자열에서 지정된 문자가 마지막으로 등장하는 위치를 반환합니다.
+     * 찾지 못하면 INDEX_NONE(-1)을 반환합니다.
+     */
+    int32 FindLastChar(const TCHAR Char) const
+    {
+        for (int32 i = static_cast<int32>(PrivateString.size()) - 1; i >= 0; --i)
+        {
+            if (PrivateString[i] == Char)
+            {
+                return i;
+            }
+        }
+        return INDEX_NONE;
+    }
+
+    /**
+     * Mid
+     * 주어진 시작 인덱스부터 지정된 길이만큼의 부분 문자열을 반환합니다.
+     * Count 값이 음수이면, 시작 인덱스부터 문자열 끝까지 반환합니다.
+     */
+    FString Mid(const int32 StartIndex, int32 Count = -1) const
+    {
+        if (StartIndex < 0 || StartIndex >= static_cast<int32>(PrivateString.size()))
+        {
+            return FString(); // 빈 문자열 반환
+        }
+
+        if (Count < 0 || StartIndex + Count > static_cast<int32>(PrivateString.size()))
+        {
+            Count = static_cast<int32>(PrivateString.size()) - StartIndex;
+        }
+
+        return FString(PrivateString.substr(StartIndex, Count));
+    }
+
 public:
     /** ElementType* 로 반환하는 연산자 */
     FORCEINLINE const ElementType* operator*() const;

@@ -28,3 +28,15 @@ void USkySphereComponent::TickComponent(float DeltaTime)
     VOffset += 0.005f;
     Super::TickComponent(DeltaTime);
 }
+
+void USkySphereComponent::CopyPropertiesFrom(UObject* Source)
+{
+    Super::CopyPropertiesFrom(Source);
+
+    const USkySphereComponent* SourceUSkySphereComponent = Cast<USkySphereComponent>(Source);
+    if (SourceUSkySphereComponent)
+    {
+        UOffset = SourceUSkySphereComponent->UOffset;
+        VOffset = SourceUSkySphereComponent->VOffset;
+    }
+}

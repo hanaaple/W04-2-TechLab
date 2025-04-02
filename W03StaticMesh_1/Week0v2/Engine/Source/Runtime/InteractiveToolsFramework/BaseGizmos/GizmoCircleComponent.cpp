@@ -26,3 +26,13 @@ bool UGizmoCircleComponent::IntersectsRay(const FVector& rayOrigin, const FVecto
 
     return (inner * inner < intersectionToDiscCenterSquared && intersectionToDiscCenterSquared < 1);
 }
+
+void UGizmoCircleComponent::CopyPropertiesFrom(UObject* Source)
+{
+    Super::CopyPropertiesFrom(Source);
+    const UGizmoCircleComponent* SourceUGizmoComponent = Cast<UGizmoCircleComponent>(Source);
+    if (SourceUGizmoComponent)
+    {
+        inner = SourceUGizmoComponent->inner;
+    }
+}

@@ -113,6 +113,25 @@ void UBillboardComponent::CreateQuadTextureVertexBuffer()
 	}
 }
 
+void UBillboardComponent::CopyPropertiesFrom(UObject* Source)
+{
+    Super::CopyPropertiesFrom(Source);
+    const UBillboardComponent* SourceUBillboardComponent = Cast<UBillboardComponent>(Source);
+    if (SourceUBillboardComponent)
+    {
+        vertexTextureBuffer = SourceUBillboardComponent->vertexTextureBuffer;
+        indexTextureBuffer = SourceUBillboardComponent->indexTextureBuffer;
+        numVertices = SourceUBillboardComponent->numVertices;
+        numIndices = SourceUBillboardComponent->numIndices;
+        finalIndexU = SourceUBillboardComponent->finalIndexU;
+        finalIndexV = SourceUBillboardComponent->finalIndexV;
+        Texture = SourceUBillboardComponent->Texture;
+        
+        m_parent = FObjectFactory::DuplicateObject(SourceUBillboardComponent->m_parent);
+    }
+    
+}
+
 bool UBillboardComponent::CheckPickingOnNDC(const TArray<FVector>& checkQuad, float& hitDistance)
 {
 	bool result = false;

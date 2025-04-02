@@ -10,6 +10,7 @@ class UClass : public UObject
 public:
     UClass(const char* InClassName, uint32 InClassSize, uint32 InAlignment, UClass* InSuperClass);
     virtual ~UClass() override = default;
+    FName GetDefaultObjectName() const;
 
     // 복사 & 이동 생성자 제거
     UClass(const UClass&) = delete;
@@ -48,6 +49,8 @@ public:
         }
         return ClassDefaultObject;
     }
+    // 가상 복사 함수: 기본 UObject 멤버를 복사합니다.
+    void CopyPropertiesFrom(UObject* Source) override;
 
 protected:
     virtual UObject* CreateDefaultObject();
@@ -55,7 +58,6 @@ protected:
 private:
     [[maybe_unused]]
     uint32 ClassSize;
-
     [[maybe_unused]]
     uint32 ClassAlignment;
 

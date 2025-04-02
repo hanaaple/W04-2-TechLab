@@ -444,3 +444,9 @@ bool FName::operator==(const FName& Other) const
 {
 	return ComparisonIndex == Other.ComparisonIndex;
 }
+
+FName FName::Append(const FString& Suffix) const
+{
+    const FString NewName = ToString() + Suffix;
+    return FName(NewName);
+}

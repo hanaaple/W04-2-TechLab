@@ -503,3 +503,18 @@ void AEditorPlayer::ControlScale(USceneComponent* pObj, UGizmoBaseComponent* Giz
         pObj->AddScale(FVector(0.0f, 0.0f, moveDir.z));
     }
 }
+
+void AEditorPlayer::CopyPropertiesFrom(UObject* Source)
+{
+    Super::CopyPropertiesFrom(Source);
+
+    AEditorPlayer* SourceEditorPlayer = Cast<AEditorPlayer>(Source);
+
+    bLeftMouseDown = SourceEditorPlayer->bLeftMouseDown;
+    bRightMouseDown = SourceEditorPlayer->bRightMouseDown;
+    bSpaceDown = SourceEditorPlayer->bSpaceDown;
+
+    m_LastMousePos = SourceEditorPlayer->m_LastMousePos;
+    cMode = SourceEditorPlayer->cMode;
+    cdMode = SourceEditorPlayer->cdMode;
+}

@@ -24,3 +24,8 @@ void UGizmoRectangleComponent::TickComponent(float DeltaTime)
 {
     Super::TickComponent(DeltaTime);
 }
+
+void UGizmoRectangleComponent::CopyPropertiesFrom(UObject* Source)
+{
+    Super::CopyPropertiesFrom(Source);
+}

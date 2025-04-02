@@ -78,6 +78,23 @@ void UParticleSubUVComp::SetRowColumnCount(int _cellsPerRow, int _cellsPerColumn
 	CreateSubUVVertexBuffer();
 }
 
+void UParticleSubUVComp::CopyPropertiesFrom(UObject* Source)
+{
+    Super::CopyPropertiesFrom(Source);
+    const UParticleSubUVComp* SourceUParticleSubUVComp = Cast<UParticleSubUVComp>(Source);
+    if (SourceUParticleSubUVComp)
+    {
+        vertexSubUVBuffer = SourceUParticleSubUVComp->vertexSubUVBuffer;
+        numTextVertices = SourceUParticleSubUVComp->numVertices;
+        bIsLoop = SourceUParticleSubUVComp->bIsLoop;
+        indexU = SourceUParticleSubUVComp->indexU;
+        indexV = SourceUParticleSubUVComp->indexV;
+        second = SourceUParticleSubUVComp->second;
+        CellsPerRow = SourceUParticleSubUVComp->CellsPerRow;
+        CellsPerColumn = SourceUParticleSubUVComp->CellsPerColumn;
+    }
+}
+
 void UParticleSubUVComp::UpdateVertexBuffer(const TArray<FVertexTexture>& vertices)
 {
 	/*

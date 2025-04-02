@@ -22,4 +22,6 @@ public:
     uint32 GetComparisonIndex() const { return ComparisonIndex; }
 
     bool operator==(const FName& Other) const;
+
+    FName Append(const FString& Suffix) const;
 };

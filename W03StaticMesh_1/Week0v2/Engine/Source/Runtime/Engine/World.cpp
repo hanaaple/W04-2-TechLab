@@ -6,7 +6,6 @@
 #include "LevelEditor/SLevelEditor.h"
 #include "Engine/FLoaderOBJ.h"
 #include "Classes/Components/StaticMeshComponent.h"
-#include "Engine/StaticMeshActor.h"
 #include "Components/SkySphereComponent.h"
 
 
@@ -19,9 +18,12 @@ void UWorld::Initialize()
 
     FManagerOBJ::CreateStaticMesh("Assets/SkySphere.obj");
     AActor* SpawnedActor = SpawnActor<AActor>();
-    USkySphereComponent* skySphere = SpawnedActor->AddComponent<USkySphereComponent>();
-    skySphere->SetStaticMesh(FManagerOBJ::GetStaticMesh(L"SkySphere.obj"));
-    skySphere->GetStaticMesh()->GetMaterials()[0]->Material->SetDiffuse(FVector((float)32/255, (float)171/255, (float)191/255));
+    UStaticMeshComponent* dodge = SpawnedActor->AddComponent<UStaticMeshComponent>();
+    dodge->SetStaticMesh(FManagerOBJ::GetStaticMesh(L"Dodge.obj"));
+
+    AActor* duplicatedActor = FObjectFactory::DuplicateObject(SpawnedActor, SpawnedActor->GetClass());
+
+    AddtoActorsArray(duplicatedActor);
 }
 
 void UWorld::CreateBaseObject()
@@ -74,6 +76,7 @@ void UWorld::ReleaseBaseObject()
 
 void UWorld::Tick(float DeltaTime)
 {
+
 	camera->TickComponent(DeltaTime);
 	EditorPlayer->Tick(DeltaTime);
 	LocalGizmo->Tick(DeltaTime);
@@ -112,6 +115,12 @@ void UWorld::Release()
     GUObjectArray.ProcessPendingDestroyObjects();
 }
 
+void UWorld::AddtoActorsArray(AActor* spawnedActor)
+{
+    ActorsArray.Add(spawnedActor);
+    PendingBeginPlayActors.Add(spawnedActor);
+}
+
 bool UWorld::DestroyActor(AActor* ThisActor)
 {
     if (ThisActor->GetWorld() == nullptr)
@@ -144,6 +153,33 @@ bool UWorld::DestroyActor(AActor* ThisActor)
     // 제거 대기열에 추가
     GUObjectArray.MarkRemoveObject(ThisActor);
     return true;
+}
+
+void UWorld::CopyPropertiesFrom(UObject* Source)
+{
+    Super::CopyPropertiesFrom(Source);
+    const UWorld* SourceUWorld = Cast<UWorld>(Source);
+    if (SourceUWorld)
+    {
+        for (auto item : SourceUWorld->ActorsArray)
+        {
+            ActorsArray.Add(FObjectFactory::DuplicateObject(item));
+        }
+
+        for (auto item : SourceUWorld->PendingBeginPlayActors)
+        {
+            PendingBeginPlayActors.Add(FObjectFactory::DuplicateObject(item));
+        }
+
+        SelectedActor = FObjectFactory::DuplicateObject(SourceUWorld->SelectedActor);
+
+        pickingGizmo = FObjectFactory::DuplicateObject(SourceUWorld->pickingGizmo);
+        camera = FObjectFactory::DuplicateObject(SourceUWorld->camera);
+        EditorPlayer = FObjectFactory::DuplicateObject(SourceUWorld->EditorPlayer);
+
+        worldGizmo = FObjectFactory::DuplicateObject(SourceUWorld->worldGizmo);
+        LocalGizmo = FObjectFactory::DuplicateObject(SourceUWorld->LocalGizmo);
+    }
 }
 
 void UWorld::SetPickingGizmo(UObject* Object)

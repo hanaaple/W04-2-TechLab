@@ -37,6 +37,22 @@ void UActorComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
     bHasBegunPlay = false;
 }
 
+void UActorComponent::CopyPropertiesFrom(UObject* Source)
+{
+    Super::CopyPropertiesFrom(Source);
+     UActorComponent* SourceActorComponent = Cast<UActorComponent>(Source);
+    
+    if (SourceActorComponent)
+    {
+        Owner = FObjectFactory::DuplicateObject(SourceActorComponent->GetOwner());
+        bHasBeenInitialized = SourceActorComponent->bHasBeenInitialized;
+        bHasBegunPlay = SourceActorComponent->bHasBegunPlay;
+        bIsBeingDestroyed = SourceActorComponent->bIsBeingDestroyed;
+        bIsActive = SourceActorComponent->bIsActive;
+        bAutoActive = SourceActorComponent->bAutoActive;
+    }
+}
+
 void UActorComponent::DestroyComponent()
 {
     if (bIsBeingDestroyed)

@@ -15,14 +15,14 @@ FORCEINLINE To* Cast(From* Src)
 		// From이 To를 상속 받았는지? (up casting)
 		if constexpr (std::derived_from<From, To>)
 		{
-			return (To*)Src;
+			return reinterpret_cast<To*>(Src);
 		}
 		else
 		{
 			// Src가 원래 From이었는지? (down casting)
 			if (((const UObject*)Src)->IsA<To>())
 			{
-				return (To*)Src;
+				return reinterpret_cast<To*>(Src);
 			}
 		}
 	}

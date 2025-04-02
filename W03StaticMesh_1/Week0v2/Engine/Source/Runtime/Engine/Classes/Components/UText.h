@@ -19,7 +19,9 @@ public:
 
     ID3D11Buffer* vertexTextBuffer;
     TArray<FVertexTexture> vertexTextureArr;
-    UINT numTextVertices;
+    uint32 numTextVertices;
+    // 가상 복사 함수: 기본 UObject 멤버를 복사합니다.
+    void CopyPropertiesFrom(UObject* Source) override;
 protected:
     FWString text;
 
