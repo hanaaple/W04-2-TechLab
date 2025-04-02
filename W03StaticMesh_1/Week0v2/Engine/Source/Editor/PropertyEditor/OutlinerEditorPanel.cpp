@@ -1,8 +1,7 @@
 ﻿#include "OutlinerEditorPanel.h"
-#include "EngineLoop.h"
 #include "World.h"
 #include "GameFramework/Actor.h"
-
+#include "Editor/UnrealEd/Editor/EditorEngine.h"
 
 void OutlinerEditorPanel::Render()
 {
@@ -40,6 +39,7 @@ void OutlinerEditorPanel::Render()
         {
             if (ImGui::Selectable(*Actor->GetActorLabel(), World->GetSelectedActor() == Actor))
             {
+                World->SetPickedComponent(nullptr);
                 World->SetPickedActor(Actor);
                 break;
             }

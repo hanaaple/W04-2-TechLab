@@ -1,6 +1,8 @@
 #pragma once
 #include <concepts>
+
 #include "Object.h"
+#include "Engine/Source/Runtime/Core/Container/Set.h"
 
 /**
  * UObject의 RTTI를 가지고 있는 클래스
@@ -50,6 +52,19 @@ public:
         return ClassDefaultObject;
     }
 
+    static TSet<UClass*>& GetClassRegistry() {
+        static TSet<UClass*> Registry;
+        return Registry;
+    }
+
+    static void RegisterUClass(UClass* Class) {
+        GetClassRegistry().Add(Class);
+    }
+
+    // UClass Iterator
+    static auto Begin() { return GetClassRegistry().begin(); }
+    static auto End() { return GetClassRegistry().end(); }
+    
 protected:
     virtual UObject* CreateDefaultObject();
 

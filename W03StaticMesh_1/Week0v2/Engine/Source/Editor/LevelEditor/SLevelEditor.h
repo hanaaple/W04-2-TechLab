@@ -1,6 +1,11 @@
 #pragma once
+#include <memory>
+
 #include "Define.h"
+#include "ViewportClient.h"
+#include "UnrealEd/EditorViewportClient.h"
 #include "Container/Map.h"
+
 class SSplitterH;
 class SSplitterV;
 class UWorld;
@@ -27,7 +32,8 @@ private:
     SSplitterV* VSplitter;
     UWorld* World;
     std::shared_ptr<FEditorViewportClient> viewportClients[4];
-    std::shared_ptr<FEditorViewportClient> ActiveViewportClient;
+    std::shared_ptr<FEditorViewportClient> PIEViewportClient;
+    std::shared_ptr<FViewportClient> ActiveViewportClient;
 
     bool bLButtonDown = false;
     bool bRButtonDown = false;
@@ -40,17 +46,17 @@ private:
 
 public:
     std::shared_ptr<FEditorViewportClient>* GetViewports() { return viewportClients; }
-    std::shared_ptr<FEditorViewportClient> GetActiveViewportClient() const
+    std::shared_ptr<FViewportClient> GetActiveViewportClient() const
     {
         return ActiveViewportClient;
     }
     void SetViewportClient(std::shared_ptr<FEditorViewportClient> viewportClient)
     {
-        ActiveViewportClient = viewportClient;
+        ActiveViewportClient = std::static_pointer_cast<FViewportClient, FEditorViewportClient>(viewportClient);
     }
     void SetViewportClient(int index)
     {
-        ActiveViewportClient = viewportClients[index];
+        ActiveViewportClient = std::static_pointer_cast<FViewportClient, FEditorViewportClient>(viewportClients[index]);
     }
 
     //Save And Load

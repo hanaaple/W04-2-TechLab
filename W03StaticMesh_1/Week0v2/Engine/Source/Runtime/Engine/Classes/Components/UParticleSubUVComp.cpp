@@ -1,9 +1,7 @@
-#include "Engine/Source/Editor/PropertyEditor/ShowFlags.h"
+#include "Renderer/Renderer.h"
 #include "UParticleSubUVComp.h"
 #include "UnrealEd/EditorViewportClient.h"
 #include "World.h"
-#include "LevelEditor/SLevelEditor.h"
-
 
 UParticleSubUVComp::UParticleSubUVComp()
 {
@@ -23,8 +21,8 @@ UParticleSubUVComp::~UParticleSubUVComp()
 void UParticleSubUVComp::InitializeComponent()
 {
 	Super::InitializeComponent();
-	FEngineLoop::renderer.UpdateSubUVConstant(0, 0);
-	FEngineLoop::renderer.PrepareSubUVConstant();
+	FEditorEngine::renderer.UpdateSubUVConstant(0, 0);
+	FEditorEngine::renderer.PrepareSubUVConstant();
 }
 
 void UParticleSubUVComp::TickComponent(float DeltaTime)
@@ -32,8 +30,8 @@ void UParticleSubUVComp::TickComponent(float DeltaTime)
     Super::TickComponent(DeltaTime);
     if (!IsActive()) return;
 
-	uint32 CellWidth = Texture->width / CellsPerColumn;
-	uint32 CellHeight = Texture->height / CellsPerColumn;
+	uint32 CellWidth = GetTexture()->width / CellsPerColumn;
+	uint32 CellHeight = GetTexture()->height / CellsPerColumn;
 
 
 	second += DeltaTime;
@@ -63,8 +61,8 @@ void UParticleSubUVComp::TickComponent(float DeltaTime)
 	}
 
 
-	float normalWidthOffset = float(CellWidth) / float(Texture->width);
-	float normalHeightOffset = float(CellHeight) / float(Texture->height);
+	float normalWidthOffset = float(CellWidth) / float(GetTexture()->width);
+	float normalHeightOffset = float(CellHeight) / float(GetTexture()->height);
 
 	finalIndexU = float(indexU) * normalWidthOffset;
 	finalIndexV = float(indexV) * normalHeightOffset;
@@ -111,10 +109,10 @@ void UParticleSubUVComp::UpdateVertexBuffer(const TArray<FVertexTexture>& vertic
 void UParticleSubUVComp::CreateSubUVVertexBuffer()
 {
 
-	uint32 CellWidth = Texture->width/CellsPerColumn;
-	uint32 CellHeight = Texture->height/ CellsPerColumn;
-	float normalWidthOffset = float(CellWidth) / float(Texture->width);
-	float normalHeightOffset = float(CellHeight) / float(Texture->height);
+	uint32 CellWidth = GetTexture()->width/CellsPerColumn;
+	uint32 CellHeight = GetTexture()->height/ CellsPerColumn;
+	float normalWidthOffset = float(CellWidth) / float(GetTexture()->width);
+	float normalHeightOffset = float(CellHeight) / float(GetTexture()->height);
 
 	TArray<FVertexTexture> vertices =
 	{
@@ -128,6 +126,6 @@ void UParticleSubUVComp::CreateSubUVVertexBuffer()
 	vertices[3].u = normalWidthOffset;
 	vertices[3].v = normalHeightOffset;
 
-	vertexSubUVBuffer = FEngineLoop::renderer.CreateVertexBuffer(vertices.GetData(), static_cast<UINT>(vertices.Num() * sizeof(FVertexTexture)));
+	vertexSubUVBuffer = FEditorEngine::renderer.CreateVertexBuffer(vertices.GetData(), static_cast<UINT>(vertices.Num() * sizeof(FVertexTexture)));
 	numTextVertices = static_cast<UINT>(vertices.Num());
 }

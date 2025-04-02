@@ -1,6 +1,7 @@
 #pragma once
 #include "UObject/Object.h"
 #include "UObject/ObjectMacros.h"
+#include "Define.h"
 
 class UMaterial : public UObject {
     DECLARE_CLASS(UMaterial, UObject)

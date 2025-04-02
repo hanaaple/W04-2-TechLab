@@ -26,13 +26,17 @@ void FResourceMgr::Initialize(FRenderer* renderer, FGraphicsDevice* device)
 
 	LoadTextureFromFile(device->Device, device->DeviceContext, L"Assets/Texture/ocean_sky.jpg");
 	LoadTextureFromFile(device->Device, device->DeviceContext, L"Assets/Texture/font.png");
-	LoadTextureFromDDS(device->Device, device->DeviceContext, L"Assets/Texture/font.dds");
+	//LoadTextureFromDDS(device->Device, device->DeviceContext, L"Assets/Texture/font.dds");
 	LoadTextureFromFile(device->Device, device->DeviceContext, L"Assets/Texture/emart.png");
 	LoadTextureFromFile(device->Device, device->DeviceContext, L"Assets/Texture/T_Explosion_SubUV.png");
 	LoadTextureFromFile(device->Device, device->DeviceContext, L"Assets/Texture/UUID_Font.png");
-	LoadTextureFromDDS(device->Device, device->DeviceContext, L"Assets/Texture/UUID_Font.dds");
+	//LoadTextureFromDDS(device->Device, device->DeviceContext, L"Assets/Texture/UUID_Font.dds");
 	LoadTextureFromFile(device->Device, device->DeviceContext, L"Assets/Texture/Wooden Crate_Crate_BaseColor.png");
 	LoadTextureFromFile(device->Device, device->DeviceContext, L"Assets/Texture/spotLight.png");
+    LoadTextureFromFile(device->Device, device->DeviceContext, L"Assets/Texture/None.png");
+    LoadTextureFromFile(device->Device, device->DeviceContext, L"Editor/Icon/Pawn_64x.png");
+    LoadTextureFromFile(device->Device, device->DeviceContext, L"Editor/Icon/PointLight_64x.png");
+    LoadTextureFromFile(device->Device, device->DeviceContext, L"Editor/Icon/SpotLight_64x.png");
 }
 
 void FResourceMgr::Release(FRenderer* renderer) {
@@ -42,6 +46,7 @@ void FResourceMgr::Release(FRenderer* renderer) {
 		texture->Release();
 	}
     textureMap.Empty();
+    textureMapByName.Empty();
 }
 
 #include <unordered_map>
@@ -63,9 +68,15 @@ struct TupleHash {
 	}
 };
 
-std::shared_ptr<FTexture> FResourceMgr::GetTexture(const FWString& name) const
+std::shared_ptr<FTexture> FResourceMgr::GetTexture(const FWString& FilePath) const
 {
-    auto* TempValue = textureMap.Find(name);
+    auto* TempValue = textureMap.Find(FilePath);
+    return TempValue ? *TempValue : nullptr;
+}
+
+std::shared_ptr<FTexture> FResourceMgr::GetTextureByName(const FWString& Name) const
+{
+    auto* TempValue = textureMapByName.Find(Name);
     return TempValue ? *TempValue : nullptr;
 }
 
@@ -157,9 +168,11 @@ HRESULT FResourceMgr::LoadTextureFromFile(ID3D11Device* device, ID3D11DeviceCont
 	samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
 
 	device->CreateSamplerState(&samplerDesc, &SamplerState);
-	FWString name = FWString(filename);
+	FWString Path = FWString(filename);
+    FWString name = Path.substr(Path.find_last_of(L"/\\") + 1, Path.find_last_of(L".") - Path.find_last_of(L"/\\") - 1);
 
-	textureMap[name] = std::make_shared<FTexture>(TextureSRV, Texture2D, SamplerState, width, height);
+	textureMap[Path] = std::make_shared<FTexture>(TextureSRV, Texture2D, SamplerState, width, height, name, filename);
+    textureMapByName[name] = textureMap[Path];
 
 	Console::GetInstance().AddLog(LogLevel::Warning, "Texture File Load Successs");
 	return hr;
@@ -212,9 +225,11 @@ HRESULT FResourceMgr::LoadTextureFromDDS(ID3D11Device* device, ID3D11DeviceConte
 	device->CreateSamplerState(&samplerDesc, &SamplerState);
 #pragma endregion Sampler
 
-	FWString name = FWString(filename);
+    FWString Path = FWString(filename);
+    FWString name = Path.substr(Path.find_last_of(L"/\\") + 1, Path.find_last_of(L".") - Path.find_last_of(L"/\\") - 1);
 
-	textureMap[name] = std::make_shared<FTexture>(textureView, texture2D, SamplerState, width, height);
+	textureMap[Path] = std::make_shared<FTexture>(textureView, texture2D, SamplerState, width, height, name, filename);
+    textureMapByName[name] = textureMap[Path];
 
 	Console::GetInstance().AddLog(LogLevel::Warning, "Texture File Load Successs");
 

@@ -1,7 +1,7 @@
 #include "Core/HAL/PlatformType.h"
-#include "EngineLoop.h"
+#include "UnrealEd/Editor/EditorEngine.h"
 
-FEngineLoop GEngineLoop;
+FEditorEngine GEngineLoop;
 
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd)

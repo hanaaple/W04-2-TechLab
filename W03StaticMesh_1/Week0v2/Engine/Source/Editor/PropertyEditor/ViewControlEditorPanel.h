@@ -1,8 +1,9 @@
 ﻿#pragma once
+#include "ImGUI/imgui.h"
 #include "Components/ActorComponent.h"
 #include "UnrealEd/EditorPanel.h"
 
-class ControlEditorPanel : public UEditorPanel
+class ViewportControlEditorPanel : public UEditorPanel
 {
 public:
     virtual void Render() override;
@@ -18,10 +19,13 @@ private:
     uint64 ConvertSelectionToFlags(const bool selected[]) const;
     
 private:
+    float PanelPosX;
+    float PanelPosY;
+    
     float Width = 300, Height = 100;
     bool bOpenMenu = false;
 
-    float* FOV = nullptr;
+    float FOV;
     float CameraSpeed = 0.0f;
     float GridScale = 1.0f;
 };

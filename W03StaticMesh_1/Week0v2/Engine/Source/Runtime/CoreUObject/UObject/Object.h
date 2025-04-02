@@ -1,12 +1,12 @@
 #pragma once
-#include "EngineLoop.h"
 #include "NameTypes.h"
 
-extern FEngineLoop GEngineLoop;
+class FEditorEngine;
+extern FEditorEngine GEngineLoop;
 
 class UClass;
 class UWorld;
-
+class FVector4;
 
 class UObject
 {
@@ -39,25 +39,18 @@ public:
     UObject();
     virtual ~UObject() = default;
 
-    UWorld* GetWorld()
-    {
-        return GEngineLoop.GetWorld();
-    }
+    UWorld* GetWorld();
 
-    FEngineLoop& GetEngine()
-    {
-        return GEngineLoop;
-    }
+    FEditorEngine& GetEngine();
 
-    FName GetFName() const { return NamePrivate; }
-    FString GetName() const { return NamePrivate.ToString(); }
+    FName GetFName() const;
+    FString GetName() const;
 
-    uint32 GetUUID() const { return UUID; }
-    uint32 GetInternalIndex() const { return InternalIndex; }
-
-    UClass* GetClass() const { return ClassPrivate; }
     UObject* GetOuter() const { return OuterPrivate; }
 
+    uint32 GetUUID() const;
+    uint32 GetInternalIndex() const;
+    UClass* GetClass() const;
 
     /** this가 SomeBase인지, SomeBase의 자식 클래스인지 확인합니다. */
     bool IsA(const UClass* SomeBase) const;
@@ -70,39 +63,11 @@ public:
     }
 
 public:
-    // void* operator new(const size_t size)
-    // {
-    //     UE_LOG(LogLevel::Display, "UObject Created : %d", size);
-    //
-    //     void* RawMemory = FPlatformMemory::Malloc<EAT_Object>(size);
-    //     UE_LOG(
-    //         LogLevel::Display,
-    //         "TotalAllocationBytes : %d, TotalAllocationCount : %d",
-    //         FPlatformMemory::GetAllocationBytes<EAT_Object>(),
-    //         FPlatformMemory::GetAllocationCount<EAT_Object>()
-    //     );
-    //     return RawMemory;
-    // }
+    void* operator new(size_t size);
 
-    void operator delete(void* ptr, const size_t size)
-    {
-        UE_LOG(LogLevel::Display, "UObject Deleted : %d", size);
-        FPlatformMemory::Free<EAT_Object>(ptr, size);
-    }
+    void operator delete(void* ptr, size_t size);
 
-    FVector4 EncodeUUID() const {
-        FVector4 result;
-
-        result.x = UUID % 0xFF;
-        result.y = UUID >> 8 & 0xFF;
-        result.z = UUID >> 16 & 0xFF;
-        result.a = UUID >> 24 & 0xFF;
-
-        return result;
-    }
-public:
-    // 가상 복사 함수: 기본 UObject 멤버를 복사합니다.
-    virtual UObject* Duplicate();
+    FVector4 EncodeUUID() const;
+    
+private:
 };
-
-

@@ -12,10 +12,6 @@ ULightComponentBase::ULightComponentBase()
     InitializeLight();
 }
 
-ULightComponentBase::~ULightComponentBase()
-{
-    delete texture2D;
-}
 void ULightComponentBase::SetColor(FVector4 newColor)
 {
     color = newColor;
@@ -52,9 +48,6 @@ UObject* ULightComponentBase::Duplicate()
 
 void ULightComponentBase::InitializeLight()
 {
-    texture2D = new UBillboardComponent();
-    texture2D->SetTexture(L"Assets/Texture/spotLight.png");
-    texture2D->InitializeComponent();
     AABB.max = { 1.f,1.f,0.1f };
     AABB.min = { -1.f,-1.f,-0.1f };
     color = { 1,1,1,1 };
@@ -64,10 +57,6 @@ void ULightComponentBase::InitializeLight()
 void ULightComponentBase::TickComponent(float DeltaTime)
 {
     Super::TickComponent(DeltaTime);
-
-    texture2D->TickComponent(DeltaTime);
-    texture2D->SetLocation(GetWorldLocation());
-
 }
 
 int ULightComponentBase::CheckRayIntersection(FVector& rayOrigin, FVector& rayDirection, float& pfNearHitDistance)

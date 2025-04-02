@@ -1,13 +1,13 @@
-#include "EngineLoop.h"
+#include "EditorEngine.h"
 #include "ImGuiManager.h"
 #include "World.h"
-#include "Camera/CameraComponent.h"
 #include "PropertyEditor/ViewportTypePanel.h"
 #include "UnrealEd/EditorViewportClient.h"
 #include "UnrealEd/UnrealEd.h"
 #include "UnrealClient.h"
 #include "slate/Widgets/Layout/SSplitter.h"
 #include "LevelEditor/SLevelEditor.h"
+#include "Renderer/Renderer.h"
 
 
 extern LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
@@ -28,9 +28,9 @@ static LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
         if (wParam != SIZE_MINIMIZED)
         {
             //UGraphicsDevice 객체의 OnResize 함수 호출
-            if (FEngineLoop::graphicDevice.SwapChain)
+            if (FEditorEngine::graphicDevice.SwapChain)
             {
-                FEngineLoop::graphicDevice.OnResize(hWnd);
+                FEditorEngine::graphicDevice.OnResize(hWnd);
             }
             for (int i = 0; i < 4; i++)
             {
@@ -38,7 +38,7 @@ static LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
                 {
                     if (GEngineLoop.GetLevelEditor()->GetViewports()[i])
                     {
-                        GEngineLoop.GetLevelEditor()->GetViewports()[i]->ResizeViewport(FEngineLoop::graphicDevice.SwapchainDesc);
+                        GEngineLoop.GetLevelEditor()->GetViewports()[i]->ResizeViewport(FEditorEngine::graphicDevice.SwapchainDesc);
                     }
                 }
             }
@@ -61,23 +61,27 @@ static LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
         zDelta = GET_WHEEL_DELTA_WPARAM(wParam); // 휠 회전 값 (+120 / -120)
         if (GEngineLoop.GetLevelEditor())
         {
-            if (GEngineLoop.GetLevelEditor()->GetActiveViewportClient()->IsPerspective())
+            FEditorViewportClient* viewportClient = dynamic_cast<FEditorViewportClient*>(GEngineLoop.GetLevelEditor()->GetActiveViewportClient().get());
+            if (viewportClient)
             {
-                if (GEngineLoop.GetLevelEditor()->GetActiveViewportClient()->GetIsOnRBMouseClick())
+                if (viewportClient->IsPerspective())
                 {
-                    GEngineLoop.GetLevelEditor()->GetActiveViewportClient()->SetCameraSpeedScalar(
-                        static_cast<float>(GEngineLoop.GetLevelEditor()->GetActiveViewportClient()->GetCameraSpeedScalar() + zDelta * 0.01)
-                    );
+                    if (viewportClient->GetIsOnRBMouseClick())
+                    {
+                        viewportClient->SetCameraSpeedScalar(
+                            static_cast<float>(GEngineLoop.GetLevelEditor()->GetActiveViewportClient()->GetCameraSpeedScalar() + zDelta * 0.01)
+                        );
+                    }
+                    else
+                    {
+                        viewportClient->CameraMoveForward(zDelta * 0.1f);
+                    }
                 }
                 else
                 {
-                    GEngineLoop.GetLevelEditor()->GetActiveViewportClient()->CameraMoveForward(zDelta * 0.1f);
+                    FEditorViewportClient::SetOthoSize(-zDelta * 0.01f);
                 }
-            }
-            else
-            {
-                FEditorViewportClient::SetOthoSize(-zDelta * 0.01f);
-            }
+            } 
         }
         break;
     default:
@@ -87,13 +91,13 @@ static LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
     return 0;
 }
 
-FGraphicsDevice FEngineLoop::graphicDevice;
-FRenderer FEngineLoop::renderer;
-FResourceMgr FEngineLoop::resourceMgr;
-uint32 FEngineLoop::TotalAllocationBytes = 0;
-uint32 FEngineLoop::TotalAllocationCount = 0;
+FGraphicsDevice FEditorEngine::graphicDevice;
+FRenderer FEditorEngine::renderer;
+FResourceMgr FEditorEngine::resourceMgr;
+uint32 FEditorEngine::TotalAllocationBytes = 0;
+uint32 FEditorEngine::TotalAllocationCount = 0;
 
-FEngineLoop::FEngineLoop()
+FEditorEngine::FEditorEngine()
     : hWnd(nullptr)
     , UIMgr(nullptr)
     , GWorld(nullptr)
@@ -102,12 +106,12 @@ FEngineLoop::FEngineLoop()
 {
 }
 
-int32 FEngineLoop::PreInit()
+int32 FEditorEngine::PreInit()
 {
     return 0;
 }
 
-int32 FEngineLoop::Init(HINSTANCE hInstance)
+int32 FEditorEngine::Init(HINSTANCE hInstance)
 {
     /* must be initialized before window. */
     UnrealEditor = new UnrealEd();
@@ -119,28 +123,44 @@ int32 FEngineLoop::Init(HINSTANCE hInstance)
 
     UIMgr = new UImGuiManager;
     UIMgr->Initialize(hWnd, graphicDevice.Device, graphicDevice.DeviceContext);
-
+    
     resourceMgr.Initialize(&renderer, &graphicDevice);
     LevelEditor = new SLevelEditor();
     LevelEditor->Initialize();
 
     GWorld = new UWorld;
-    GWorld->Initialize();
+    GWorld->Initialize(EWorldType::Editor);
 
     return 0;
 }
 
 
-void FEngineLoop::Render()
+void FEditorEngine::Render()
 {
     graphicDevice.Prepare();
-    if (LevelEditor->IsMultiViewport())
+    if (GWorld->GetWorldType() == EWorldType::Editor)
     {
-        std::shared_ptr<FEditorViewportClient> viewportClient = GetLevelEditor()->GetActiveViewportClient();
-        for (int i = 0; i < 4; ++i)
+        
+        if (LevelEditor->IsMultiViewport())
         {
-            LevelEditor->SetViewportClient(i);
-            // graphicDevice.DeviceContext->RSSetViewports(1, &LevelEditor->GetViewports()[i]->GetD3DViewport());
+            std::shared_ptr<FEditorViewportClient> viewportClient = std::dynamic_pointer_cast<FEditorViewportClient>(GetLevelEditor()->GetActiveViewportClient());
+            for (int i = 0; i < 4; ++i)
+            {
+                LevelEditor->SetViewportClient(i);
+                // graphicDevice.DeviceContext->RSSetViewports(1, &LevelEditor->GetViewports()[i]->GetD3DViewport());
+                // graphicDevice.ChangeRasterizer(LevelEditor->GetActiveViewportClient()->GetViewMode());
+                // renderer.ChangeViewMode(LevelEditor->GetActiveViewportClient()->GetViewMode());
+                // renderer.PrepareShader();
+                // renderer.UpdateLightBuffer();
+                // RenderWorld();
+                renderer.PrepareRender();
+                renderer.Render(GetWorld(),LevelEditor->GetActiveViewportClient());
+            }
+            GetLevelEditor()->SetViewportClient(viewportClient);
+        }
+        else
+        {
+            // graphicDevice.DeviceContext->RSSetViewports(1, &LevelEditor->GetActiveViewportClient()->GetD3DViewport());
             // graphicDevice.ChangeRasterizer(LevelEditor->GetActiveViewportClient()->GetViewMode());
             // renderer.ChangeViewMode(LevelEditor->GetActiveViewportClient()->GetViewMode());
             // renderer.PrepareShader();
@@ -149,22 +169,15 @@ void FEngineLoop::Render()
             renderer.PrepareRender();
             renderer.Render(GetWorld(),LevelEditor->GetActiveViewportClient());
         }
-        GetLevelEditor()->SetViewportClient(viewportClient);
-    }
-    else
+        
+    } else if (GWorld->GetWorldType() == EWorldType::PIE)
     {
-        // graphicDevice.DeviceContext->RSSetViewports(1, &LevelEditor->GetActiveViewportClient()->GetD3DViewport());
-        // graphicDevice.ChangeRasterizer(LevelEditor->GetActiveViewportClient()->GetViewMode());
-        // renderer.ChangeViewMode(LevelEditor->GetActiveViewportClient()->GetViewMode());
-        // renderer.PrepareShader();
-        // renderer.UpdateLightBuffer();
-        // RenderWorld();
         renderer.PrepareRender();
-        renderer.Render(GetWorld(),LevelEditor->GetActiveViewportClient());
+        renderer.Render(GetWorld(), LevelEditor->GetActiveViewportClient());
     }
 }
 
-void FEngineLoop::Tick()
+void FEditorEngine::Tick()
 {
     LARGE_INTEGER frequency;
     const double targetFrameTime = 1000.0 / targetFPS; // 한 프레임의 목표 시간 (밀리초 단위)
@@ -216,14 +229,14 @@ void FEngineLoop::Tick()
     }
 }
 
-float FEngineLoop::GetAspectRatio(IDXGISwapChain* swapChain) const
+float FEditorEngine::GetAspectRatio(IDXGISwapChain* swapChain) const
 {
     DXGI_SWAP_CHAIN_DESC desc;
     swapChain->GetDesc(&desc);
     return static_cast<float>(desc.BufferDesc.Width) / static_cast<float>(desc.BufferDesc.Height);
 }
 
-void FEngineLoop::Input()
+void FEditorEngine::Input()
 {
     if (GetAsyncKeyState('M') & 0x8000)
     {
@@ -244,7 +257,7 @@ void FEngineLoop::Input()
     }
 }
 
-void FEngineLoop::Exit()
+void FEditorEngine::Exit()
 {
     LevelEditor->Release();
     GWorld->Release();
@@ -257,7 +270,7 @@ void FEngineLoop::Exit()
 }
 
 
-void FEngineLoop::WindowInit(HINSTANCE hInstance)
+void FEditorEngine::WindowInit(HINSTANCE hInstance)
 {
     WCHAR WindowClass[] = L"JungleWindowClass";
 
@@ -275,4 +288,31 @@ void FEngineLoop::WindowInit(HINSTANCE hInstance)
         CW_USEDEFAULT, CW_USEDEFAULT, 1000, 1000,
         nullptr, nullptr, hInstance, nullptr
     );
+}
+
+void FEditorEngine::StartPIE()
+{
+    GWorld = GWorld;
+    
+    ULevel* TargetLevel = GEngineLoop.GetWorld()->GetLevel();
+    TargetLevel->LevelState = ELevelState::Play;
+}
+
+void FEditorEngine::EndPIE()
+{
+    GWorld = GWorld;
+    ULevel* TargetLevel = GEngineLoop.GetWorld()->GetLevel();
+    TargetLevel->LevelState = ELevelState::Stop;
+}
+
+void FEditorEngine::Pause()
+{
+    ULevel* TargetLevel = GEngineLoop.GetWorld()->GetLevel();
+    TargetLevel->LevelState = ELevelState::Pause;
+}
+
+void FEditorEngine::Resume()
+{
+    ULevel* TargetLevel = GEngineLoop.GetWorld()->GetLevel();
+    TargetLevel->LevelState = ELevelState::Play;;
 }

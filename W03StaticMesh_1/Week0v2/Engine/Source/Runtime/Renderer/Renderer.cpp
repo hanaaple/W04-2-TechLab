@@ -11,9 +11,9 @@
 #include "Components/UText.h"
 #include "Components/Material/Material.h"
 #include "D3D11RHI/GraphicDevice.h"
-#include "Launch/EngineLoop.h"
+#include "Editor/UnrealEd/Editor/EditorEngine.h"
 #include "Math/JungleMath.h"
-#include "UnrealEd/EditorViewportClient.h"
+#include "ViewportClient.h"
 #include "UnrealEd/PrimitiveBatch.h"
 #include "UObject/Casts.h"
 #include "UObject/Object.h"
@@ -471,7 +471,7 @@ void FRenderer::UpdateMaterial(const FObjMaterialInfo& MaterialInfo) const
 
     if (MaterialInfo.bHasTexture == true)
     {
-        std::shared_ptr<FTexture> texture = FEngineLoop::resourceMgr.GetTexture(MaterialInfo.DiffuseTexturePath);
+        std::shared_ptr<FTexture> texture = FEditorEngine::resourceMgr.GetTexture(MaterialInfo.DiffuseTexturePath);
         Graphics->DeviceContext->PSSetShaderResources(0, 1, &texture->TextureSRV);
         Graphics->DeviceContext->PSSetSamplers(0, 1, &texture->SamplerState);
     }
@@ -1001,7 +1001,7 @@ void FRenderer::ClearRenderArr()
     LightObjs.Empty();
 }
 
-void FRenderer::Render(UWorld* World, std::shared_ptr<FEditorViewportClient> ActiveViewport)
+void FRenderer::Render(UWorld* World, std::shared_ptr<FViewportClient> ActiveViewport)
 {
     Graphics->DeviceContext->RSSetViewports(1, &ActiveViewport->GetD3DViewport());
     Graphics->ChangeRasterizer(ActiveViewport->GetViewMode());
@@ -1019,7 +1019,7 @@ void FRenderer::Render(UWorld* World, std::shared_ptr<FEditorViewportClient> Act
     ClearRenderArr();
 }
 
-void FRenderer::RenderStaticMeshes(UWorld* World, std::shared_ptr<FEditorViewportClient> ActiveViewport)
+void FRenderer::RenderStaticMeshes(UWorld* World, std::shared_ptr<FViewportClient> ActiveViewport)
 {
     PrepareShader();
     for (UStaticMeshComponent* StaticMeshComp : StaticMeshObjs)
@@ -1069,7 +1069,7 @@ void FRenderer::RenderStaticMeshes(UWorld* World, std::shared_ptr<FEditorViewpor
     }
 }
 
-void FRenderer::RenderGizmos(const UWorld* World, const std::shared_ptr<FEditorViewportClient>& ActiveViewport)
+void FRenderer::RenderGizmos(const UWorld* World, const std::shared_ptr<FViewportClient>& ActiveViewport)
 {
     if (!World->GetSelectedActor())
     {
@@ -1082,7 +1082,7 @@ void FRenderer::RenderGizmos(const UWorld* World, const std::shared_ptr<FEditorV
     #pragma endregion GizmoDepth
 
     //  fill solid,  Wirframe 에서도 제대로 렌더링되기 위함
-    Graphics->DeviceContext->RSSetState(FEngineLoop::graphicDevice.RasterizerStateSOLID);
+    Graphics->DeviceContext->RSSetState(FEditorEngine::graphicDevice.RasterizerStateSOLID);
     
     for (auto GizmoComp : GizmoObjs)
     {
@@ -1132,12 +1132,15 @@ void FRenderer::RenderGizmos(const UWorld* World, const std::shared_ptr<FEditorV
 #pragma endregion GizmoDepth
 }
 
-void FRenderer::RenderBillboards(UWorld* World, std::shared_ptr<FEditorViewportClient> ActiveViewport)
+void FRenderer::RenderBillboards(UWorld* World, std::shared_ptr<FViewportClient> ActiveViewport)
 {
     PrepareTextureShader();
     PrepareSubUVConstant();
     for (auto BillboardComp : BillboardObjs)
     {
+        if (BillboardComp->GetTexture() == nullptr)
+            continue;
+        
         UpdateSubUVConstant(BillboardComp->finalIndexU, BillboardComp->finalIndexV);
 
         FMatrix Model = BillboardComp->CreateBillboardMatrix();
@@ -1155,28 +1158,28 @@ void FRenderer::RenderBillboards(UWorld* World, std::shared_ptr<FEditorViewportC
         {
             RenderTexturePrimitive(
                 SubUVParticle->vertexSubUVBuffer, SubUVParticle->numTextVertices,
-                SubUVParticle->indexTextureBuffer, SubUVParticle->numIndices, SubUVParticle->Texture->TextureSRV, SubUVParticle->Texture->SamplerState
+                SubUVParticle->indexTextureBuffer, SubUVParticle->numIndices, SubUVParticle->GetTexture()->TextureSRV, SubUVParticle->GetTexture()->SamplerState
             );
         }
         else if (UText* Text = Cast<UText>(BillboardComp))
         {
-            FEngineLoop::renderer.RenderTextPrimitive(
+            FEditorEngine::renderer.RenderTextPrimitive(
                 Text->vertexTextBuffer, Text->numTextVertices,
-                Text->Texture->TextureSRV, Text->Texture->SamplerState
+                Text->GetTexture()->TextureSRV, Text->GetTexture()->SamplerState
             );
         }
         else
         {
             RenderTexturePrimitive(
                 BillboardComp->vertexTextureBuffer, BillboardComp->numVertices,
-                BillboardComp->indexTextureBuffer, BillboardComp->numIndices, BillboardComp->Texture->TextureSRV, BillboardComp->Texture->SamplerState
+                BillboardComp->indexTextureBuffer, BillboardComp->numIndices, BillboardComp->GetTexture()->TextureSRV, BillboardComp->GetTexture()->SamplerState
             );
         }
     }
     PrepareShader();
 }
 
-void FRenderer::RenderLight(UWorld* World, std::shared_ptr<FEditorViewportClient> ActiveViewport)
+void FRenderer::RenderLight(UWorld* World, std::shared_ptr<FViewportClient> ActiveViewport)
 {
     for (auto Light : LightObjs)
     {

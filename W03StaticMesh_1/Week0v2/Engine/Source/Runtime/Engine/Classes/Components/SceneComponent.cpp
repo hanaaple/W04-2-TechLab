@@ -129,7 +129,7 @@ FVector USceneComponent::GetLocalRotation()
 	return JungleMath::QuaternionToEuler(QuatRotation);
 }
 
-void USceneComponent::SetRotation(FVector _newRot)
+void USceneComponent::SetLocalRotation(FVector _newRot)
 {
 	RelativeRotation = _newRot;
 	QuatRotation = JungleMath::EulerToQuaternion(_newRot);
@@ -148,5 +148,28 @@ void USceneComponent::SetupAttachment(USceneComponent* InParent)
     ) {
         AttachParent = InParent;
         InParent->AttachChildren.AddUnique(this);
+    }
+}
+
+void USceneComponent::SetToComponent(USceneComponent* InParent)
+{
+    if (AttachParent != nullptr)
+    {
+        DetachFromComponent();
+    }
+    SetupAttachment(InParent);
+}
+
+void USceneComponent::DetachFromComponent()
+{
+    if (AttachParent == nullptr)
+        return;
+
+    AActor* Owner = GetOwner();
+
+    if (Owner && Owner->GetRootComponent() && Owner->GetRootComponent()->AttachChildren.Contains(this))
+    {
+        Owner->GetRootComponent()->AttachChildren.Remove(this);
+        AttachParent = nullptr;
     }
 }

@@ -3,13 +3,14 @@
 #include "World.h"
 #include "Actors/Player.h"
 #include "Components/LightComponent.h"
+#include "Components/SkySphereComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Components/UText.h"
 #include "Engine/FLoaderOBJ.h"
 #include "Math/MathUtility.h"
 #include "UnrealEd/ImGuiWidget.h"
 #include "UObject/Casts.h"
-#include "UObject/ObjectFactory.h"
+#include "Runtime/Engine/Camera/CameraComponent.h"
 
 void PropertyEditorPanel::Render()
 {
@@ -37,33 +38,32 @@ void PropertyEditorPanel::Render()
 
     /* Render Start */
     ImGui::Begin("Detail", nullptr, PanelFlags);
-    
+
     AEditorPlayer* player = GEngineLoop.GetWorld()->GetEditorPlayer();
-    AActor* PickedActor = GEngineLoop.GetWorld()->GetSelectedActor();
-    if (PickedActor)
+
+    AActor* TargetActor = GEngineLoop.GetWorld()->GetSelectedTempActor();
+    UActorComponent* TargetComponent = GEngineLoop.GetWorld()->GetSelectedTempComponent();
+
+    if (TargetActor == nullptr)
     {
+        ImGui::End();
+        return;
+    }
+
+    
+    ImGui::Text("%s", GetData(TargetActor->GetName()));
+
+    DrawAddComponent(ImVec2(100, 32), ImGui::GetFont());
+    
+    DrawActorHierarchy();
+    
+    if (USceneComponent* SceneComponent = Cast<USceneComponent>(TargetComponent))
+    {        
         ImGui::SetItemDefaultFocus();
         // TreeNode 배경색을 변경 (기본 상태)
         ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0.1f, 0.1f, 0.1f, 1.0f));
         if (ImGui::TreeNodeEx("Transform", ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_DefaultOpen)) // 트리 노드 생성
         {
-            Location = PickedActor->GetActorLocation();
-            Rotation = PickedActor->GetActorRotation();
-            Scale = PickedActor->GetActorScale();
-            
-            FImGuiWidget::DrawVec3Control("Location", Location, 0, 85);
-            ImGui::Spacing();
-
-            FImGuiWidget::DrawVec3Control("Rotation", Rotation, 0, 85);
-            ImGui::Spacing();
-
-            FImGuiWidget::DrawVec3Control("Scale", Scale, 0, 85);
-            ImGui::Spacing();
-
-            PickedActor->SetActorLocation(Location);
-            PickedActor->SetActorRotation(Rotation);
-            PickedActor->SetActorScale(Scale);
-            
             std::string coordiButtonLabel;
             if (player->GetCoordiMode() == CoordiMode::CDM_WORLD)
                 coordiButtonLabel = "World";
@@ -74,14 +74,49 @@ void PropertyEditorPanel::Render()
             {
                 player->AddCoordiMode();
             }
+
+            // if (player->GetCoordiMode() == CoordiMode::CDM_WORLD)
+            // {
+            //     Location = SceneComponent->GetWorldLocation();
+            //     Rotation = SceneComponent->GetWorldRotation();
+            //     Scale = SceneComponent->GetWorldScale();
+            // }
+            // else if (player->GetCoordiMode() == CoordiMode::CDM_LOCAL)
+            {
+                Location = SceneComponent->GetLocalLocation();
+                Rotation = SceneComponent->GetLocalRotation();
+                Scale = SceneComponent->GetLocalScale();   
+            }
+            
+            FImGuiWidget::DrawVec3Control("Location", Location, 0, 85);
+            ImGui::Spacing();
+
+            FImGuiWidget::DrawVec3Control("Rotation", Rotation, 0, 85);
+            ImGui::Spacing();
+
+            FImGuiWidget::DrawVec3Control("Scale", Scale, 0, 85);
+            ImGui::Spacing();
+
+            // if (player->GetCoordiMode() == CoordiMode::CDM_WORLD)
+            // {
+            //     SceneComponent->SetWorldLocation(Location);
+            //     SceneComponent->SetWorldRotation(Rotation);
+            //     SceneComponent->SetWorldScale(Scale);
+            // }
+            // else if (player->GetCoordiMode() == CoordiMode::CDM_LOCAL)
+            {
+                SceneComponent->SetLocalLocation(Location);
+                SceneComponent->SetLocalRotation(Rotation);
+                SceneComponent->SetLocalScale(Scale); 
+            }
+            
             ImGui::TreePop(); // 트리 닫기
         }
         ImGui::PopStyleColor();
     }
 
     // TODO: 추후에 RTTI를 이용해서 프로퍼티 출력하기
-    if (PickedActor)
-    if (ULightComponentBase* lightObj = Cast<ULightComponentBase>(PickedActor->GetRootComponent()))
+    if (ULightComponentBase* lightObj = Cast<ULightComponentBase>(TargetComponent))
     {
         ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0.1f, 0.1f, 0.1f, 1.0f));
         if (ImGui::TreeNodeEx("SpotLight Component", ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_DefaultOpen)) // 트리 노드 생성
@@ -158,8 +193,7 @@ void PropertyEditorPanel::Render()
     }
 
     // TODO: 추후에 RTTI를 이용해서 프로퍼티 출력하기
-    if (PickedActor)
-    if (UText* textOBj = Cast<UText>(PickedActor->GetRootComponent()))
+    if (UText* textOBj = Cast<UText>(TargetComponent))
     {
         ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0.1f, 0.1f, 0.1f, 1.0f));
         if (ImGui::TreeNodeEx("Text Component", ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_DefaultOpen)) // 트리 노드 생성
@@ -183,6 +217,10 @@ void PropertyEditorPanel::Render()
                     textOBj->ClearText();
                     int wlen = MultiByteToWideChar(CP_UTF8, 0, buf, -1, nullptr, 0);
                     FWString newWText(wlen, L'\0');
+                    if (*(newWText.end()-1) == L'\0')
+                    {
+                        newWText.erase(newWText.end()-1, newWText.end()); 
+                    }
                     MultiByteToWideChar(CP_UTF8, 0, buf, -1, newWText.data(), wlen);
                     textOBj->SetText(newWText);
                 }
@@ -194,11 +232,15 @@ void PropertyEditorPanel::Render()
     }
 
     // TODO: 추후에 RTTI를 이용해서 프로퍼티 출력하기
-    if (PickedActor)
-    if (UStaticMeshComponent* StaticMeshComponent = Cast<UStaticMeshComponent>(PickedActor->GetRootComponent()))
+    if (UStaticMeshComponent* StaticMeshComponent = Cast<UStaticMeshComponent>(TargetComponent))
     {
         RenderForStaticMesh(StaticMeshComponent);
         RenderForMaterial(StaticMeshComponent);
+    }
+
+    if (UBillboardComponent* BillBoardComponent = Cast<UBillboardComponent>(TargetComponent))
+    {
+        RenderForBillBoard(BillBoardComponent);
     }
     ImGui::End();
 }
@@ -259,22 +301,30 @@ void PropertyEditorPanel::HSVToRGB(float h, float s, float v, float& r, float& g
 }
 
 void PropertyEditorPanel::RenderForStaticMesh(UStaticMeshComponent* StaticMeshComp)
-{
-    if (StaticMeshComp->GetStaticMesh() == nullptr)
-    {
-        return;
-    }
-    
+{    
     ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0.1f, 0.1f, 0.1f, 1.0f));
     if (ImGui::TreeNodeEx("Static Mesh", ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_DefaultOpen)) // 트리 노드 생성
     {
         ImGui::Text("StaticMesh");
         ImGui::SameLine();
 
-        FString PreviewName = StaticMeshComp->GetStaticMesh()->GetRenderData()->DisplayName;
+        FString PreviewName;
+        if (StaticMeshComp->GetStaticMesh())
+        {
+            PreviewName = StaticMeshComp->GetStaticMesh()->GetRenderData()->DisplayName;
+        }
+        else
+        {
+            PreviewName = TEXT("None");
+        }
         const TMap<FWString, UStaticMesh*> Meshes = FManagerOBJ::GetStaticMeshes();
         if (ImGui::BeginCombo("##StaticMesh", GetData(PreviewName), ImGuiComboFlags_None))
         {
+            if (ImGui::Selectable(TEXT("None"), false))
+            {
+                StaticMeshComp->SetStaticMesh(nullptr);
+            }
+            
             for (auto Mesh : Meshes)
             {
                 if (ImGui::Selectable(GetData(Mesh.Value->GetRenderData()->DisplayName), false))
@@ -567,10 +617,225 @@ void PropertyEditorPanel::RenderCreateMaterialView()
     ImGui::End();
 }
 
+void PropertyEditorPanel::RenderForBillBoard(UBillboardComponent* BillBoardComponent)
+{
+    ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0.1f, 0.1f, 0.1f, 1.0f));
+    if (ImGui::TreeNodeEx("Sprite", ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_DefaultOpen)) // 트리 노드 생성
+    {
+        ImGui::Text("Sprite");
+        ImGui::SameLine();
+
+        std::shared_ptr<FTexture> CurrentTexture = BillBoardComponent->GetTexture();
+
+        FWString PreviewName;
+        if (CurrentTexture != nullptr)
+            
+        {
+            PreviewName = CurrentTexture->DisplayName;
+            ImGui::Image(reinterpret_cast<ImTextureID>(CurrentTexture->TextureSRV), ImVec2(64, 64));
+        }
+        else
+        {
+            PreviewName = L"None";
+            ImGui::Image(reinterpret_cast<ImTextureID>(GEngineLoop.resourceMgr.GetTextureByName(L"None")->TextureSRV), ImVec2(64, 64));
+
+            //ImGui::Image(0, ImVec2(128, 128));
+        }
+
+        ImGui::SameLine();
+        
+        const TMap<FWString, std::shared_ptr<FTexture>> Textures = GEngineLoop.resourceMgr.GetAllTextures();
+        if (ImGui::BeginCombo("##StaticMesh", (WStringToString(PreviewName) + "##").c_str(), ImGuiComboFlags_None))
+        {
+            for (auto Texture : Textures)
+            {
+                if (ImGui::Selectable((WStringToString(Texture.Value->DisplayName) + "##").c_str(), false))
+                {
+                    if (Texture.Value->DisplayName == L"None")
+                    {
+                        BillBoardComponent->SetTexture(L"");
+                    }
+                    else
+                    {
+                        BillBoardComponent->SetTexture(Texture.Value->FileName);
+                    }
+                }
+            }
+
+            ImGui::EndCombo();
+        }
+        
+        ImGui::TreePop();
+    }
+    ImGui::PopStyleColor();
+}
+
+
 void PropertyEditorPanel::OnResize(HWND hWnd)
 {
     RECT clientRect;
     GetClientRect(hWnd, &clientRect);
     Width = clientRect.right - clientRect.left;
     Height = clientRect.bottom - clientRect.top;
+}
+
+void PropertyEditorPanel::DrawAddComponent(ImVec2 ButtonSize, ImFont* IconFont)
+{
+    AActor* SelectedActor = GEngineLoop.GetWorld()->GetSelectedTempActor();
+    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.3f, 0.3f, 0.3f, 1.f));
+    ImGui::PushFont(IconFont);
+    if (ImGui::Button("+ Add", ButtonSize))
+    {
+         ImGui::OpenPopup("AddComponent");
+    }
+    ImGui::PopFont();
+    ImGui::PopStyleColor();
+    
+    if (ImGui::BeginPopup("AddComponent"))
+    {
+        TArray<FName> ItemLabels;
+        for (auto Class : UClass::GetClassRegistry())
+        {
+            if (Class->IsChildOf<USceneComponent>())
+            {
+                ItemLabels.Add(Class->GetName());
+            }
+        }
+    
+        for (FName label : ItemLabels)
+        {
+            if (ImGui::Selectable(GetData(label.ToString())))
+            {
+                UWorld* World = GEngineLoop.GetWorld();
+                USceneComponent* SelectedComponent = Cast<USceneComponent>(GEngineLoop.GetWorld()->GetSelectedComponent());
+                UActorComponent* TargetComponent = nullptr;
+                // for (auto Class : UClass::GetClassRegistry())
+                // {
+                //     if (Class->GetFName() == label)
+                //     {
+                //         //SelectedActor->AddComponentByClass(Class);
+                //     }
+                // }
+                if (label == FName("UCameraComponent"))
+                {
+                    TargetComponent = SelectedActor->AddComponent<UCameraComponent>();
+                }
+                else if (label == FName("USceneComponent"))
+                {
+                    TargetComponent = SelectedActor->AddComponent<USceneComponent>();
+                }
+                else if (label == FName("UStaticMeshComponent"))
+                {
+                   TargetComponent =  SelectedActor->AddComponent<UStaticMeshComponent>();
+                }
+                else if (label == FName("USkySphereComponent"))
+                {
+                   TargetComponent =  SelectedActor->AddComponent<USkySphereComponent>();
+                }
+                else if (label == FName("UBillboardComponent"))
+                {
+                    TargetComponent = SelectedActor->AddComponent<UBillboardComponent>();
+                }
+                else if (label == FName("ULightComponentBase"))
+                {
+                    TargetComponent = SelectedActor->AddComponent<ULightComponentBase>();
+                    auto billboard = SelectedActor->AddComponent<UBillboardComponent>();
+                    billboard->SetTexture(L"Assets/Texture/spotLight.png");
+                }
+                else if (label == FName("UText"))
+                {
+                    TargetComponent = SelectedActor->AddComponent<UText>();
+                }
+    
+                if (TargetComponent)
+                {
+                    if (SelectedComponent)
+                    {
+                        USceneComponent* AddedSceneComponent = Cast<USceneComponent>(TargetComponent);
+                        if (AddedSceneComponent)
+                        {
+                            AddedSceneComponent->SetToComponent(SelectedComponent);
+                        }
+                    }
+                    World->SetPickedActor(nullptr);
+                    World->SetPickedComponent(TargetComponent);
+                }
+            }
+        }
+        ImGui::EndPopup();
+    }
+}
+
+void PropertyEditorPanel::DrawActorHierarchy()
+{
+    ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.2f, 0.2f, 0.2f, 1.0f)); // 회색 배경
+
+    ImGui::BeginChild("Box", ImVec2(300, 200), true);
+
+    AActor* TargetActor = GEngineLoop.GetWorld()->GetSelectedTempActor();
+    
+    ImGui::Text("%s", GetData(TargetActor->GetName()));
+    {
+        bool bClicked = false;
+        DrawActorHierarchyRecursive(TargetActor->GetRootComponent(), bClicked);
+    }
+    // Draw Actor
+
+    ImGui::EndChild();
+    ImGui::PopStyleColor();
+}
+
+void PropertyEditorPanel::DrawActorHierarchyRecursive(USceneComponent* TargetSceneComponent, bool& bClicked)
+{
+    if (TargetSceneComponent == nullptr)
+    {
+        return;
+    }
+
+    UWorld* World = GEngineLoop.GetWorld();
+    FString Name = TargetSceneComponent->GetName() + "##";
+    
+    bool bWasSelected = (World->GetSelectedComponent() == TargetSceneComponent);
+
+    if (bWasSelected)
+    {
+        //SelectedCount++;
+        ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0.2f, 0.6f, 0.8f, 1.0f));
+    }
+
+    // 자식이 있는지 여부 확인
+    ImGuiTreeNodeFlags NodeFlags = (TargetSceneComponent->GetChildrenCount() == 0) 
+        ? ImGuiTreeNodeFlags_Leaf 
+        : ImGuiTreeNodeFlags_DefaultOpen;
+
+    if (bWasSelected)
+    {
+        NodeFlags |= ImGuiTreeNodeFlags_Selected;
+    }
+
+    bool bIsOpen = ImGui::TreeNodeEx(GetData(Name), NodeFlags);
+
+    if (ImGui::IsItemClicked() && !bClicked) // 클릭 감지
+    {
+        bClicked = true;
+        World->SetPickedActor(nullptr);
+        World->SetPickedComponent(TargetSceneComponent);
+    }
+
+    // TreeNode가 열린 경우에만 자식 재귀 호출
+    if (bIsOpen)
+    {
+        for (auto* AttachChild : TargetSceneComponent->GetAttachChildren())
+        {
+            DrawActorHierarchyRecursive(AttachChild, bClicked);
+        }
+        ImGui::TreePop();
+    }
+
+    // Push된 스타일이 있으면 Pop
+    if (bWasSelected)
+    {
+        //SelectedCount--;
+        ImGui::PopStyleColor();
+    }
 }

@@ -1,14 +1,22 @@
 ﻿#include "UnrealEd.h"
 #include "EditorPanel.h"
+#include "World.h"
+#include "Editor/EditorEngine.h"
 
-#include "PropertyEditor/ControlEditorPanel.h"
+#include "PropertyEditor/ViewControlEditorPanel.h"
 #include "PropertyEditor/OutlinerEditorPanel.h"
 #include "PropertyEditor/PropertyEditorPanel.h"
+#include "PropertyEditor/WorldControlEditorPanel.h"
+
+extern FEditorEngine GEngineLoop;
 
 void UnrealEd::Initialize()
 {
-    auto ControlPanel = std::make_shared<ControlEditorPanel>();
-    Panels["ControlPanel"] = ControlPanel;
+    auto WorldControlPanel = std::make_shared<WorldControlEditorPanel>();
+    Panels["WorldControlPanel"] = WorldControlPanel;
+    
+    auto ViewportControlPanel = std::make_shared<ViewportControlEditorPanel>();
+    Panels["ViewportControlPanel"] = ViewportControlPanel;
     
     auto OutlinerPanel = std::make_shared<OutlinerEditorPanel>();
     Panels["OutlinerPanel"] = OutlinerPanel;

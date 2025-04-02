@@ -5,8 +5,8 @@
 
 UTextUUID::UTextUUID()
 {
-    SetScale(FVector(0.1f, 0.25f, 0.25f));
-    SetLocation(FVector(0.0f, 0.0f, -0.5f));
+    SetLocalScale(FVector(0.1f, 0.25f, 0.25f));
+    SetLocalLocation(FVector(0.0f, 0.0f, -0.5f));
 }
 
 UTextUUID::~UTextUUID()

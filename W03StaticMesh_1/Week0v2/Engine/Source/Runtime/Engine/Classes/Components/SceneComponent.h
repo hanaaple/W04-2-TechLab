@@ -1,6 +1,7 @@
 #pragma once
 #include "ActorComponent.h"
 #include "Math/Quat.h"
+#include "Core/Container/Array.h"
 #include "UObject/ObjectMacros.h"
 
 class USceneComponent : public UActorComponent
@@ -20,7 +21,6 @@ public:
     void AddLocation(FVector _added);
     void AddRotation(FVector _added);
     void AddScale(FVector _added);
-    
 
     UObject* Duplicate() override;
 protected:
@@ -42,11 +42,18 @@ public:
     FVector GetLocalScale() const { return RelativeScale3D; }
     FVector GetLocalLocation() const { return RelativeLocation; }
 
-    void SetLocation(const FVector _newLoc) { RelativeLocation = _newLoc; }
-    virtual void SetRotation(FVector _newRot);
-    void SetRotation(const FQuat _newRot) { QuatRotation = _newRot; }
-    void SetScale(const FVector _newScale) { RelativeScale3D = _newScale; }
+    void SetLocalLocation(FVector _newLoc) { RelativeLocation = _newLoc; }
+    virtual void SetLocalRotation(FVector _newRot);
+    void SetLocalRotation(FQuat _newRot) { QuatRotation = _newRot; }
+    void SetLocalScale(FVector _newScale) { RelativeScale3D = _newScale; }
+
+public:
     void SetupAttachment(USceneComponent* InParent);
+    void SetToComponent(USceneComponent* InParent);
+    void DetachFromComponent();
+    inline TArray<USceneComponent*> GetAttachChildren() const { return AttachChildren; }
+    inline uint32 GetChildrenCount() const { return AttachChildren.Num(); }
+
 private:
     class UTextUUID* uuidText = nullptr;
 

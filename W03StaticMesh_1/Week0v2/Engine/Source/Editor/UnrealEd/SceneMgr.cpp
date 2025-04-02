@@ -64,13 +64,13 @@ SceneData FSceneMgr::ParseSceneData(const FString& jsonStr)
             USceneComponent* sceneComp = static_cast<USceneComponent*>(obj);
             //Todo : 여기다가 Obj Maeh저장후 일기
             //if (value.contains("ObjStaticMeshAsset"))
-            if (value.contains("Location")) sceneComp->SetLocation(FVector(value["Location"].get<std::vector<float>>()[0],
+            if (value.contains("Location")) sceneComp->SetLocalLocation(FVector(value["Location"].get<std::vector<float>>()[0],
                 value["Location"].get<std::vector<float>>()[1],
                 value["Location"].get<std::vector<float>>()[2]));
-            if (value.contains("Rotation")) sceneComp->SetRotation(FVector(value["Rotation"].get<std::vector<float>>()[0],
+            if (value.contains("Rotation")) sceneComp->SetLocalRotation(FVector(value["Rotation"].get<std::vector<float>>()[0],
                 value["Rotation"].get<std::vector<float>>()[1],
                 value["Rotation"].get<std::vector<float>>()[2]));
-            if (value.contains("Scale")) sceneComp->SetScale(FVector(value["Scale"].get<std::vector<float>>()[0],
+            if (value.contains("Scale")) sceneComp->SetLocalScale(FVector(value["Scale"].get<std::vector<float>>()[0],
                 value["Scale"].get<std::vector<float>>()[1],
                 value["Scale"].get<std::vector<float>>()[2]));
             if (value.contains("Type")) {
@@ -92,13 +92,13 @@ SceneData FSceneMgr::ParseSceneData(const FString& jsonStr)
             const json& value = it.value();
             UObject* obj = FObjectFactory::ConstructObject<UCameraComponent>();
             UCameraComponent* camera = static_cast<UCameraComponent*>(obj);
-            if (value.contains("Location")) camera->SetLocation(FVector(value["Location"].get<std::vector<float>>()[0],
+            if (value.contains("Location")) camera->SetLocalLocation(FVector(value["Location"].get<std::vector<float>>()[0],
                     value["Location"].get<std::vector<float>>()[1],
                     value["Location"].get<std::vector<float>>()[2]));
-            if (value.contains("Rotation")) camera->SetRotation(FVector(value["Rotation"].get<std::vector<float>>()[0],
+            if (value.contains("Rotation")) camera->SetLocalRotation(FVector(value["Rotation"].get<std::vector<float>>()[0],
                 value["Rotation"].get<std::vector<float>>()[1],
                 value["Rotation"].get<std::vector<float>>()[2]));
-            if (value.contains("Rotation")) camera->SetRotation(FVector(value["Rotation"].get<std::vector<float>>()[0],
+            if (value.contains("Rotation")) camera->SetLocalRotation(FVector(value["Rotation"].get<std::vector<float>>()[0],
                 value["Rotation"].get<std::vector<float>>()[1],
                 value["Rotation"].get<std::vector<float>>()[2]));
             if (value.contains("FOV")) camera->SetFOV(value["FOV"].get<float>());
