@@ -1,4 +1,4 @@
-﻿#include "PIEViewportClient.h"
+#include "PIEViewportClient.h"
 
 #include "UnrealClient.h"
 #include "Camera/CameraComponent.h"
@@ -51,6 +51,7 @@ FMatrix& FPIEViewportClient::GetProjectionMatrix()
             farPlane
         );
     }
+    return Projection;
 }
 
 void FPIEViewportClient::SetMainCamera(UCameraComponent* camera)
