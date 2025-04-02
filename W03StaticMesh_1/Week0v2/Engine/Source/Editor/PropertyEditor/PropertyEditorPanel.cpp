@@ -296,22 +296,30 @@ void PropertyEditorPanel::HSVToRGB(float h, float s, float v, float& r, float& g
 }
 
 void PropertyEditorPanel::RenderForStaticMesh(UStaticMeshComponent* StaticMeshComp)
-{
-    if (StaticMeshComp->GetStaticMesh() == nullptr)
-    {
-        return;
-    }
-    
+{    
     ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0.1f, 0.1f, 0.1f, 1.0f));
     if (ImGui::TreeNodeEx("Static Mesh", ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_DefaultOpen)) // 트리 노드 생성
     {
         ImGui::Text("StaticMesh");
         ImGui::SameLine();
 
-        FString PreviewName = StaticMeshComp->GetStaticMesh()->GetRenderData()->DisplayName;
+        FString PreviewName;
+        if (StaticMeshComp->GetStaticMesh())
+        {
+            PreviewName = StaticMeshComp->GetStaticMesh()->GetRenderData()->DisplayName;
+        }
+        else
+        {
+            PreviewName = TEXT("None");
+        }
         const TMap<FWString, UStaticMesh*> Meshes = FManagerOBJ::GetStaticMeshes();
         if (ImGui::BeginCombo("##StaticMesh", GetData(PreviewName), ImGuiComboFlags_None))
         {
+            if (ImGui::Selectable(TEXT("None"), false))
+            {
+                StaticMeshComp->SetStaticMesh(nullptr);
+            }
+            
             for (auto Mesh : Meshes)
             {
                 if (ImGui::Selectable(GetData(Mesh.Value->GetRenderData()->DisplayName), false))
@@ -640,6 +648,7 @@ void PropertyEditorPanel::DrawAddComponent(ImVec2 ButtonSize, ImFont* IconFont)
             if (ImGui::Selectable(GetData(label.ToString())))
             {
                 UWorld* World = GEngineLoop.GetWorld();
+                USceneComponent* SelectedComponent = Cast<USceneComponent>(GEngineLoop.GetWorld()->GetSelectedComponent());
                 UActorComponent* TargetComponent = nullptr;
                 // for (auto Class : UClass::GetClassRegistry())
                 // {
@@ -679,6 +688,14 @@ void PropertyEditorPanel::DrawAddComponent(ImVec2 ButtonSize, ImFont* IconFont)
     
                 if (TargetComponent)
                 {
+                    if (SelectedComponent)
+                    {
+                        USceneComponent* AddedSceneComponent = Cast<USceneComponent>(TargetComponent);
+                        if (AddedSceneComponent)
+                        {
+                            AddedSceneComponent->SetToComponent(SelectedComponent);
+                        }
+                    }
                     World->SetPickedActor(nullptr);
                     World->SetPickedComponent(TargetComponent);
                 }

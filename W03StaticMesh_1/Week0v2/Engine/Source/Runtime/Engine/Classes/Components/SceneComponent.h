@@ -48,6 +48,8 @@ public:
 
 public:
     void SetupAttachment(USceneComponent* InParent);
+    void SetToComponent(USceneComponent* InParent);
+    void DetachFromComponent();
     inline TArray<USceneComponent*> GetAttachChildren() const { return AttachChildren; }
     inline uint32 GetChildrenCount() const { return AttachChildren.Num(); }
 
