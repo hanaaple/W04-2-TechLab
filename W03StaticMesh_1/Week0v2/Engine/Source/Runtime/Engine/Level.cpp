@@ -10,3 +10,14 @@ void ULevel::Tick(float DeltaTime)
     }
 }
 
+UObject* ULevel::Duplicate()
+{
+    ULevel* DuplicatedLevel = Cast<ULevel>(FObjectFactory::DuplicateObject(this));
+    DuplicatedLevel->Actors.Empty();
+    for (AActor* Actor: Actors)
+    {
+        DuplicatedLevel->Actors.Add(Cast<AActor>(Actor->Duplicate()));
+    }
+    return DuplicatedLevel;
+}
+

@@ -19,4 +19,5 @@ public:
     ELevelState LevelState;
     TArray<AActor*> Actors;
     void Tick(float DeltaTime);
+    UObject* Duplicate() override;
 };

@@ -153,29 +153,36 @@ bool UWorld::DestroyActor(AActor* ThisActor)
 
 UObject* UWorld::Duplicate()
 {
-    // UWorld* dup = Cast<UWorld>(FObjectFactory::DuplicateObject(this, this->GetClass()));
-    // dup->Level..Empty();
-    // for (const auto item : this->ActorsArray)
-    // {
-    //     dup->ActorsArray.Add(Cast<AActor>(FObjectFactory::DuplicateObject(item, item->GetClass())));
-    // }
-    //
-    // dup->PendingBeginPlayActors.Empty();
-    // for (const auto item : this->PendingBeginPlayActors)
-    // {
-    //     dup->PendingBeginPlayActors.Add(Cast<AActor>(FObjectFactory::DuplicateObject(item, item->GetClass())));
-    // }
-    //
-    // dup->SelectedActor = Cast<AActor>(FObjectFactory::DuplicateObject(this->SelectedActor, this->SelectedActor->GetClass()));
-    //
-    // dup->pickingGizmo = Cast<USceneComponent>(FObjectFactory::DuplicateObject(this->pickingGizmo, this->pickingGizmo->GetClass()));
-    //
-    // dup->worldGizmo = FObjectFactory::DuplicateObject(this->worldGizmo, this->worldGizmo->GetClass());
-    //
-    // Super::Duplicate();
+     UWorld* dup = Cast<UWorld>(FObjectFactory::DuplicateObject(this, this->GetClass()));
+     dup->Level = Cast<ULevel>(Level->Duplicate());
     
-    //return dup;
-    return nullptr;
+     dup->PendingBeginPlayActors.Empty();
+     for (const auto item : this->PendingBeginPlayActors)
+     {
+         dup->PendingBeginPlayActors.Add(Cast<AActor>(item->Duplicate()));
+     }
+
+    if (this->SelectedActor != nullptr)
+         dup->SelectedActor = Cast<AActor>(this->SelectedActor->Duplicate());
+
+    if (this->SelectedComponent != nullptr)
+        dup->SelectedComponent = Cast<UActorComponent>(this->SelectedComponent->Duplicate());
+
+    if (this->pickingGizmo != nullptr)
+         dup->pickingGizmo = Cast<USceneComponent>(this->pickingGizmo->Duplicate());
+
+    if (this->camera != nullptr)
+        dup->camera = Cast<UCameraComponent>(this->camera->Duplicate());
+
+    if (this->EditorPlayer != nullptr)
+        dup->EditorPlayer = Cast<AEditorPlayer>(this->EditorPlayer->Duplicate());
+
+    if (this->worldGizmo != nullptr)
+         dup->worldGizmo = Cast<UObject>(this->worldGizmo->Duplicate());
+    
+     Super::Duplicate();
+    
+    return dup;
 }
 
 void UWorld::SetPickingGizmo(UObject* Object)
