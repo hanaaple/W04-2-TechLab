@@ -18,6 +18,7 @@ public:
     ) override;
 
     void SetTexture(FWString _fileName);
+    std::shared_ptr<FTexture> GetTexture() const { return Texture;}
     void SetUUIDParent(USceneComponent* _parent);
     FMatrix CreateBillboardMatrix();
 
@@ -27,7 +28,6 @@ public:
     UINT numIndices;
     float finalIndexU = 0.0f;
     float finalIndexV = 0.0f;
-    std::shared_ptr<FTexture> Texture;
 protected:
 
 
@@ -38,4 +38,8 @@ protected:
 
 private:
     void CreateQuadTextureVertexBuffer();
+
+    
+private:
+    std::shared_ptr<FTexture> Texture;
 };

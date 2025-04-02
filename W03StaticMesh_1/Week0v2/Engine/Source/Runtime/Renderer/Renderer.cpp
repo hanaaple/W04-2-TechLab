@@ -1138,7 +1138,7 @@ void FRenderer::RenderBillboards(UWorld* World, std::shared_ptr<FViewportClient>
     PrepareSubUVConstant();
     for (auto BillboardComp : BillboardObjs)
     {
-        if (BillboardComp->Texture == nullptr)
+        if (BillboardComp->GetTexture() == nullptr)
             continue;
         
         UpdateSubUVConstant(BillboardComp->finalIndexU, BillboardComp->finalIndexV);
@@ -1158,21 +1158,21 @@ void FRenderer::RenderBillboards(UWorld* World, std::shared_ptr<FViewportClient>
         {
             RenderTexturePrimitive(
                 SubUVParticle->vertexSubUVBuffer, SubUVParticle->numTextVertices,
-                SubUVParticle->indexTextureBuffer, SubUVParticle->numIndices, SubUVParticle->Texture->TextureSRV, SubUVParticle->Texture->SamplerState
+                SubUVParticle->indexTextureBuffer, SubUVParticle->numIndices, SubUVParticle->GetTexture()->TextureSRV, SubUVParticle->GetTexture()->SamplerState
             );
         }
         else if (UText* Text = Cast<UText>(BillboardComp))
         {
             FEditorEngine::renderer.RenderTextPrimitive(
                 Text->vertexTextBuffer, Text->numTextVertices,
-                Text->Texture->TextureSRV, Text->Texture->SamplerState
+                Text->GetTexture()->TextureSRV, Text->GetTexture()->SamplerState
             );
         }
         else
         {
             RenderTexturePrimitive(
                 BillboardComp->vertexTextureBuffer, BillboardComp->numVertices,
-                BillboardComp->indexTextureBuffer, BillboardComp->numIndices, BillboardComp->Texture->TextureSRV, BillboardComp->Texture->SamplerState
+                BillboardComp->indexTextureBuffer, BillboardComp->numIndices, BillboardComp->GetTexture()->TextureSRV, BillboardComp->GetTexture()->SamplerState
             );
         }
     }

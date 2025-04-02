@@ -237,6 +237,11 @@ void PropertyEditorPanel::Render()
         RenderForStaticMesh(StaticMeshComponent);
         RenderForMaterial(StaticMeshComponent);
     }
+
+    if (UBillboardComponent* BillBoardComponent = Cast<UBillboardComponent>(TargetComponent))
+    {
+        RenderForBillBoard(BillBoardComponent);
+    }
     ImGui::End();
 }
 
@@ -611,6 +616,60 @@ void PropertyEditorPanel::RenderCreateMaterialView()
 
     ImGui::End();
 }
+
+void PropertyEditorPanel::RenderForBillBoard(UBillboardComponent* BillBoardComponent)
+{
+    ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0.1f, 0.1f, 0.1f, 1.0f));
+    if (ImGui::TreeNodeEx("Static Mesh", ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_DefaultOpen)) // 트리 노드 생성
+    {
+        ImGui::Text("Sprite");
+        ImGui::SameLine();
+
+        std::shared_ptr<FTexture> CurrentTexture = BillBoardComponent->GetTexture();
+
+        FWString PreviewName;
+        if (CurrentTexture != nullptr)
+            
+        {
+            PreviewName = CurrentTexture->DisplayName;
+            ImGui::Image(reinterpret_cast<ImTextureID>(CurrentTexture->TextureSRV), ImVec2(64, 64));
+        }
+        else
+        {
+            PreviewName = L"None";
+            ImGui::Image(reinterpret_cast<ImTextureID>(GEngineLoop.resourceMgr.GetTextureByName(L"None")->TextureSRV), ImVec2(64, 64));
+
+            //ImGui::Image(0, ImVec2(128, 128));
+        }
+
+        ImGui::SameLine();
+        
+        const TMap<FWString, std::shared_ptr<FTexture>> Textures = GEngineLoop.resourceMgr.GetAllTextures();
+        if (ImGui::BeginCombo("##StaticMesh", (WStringToString(PreviewName) + "##").c_str(), ImGuiComboFlags_None))
+        {
+            for (auto Texture : Textures)
+            {
+                if (ImGui::Selectable((WStringToString(Texture.Value->DisplayName) + "##").c_str(), false))
+                {
+                    if (Texture.Value->DisplayName == L"None")
+                    {
+                        BillBoardComponent->SetTexture(L"");
+                    }
+                    else
+                    {
+                        BillBoardComponent->SetTexture(Texture.Value->FileName);
+                    }
+                }
+            }
+
+            ImGui::EndCombo();
+        }
+        
+        ImGui::TreePop();
+    }
+    ImGui::PopStyleColor();
+}
+
 
 void PropertyEditorPanel::OnResize(HWND hWnd)
 {
