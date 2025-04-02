@@ -3,6 +3,8 @@
 #include "World.h"
 #include "UnrealEd/Editor/EditorEngine.h"
 
+#include "World.h"
+
 void WorldControlEditorPanel::Render()
 {
     /* Pre Setup */
@@ -33,6 +35,10 @@ void WorldControlEditorPanel::Render()
 
     /* Render Start */
     ImGui::Begin("World Control Panel", nullptr, PanelFlags);
+
+    CreateAddActorButton(IconSize, IconFont);
+
+    ImGui::SameLine();
     
     CreateLevelEditorPlayButton(IconSize, IconFont);
     
@@ -65,6 +71,47 @@ void WorldControlEditorPanel::OnResize(HWND hWnd)
     GetClientRect(hWnd, &clientRect);
     Width = clientRect.right - clientRect.left;
     Height = clientRect.bottom - clientRect.top;
+}
+
+void WorldControlEditorPanel::CreateAddActorButton(ImVec2 ButtonSize, ImFont* IconFont)
+{
+    ImGui::PushFont(IconFont);
+    if (ImGui::Button(ICON_FA_BOX, ButtonSize))
+    {
+        ImGui::OpenPopup("AddActor");
+    }
+    ImVec2 pos = ImGui::GetItemRectMin() + ButtonSize - ImVec2(19, 19);
+    
+    ImGui::GetWindowDrawList()->AddText(pos, IM_COL32(0, 255, 0, 255), ICON_FA_PLUS);
+    ImGui::PopFont();
+    
+    if (ImGui::BeginPopup("AddActor"))
+    {
+        static const char* ItemLabels[] = {
+            "Empty Actor",
+        };
+
+        for (const char* label : ItemLabels)
+        {
+            if (ImGui::Selectable(label))
+            {
+                UWorld* World = GEngineLoop.GetWorld();
+                AActor* SpawnedActor = nullptr;
+                if (label == FString("Empty Actor"))
+                {
+                    SpawnedActor = World->SpawnActor<AActor>();
+                    SpawnedActor->SetActorLabel(TEXT("NameNAMENameNAMENameNAME"));
+                }
+
+                if (SpawnedActor && SpawnedActor->GetRootComponent())
+                {
+                    World->SetPickedActor(SpawnedActor);
+                    World->SetPickedComponent(nullptr);
+                }
+            }
+        }
+        ImGui::EndPopup();
+    }
 }
 
 void WorldControlEditorPanel::CreateLevelEditorPlayButton(ImVec2 ButtonSize, ImFont* IconFont)

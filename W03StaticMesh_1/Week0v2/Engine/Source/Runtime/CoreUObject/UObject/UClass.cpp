@@ -8,6 +8,7 @@ UClass::UClass(const char* InClassName, uint32 InClassSize, uint32 InAlignment, 
     , SuperClass(InSuperClass)
 {
     NamePrivate = InClassName;
+    RegisterUClass(this);
 }
 
 bool UClass::IsChildOf(const UClass* SomeBase) const

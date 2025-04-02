@@ -34,8 +34,8 @@ void UWorld::CreateBaseObject()
     if (camera == nullptr)
     {
         camera = FObjectFactory::ConstructObject<UCameraComponent>();
-        camera->SetLocation(FVector(8.0f, 8.0f, 8.f));
-        camera->SetRotation(FVector(0.0f, 45.0f, -135.0f));
+        camera->SetLocalLocation(FVector(8.0f, 8.0f, 8.f));
+        camera->SetLocalRotation(FVector(0.0f, 45.0f, -135.0f));
     }
 
     if (LocalGizmo == nullptr)

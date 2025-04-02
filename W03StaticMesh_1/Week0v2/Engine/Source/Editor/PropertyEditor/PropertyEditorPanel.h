@@ -1,4 +1,6 @@
 #pragma once
+#include "Components/ActorComponent.h"
+#include "Components/SceneComponent.h"
 #include "Define.h"
 #include "UnrealEd/EditorPanel.h"
 
@@ -12,6 +14,9 @@ public:
 
 
 private:
+    void DrawAddComponent(ImVec2 ButtonSize, ImFont* IconFont);
+    void DrawActorHierarchy();
+    void DrawActorHierarchyRecursive(USceneComponent* TargetSceneComponent, bool& bClicked);
     void RGBToHSV(float r, float g, float b, float& h, float& s, float& v) const;
     void HSVToRGB(float h, float s, float v, float& r, float& g, float& b) const;
 

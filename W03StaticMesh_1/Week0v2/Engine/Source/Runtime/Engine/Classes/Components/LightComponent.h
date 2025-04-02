@@ -1,7 +1,7 @@
 #pragma once
 #include "PrimitiveComponent.h"
 #include "Define.h"
-class UBillboardComponent;
+#include "UBillboardComponent.h"
 
 class ULightComponentBase : public USceneComponent
 {
@@ -9,7 +9,6 @@ class ULightComponentBase : public USceneComponent
 
 public:
     ULightComponentBase();
-    virtual ~ULightComponentBase() override;
 
     virtual void TickComponent(float DeltaTime) override;
     virtual int CheckRayIntersection(FVector& rayOrigin, FVector& rayDirection, float& pfNearHitDistance);
@@ -19,14 +18,12 @@ public:
     float GetRadius() const;
     void SetRadius(float r);
 
-private:
+public:
     FVector4 color;
     float radius;
     FBoundingBox AABB;
-    UBillboardComponent* texture2D;
 public:
     FBoundingBox GetBoundingBox() const {return AABB;}
     float GetRadius() {return radius;}
     FVector4 GetColor() {return color;}
-    UBillboardComponent* GetTexture2D() const {return texture2D;}
 };

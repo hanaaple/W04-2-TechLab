@@ -39,6 +39,7 @@ void OutlinerEditorPanel::Render()
         {
             if (ImGui::Selectable(*Actor->GetActorLabel(), World->GetSelectedActor() == Actor))
             {
+                World->SetPickedComponent(nullptr);
                 World->SetPickedActor(Actor);
                 break;
             }

@@ -349,7 +349,8 @@ int AEditorPlayer::RayIntersectsObject(const FVector& pickPosition, USceneCompon
 
 void AEditorPlayer::PickedObjControl()
 {
-    if (GetWorld()->GetSelectedActor() && GetWorld()->GetPickingGizmo())
+    AActor* PickedActor = GetWorld()->GetSelectedActor();
+    if (PickedActor && PickedActor->GetRootComponent() && GetWorld()->GetPickingGizmo())
     {
         POINT currentMousePos;
         GetCursorPos(&currentMousePos);
@@ -357,7 +358,6 @@ void AEditorPlayer::PickedObjControl()
         int32 deltaY = currentMousePos.y - m_LastMousePos.y;
 
         // USceneComponent* pObj = GetWorld()->GetPickingObj();
-        AActor* PickedActor = GetWorld()->GetSelectedActor();
         UGizmoBaseComponent* Gizmo = static_cast<UGizmoBaseComponent*>(GetWorld()->GetPickingGizmo());
         switch (cMode)
         {
@@ -409,11 +409,11 @@ void AEditorPlayer::ControlRotation(USceneComponent* pObj, UGizmoBaseComponent* 
     }
     if (cdMode == CDM_LOCAL)
     {
-        pObj->SetRotation(currentRotation * rotationDelta);
+        pObj->SetLocalRotation(currentRotation * rotationDelta);
     }
     else if (cdMode == CDM_WORLD)
     {
-        pObj->SetRotation(rotationDelta * currentRotation);
+        pObj->SetLocalRotation(rotationDelta * currentRotation);
     }
 }
 

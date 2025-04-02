@@ -41,11 +41,15 @@ public:
     FVector GetLocalScale() const { return RelativeScale3D; }
     FVector GetLocalLocation() const { return RelativeLocation; }
 
-    void SetLocation(FVector _newLoc) { RelativeLocation = _newLoc; }
-    virtual void SetRotation(FVector _newRot);
-    void SetRotation(FQuat _newRot) { QuatRotation = _newRot; }
-    void SetScale(FVector _newScale) { RelativeScale3D = _newScale; }
+    void SetLocalLocation(FVector _newLoc) { RelativeLocation = _newLoc; }
+    virtual void SetLocalRotation(FVector _newRot);
+    void SetLocalRotation(FQuat _newRot) { QuatRotation = _newRot; }
+    void SetLocalScale(FVector _newScale) { RelativeScale3D = _newScale; }
+
+public:
     void SetupAttachment(USceneComponent* InParent);
+    inline TArray<USceneComponent*> GetAttachChildren() const { return AttachChildren; }
+    inline uint32 GetChildrenCount() const { return AttachChildren.Num(); }
 
 private:
     class UTextUUID* uuidText = nullptr;
