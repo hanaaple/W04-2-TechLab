@@ -3,7 +3,7 @@
 #include "sstream"
 #include "ostream"
 #include "Math/JungleMath.h"
-#include "EngineLoop.h"
+#include "Editor/UnrealEd/Editor/EditorEngine.h"
 #include "UnrealClient.h"
 #include "World.h"
 #include "GameFramework/Actor.h"

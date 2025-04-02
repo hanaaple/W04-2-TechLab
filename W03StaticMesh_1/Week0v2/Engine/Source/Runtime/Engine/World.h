@@ -1,6 +1,8 @@
 #pragma once
 #include "Define.h"
+#include "Level.h"
 #include "Container/Set.h"
+#include "Engine/EngineTypes.h"
 #include "UObject/ObjectFactory.h"
 #include "UObject/ObjectMacros.h"
 
@@ -42,6 +44,10 @@ public:
 private:
     const FString defaultMapName = "Default";
 
+    ULevel* Level;
+
+    EWorldType::Type WorldType;
+    
     /** World에서 관리되는 모든 Actor의 목록 */
     TSet<AActor*> ActorsArray;
 

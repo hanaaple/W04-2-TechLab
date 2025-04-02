@@ -3,7 +3,7 @@
 #include <sstream>
 
 #include "Define.h"
-#include "EngineLoop.h"
+#include "Editor/UnrealEd/Editor/EditorEngine.h"
 #include "Container/Map.h"
 #include "HAL/PlatformType.h"
 #include "Serialization/Serializer.h"
@@ -383,12 +383,12 @@ struct FLoaderOBJ
     static bool CreateTextureFromFile(const FWString& Filename)
     {
         
-        if (FEngineLoop::resourceMgr.GetTexture(Filename))
+        if (FEditorEngine::resourceMgr.GetTexture(Filename))
         {
             return true;
         }
 
-        HRESULT hr = FEngineLoop::resourceMgr.LoadTextureFromFile(FEngineLoop::graphicDevice.Device, FEngineLoop::graphicDevice.DeviceContext, Filename.c_str());
+        HRESULT hr = FEditorEngine::resourceMgr.LoadTextureFromFile(FEditorEngine::graphicDevice.Device, FEditorEngine::graphicDevice.DeviceContext, Filename.c_str());
 
         if (FAILED(hr))
         {
@@ -679,9 +679,9 @@ public:
         {
             for (const FWString& Texture : Textures)
             {
-                if (FEngineLoop::resourceMgr.GetTexture(Texture) == nullptr)
+                if (FEditorEngine::resourceMgr.GetTexture(Texture) == nullptr)
                 {
-                    FEngineLoop::resourceMgr.LoadTextureFromFile(FEngineLoop::graphicDevice.Device, FEngineLoop::graphicDevice.DeviceContext, Texture.c_str());
+                    FEditorEngine::resourceMgr.LoadTextureFromFile(FEditorEngine::graphicDevice.Device, FEditorEngine::graphicDevice.DeviceContext, Texture.c_str());
                 }
             }
         }

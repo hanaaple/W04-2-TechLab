@@ -244,7 +244,7 @@ void UText::CreateTextTextureVertexBuffer(const TArray<FVertexTexture>& _vertex,
 
 	ID3D11Buffer* vertexBuffer;
 	
-	HRESULT hr = FEngineLoop::graphicDevice.Device->CreateBuffer(&vertexbufferdesc, &vertexbufferSRD, &vertexBuffer);
+	HRESULT hr = FEditorEngine::graphicDevice.Device->CreateBuffer(&vertexbufferdesc, &vertexbufferSRD, &vertexBuffer);
 	if (FAILED(hr))
 	{
 		UE_LOG(LogLevel::Warning, "VertexBuffer Creation faild");
@@ -259,7 +259,7 @@ void UText::CreateTextTextureVertexBuffer(const TArray<FVertexTexture>& _vertex,
 
 void UText::TextMVPRendering()
 {
-    FEngineLoop::renderer.PrepareTextureShader();
+    FEditorEngine::renderer.PrepareTextureShader();
     //FEngineLoop::renderer.UpdateSubUVConstant(0, 0);
     //FEngineLoop::renderer.PrepareSubUVConstant();
     FMatrix Model = CreateBillboardMatrix();
@@ -268,16 +268,16 @@ void UText::TextMVPRendering()
     FMatrix NormalMatrix = FMatrix::Transpose(FMatrix::Inverse(Model));
     FVector4 UUIDColor = EncodeUUID() / 255.0f;
     if (this == GetWorld()->GetPickingGizmo()) {
-        FEngineLoop::renderer.UpdateConstant(MVP, NormalMatrix, UUIDColor, true);
+        FEditorEngine::renderer.UpdateConstant(MVP, NormalMatrix, UUIDColor, true);
     }
     else
-        FEngineLoop::renderer.UpdateConstant(MVP, NormalMatrix, UUIDColor, false);
+        FEditorEngine::renderer.UpdateConstant(MVP, NormalMatrix, UUIDColor, false);
 
     if (ShowFlags::GetInstance().currentFlags & static_cast<uint64>(EEngineShowFlags::SF_BillboardText)) {
-        FEngineLoop::renderer.RenderTextPrimitive(vertexTextBuffer, numTextVertices,
+        FEditorEngine::renderer.RenderTextPrimitive(vertexTextBuffer, numTextVertices,
             Texture->TextureSRV, Texture->SamplerState);
     }
     //Super::Render();
 
-    FEngineLoop::renderer.PrepareShader();
+    FEditorEngine::renderer.PrepareShader();
 }

@@ -1,8 +1,8 @@
 #pragma once
-#include "EngineLoop.h"
 #include "NameTypes.h"
+#include "UnrealEd/Editor/EditorEngine.h"
 
-extern FEngineLoop GEngineLoop;
+extern FEditorEngine GEngineLoop;
 
 class UClass;
 class UWorld;
@@ -42,7 +42,7 @@ public:
         return GEngineLoop.GetWorld();
     }
 
-    FEngineLoop& GetEngine()
+    FEditorEngine& GetEngine()
     {
         return GEngineLoop;
     }

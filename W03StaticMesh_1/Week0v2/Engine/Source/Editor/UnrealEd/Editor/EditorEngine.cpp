@@ -1,7 +1,6 @@
-#include "EngineLoop.h"
+#include "EditorEngine.h"
 #include "ImGuiManager.h"
 #include "World.h"
-#include "Camera/CameraComponent.h"
 #include "PropertyEditor/ViewportTypePanel.h"
 #include "UnrealEd/EditorViewportClient.h"
 #include "UnrealEd/UnrealEd.h"
@@ -28,9 +27,9 @@ static LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
         if (wParam != SIZE_MINIMIZED)
         {
             //UGraphicsDevice 객체의 OnResize 함수 호출
-            if (FEngineLoop::graphicDevice.SwapChain)
+            if (FEditorEngine::graphicDevice.SwapChain)
             {
-                FEngineLoop::graphicDevice.OnResize(hWnd);
+                FEditorEngine::graphicDevice.OnResize(hWnd);
             }
             for (int i = 0; i < 4; i++)
             {
@@ -38,7 +37,7 @@ static LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
                 {
                     if (GEngineLoop.GetLevelEditor()->GetViewports()[i])
                     {
-                        GEngineLoop.GetLevelEditor()->GetViewports()[i]->ResizeViewport(FEngineLoop::graphicDevice.SwapchainDesc);
+                        GEngineLoop.GetLevelEditor()->GetViewports()[i]->ResizeViewport(FEditorEngine::graphicDevice.SwapchainDesc);
                     }
                 }
             }
@@ -87,13 +86,13 @@ static LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
     return 0;
 }
 
-FGraphicsDevice FEngineLoop::graphicDevice;
-FRenderer FEngineLoop::renderer;
-FResourceMgr FEngineLoop::resourceMgr;
-uint32 FEngineLoop::TotalAllocationBytes = 0;
-uint32 FEngineLoop::TotalAllocationCount = 0;
+FGraphicsDevice FEditorEngine::graphicDevice;
+FRenderer FEditorEngine::renderer;
+FResourceMgr FEditorEngine::resourceMgr;
+uint32 FEditorEngine::TotalAllocationBytes = 0;
+uint32 FEditorEngine::TotalAllocationCount = 0;
 
-FEngineLoop::FEngineLoop()
+FEditorEngine::FEditorEngine()
     : hWnd(nullptr)
     , UIMgr(nullptr)
     , GWorld(nullptr)
@@ -102,12 +101,12 @@ FEngineLoop::FEngineLoop()
 {
 }
 
-int32 FEngineLoop::PreInit()
+int32 FEditorEngine::PreInit()
 {
     return 0;
 }
 
-int32 FEngineLoop::Init(HINSTANCE hInstance)
+int32 FEditorEngine::Init(HINSTANCE hInstance)
 {
     /* must be initialized before window. */
     UnrealEditor = new UnrealEd();
@@ -119,7 +118,7 @@ int32 FEngineLoop::Init(HINSTANCE hInstance)
 
     UIMgr = new UImGuiManager;
     UIMgr->Initialize(hWnd, graphicDevice.Device, graphicDevice.DeviceContext);
-
+    
     resourceMgr.Initialize(&renderer, &graphicDevice);
     LevelEditor = new SLevelEditor();
     LevelEditor->Initialize();
@@ -131,7 +130,7 @@ int32 FEngineLoop::Init(HINSTANCE hInstance)
 }
 
 
-void FEngineLoop::Render()
+void FEditorEngine::Render()
 {
     graphicDevice.Prepare();
     if (LevelEditor->IsMultiViewport())
@@ -164,7 +163,7 @@ void FEngineLoop::Render()
     }
 }
 
-void FEngineLoop::Tick()
+void FEditorEngine::Tick()
 {
     LARGE_INTEGER frequency;
     const double targetFrameTime = 1000.0 / targetFPS; // 한 프레임의 목표 시간 (밀리초 단위)
@@ -216,14 +215,14 @@ void FEngineLoop::Tick()
     }
 }
 
-float FEngineLoop::GetAspectRatio(IDXGISwapChain* swapChain) const
+float FEditorEngine::GetAspectRatio(IDXGISwapChain* swapChain) const
 {
     DXGI_SWAP_CHAIN_DESC desc;
     swapChain->GetDesc(&desc);
     return static_cast<float>(desc.BufferDesc.Width) / static_cast<float>(desc.BufferDesc.Height);
 }
 
-void FEngineLoop::Input()
+void FEditorEngine::Input()
 {
     if (GetAsyncKeyState('M') & 0x8000)
     {
@@ -244,7 +243,7 @@ void FEngineLoop::Input()
     }
 }
 
-void FEngineLoop::Exit()
+void FEditorEngine::Exit()
 {
     LevelEditor->Release();
     GWorld->Release();
@@ -257,7 +256,7 @@ void FEngineLoop::Exit()
 }
 
 
-void FEngineLoop::WindowInit(HINSTANCE hInstance)
+void FEditorEngine::WindowInit(HINSTANCE hInstance)
 {
     WCHAR WindowClass[] = L"JungleWindowClass";
 

@@ -1,4 +1,5 @@
 #pragma once
+#include "Engine.h"
 #include "Core/HAL/PlatformType.h"
 #include "D3D11RHI/GraphicDevice.h"
 #include "Renderer/Renderer.h"
@@ -12,10 +13,12 @@ class SSplitterV;
 class SSplitterH;
 class SLevelEditor;
 
-class FEngineLoop
+// TODO 임시로 UObject 상속 안함.
+class FEditorEngine : public FEngine
 {
+    //DECLARE_CLASS(UEditorEngine, UEngine)
 public:
-    FEngineLoop();
+    FEditorEngine();
 
     int32 PreInit();
     int32 Init(HINSTANCE hInstance);
@@ -39,10 +42,14 @@ public:
     HWND hWnd;
 
 private:
-    UImGuiManager* UIMgr;
     UWorld* GWorld;
+
+    // ImGUI
+    UImGuiManager* UIMgr;
+    // Slate
     SLevelEditor* LevelEditor;
     UnrealEd* UnrealEditor;
+    
     bool bIsExit = false;
     const int32 targetFPS = 60;
     bool bTestInput = false;

@@ -1,4 +1,4 @@
-﻿#include "ControlEditorPanel.h"
+﻿#include "ViewControlEditorPanel.h"
 
 #include "World.h"
 #include "Actors/Player.h"
@@ -15,7 +15,7 @@
 #include "UnrealEd/EditorViewportClient.h"
 #include "PropertyEditor/ShowFlags.h"
 
-void ControlEditorPanel::Render()
+void ViewportControlEditorPanel::Render()
 {
     /* Pre Setup */
     ImGuiIO& io = ImGui::GetIO();
@@ -25,8 +25,8 @@ void ControlEditorPanel::Render()
     float PanelWidth = (Width) * 0.8f;
     float PanelHeight = 45.0f;
 
-    float PanelPosX = 1.0f;
-    float PanelPosY = 1.0f;
+    PanelPosX = 1.0f;
+    PanelPosY = 100.0f;
 
     ImVec2 MinSize(300, 50);
     ImVec2 MaxSize(FLT_MAX, 50);
@@ -44,7 +44,7 @@ void ControlEditorPanel::Render()
     ImGuiWindowFlags PanelFlags = ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoBackground;
     
     /* Render Start */
-    ImGui::Begin("Control Panel", nullptr, PanelFlags);
+    ImGui::Begin("Viewport Control Panel", nullptr, PanelFlags);
     
     CreateMenuButton(IconSize, IconFont);
     
@@ -71,7 +71,7 @@ void ControlEditorPanel::Render()
     ImGui::End();
 }
 
-void ControlEditorPanel::CreateMenuButton(ImVec2 ButtonSize, ImFont* IconFont)
+void ViewportControlEditorPanel::CreateMenuButton(ImVec2 ButtonSize, ImFont* IconFont)
 {
     ImGui::PushFont(IconFont);
     if (ImGui::Button("\ue9ad", ButtonSize)) // Menu
@@ -82,7 +82,7 @@ void ControlEditorPanel::CreateMenuButton(ImVec2 ButtonSize, ImFont* IconFont)
     
     if (bOpenMenu)
     {
-        ImGui::SetNextWindowPos(ImVec2(10, 55), ImGuiCond_Always);
+        ImGui::SetNextWindowPos(ImVec2(PanelPosX + 10, PanelPosY + 55), ImGuiCond_Always);
         ImGui::SetNextWindowSize(ImVec2(135, 170), ImGuiCond_Always);
         
         ImGui::Begin("Menu", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove);
@@ -188,7 +188,7 @@ void ControlEditorPanel::CreateMenuButton(ImVec2 ButtonSize, ImFont* IconFont)
     }
 }
 
-void ControlEditorPanel::CreateModifyButton(ImVec2 ButtonSize, ImFont* IconFont)
+void ViewportControlEditorPanel::CreateModifyButton(ImVec2 ButtonSize, ImFont* IconFont)
 {
     ImGui::PushFont(IconFont);
     if (ImGui::Button("\ue9c4", ButtonSize)) // Slider
@@ -323,7 +323,7 @@ void ControlEditorPanel::CreateModifyButton(ImVec2 ButtonSize, ImFont* IconFont)
     }
 }
 
-void ControlEditorPanel::CreateFlagButton() const
+void ViewportControlEditorPanel::CreateFlagButton() const
 {
     auto ActiveViewport = GEngineLoop.GetLevelEditor()->GetActiveViewportClient();
 
@@ -374,8 +374,8 @@ void ControlEditorPanel::CreateFlagButton() const
             if (ImGui::Selectable(ViewModeNames[i], bIsSelected))
             {
                 ActiveViewport->SetViewMode((EViewModeIndex)i);
-                FEngineLoop::graphicDevice.ChangeRasterizer(ActiveViewport->GetViewMode());
-                FEngineLoop::renderer.ChangeViewMode(ActiveViewport->GetViewMode());
+                FEditorEngine::graphicDevice.ChangeRasterizer(ActiveViewport->GetViewMode());
+                FEditorEngine::renderer.ChangeViewMode(ActiveViewport->GetViewMode());
             }
 
             if (bIsSelected)
@@ -416,7 +416,7 @@ void ControlEditorPanel::CreateFlagButton() const
 }
 
 // code is so dirty / Please refactor
-void ControlEditorPanel::CreateSRTButton(ImVec2 ButtonSize) const
+void ViewportControlEditorPanel::CreateSRTButton(ImVec2 ButtonSize) const
 {
     AEditorPlayer* Player = GEngineLoop.GetWorld()->GetEditorPlayer();
 
@@ -468,7 +468,7 @@ void ControlEditorPanel::CreateSRTButton(ImVec2 ButtonSize) const
     }
 }
 
-uint64 ControlEditorPanel::ConvertSelectionToFlags(const bool selected[]) const
+uint64 ViewportControlEditorPanel::ConvertSelectionToFlags(const bool selected[]) const
 {
     uint64 flags = static_cast<uint64>(EEngineShowFlags::None);
 
@@ -484,7 +484,7 @@ uint64 ControlEditorPanel::ConvertSelectionToFlags(const bool selected[]) const
 }
 
 
-void ControlEditorPanel::OnResize(HWND hWnd)
+void ViewportControlEditorPanel::OnResize(HWND hWnd)
 {
     RECT clientRect;
     GetClientRect(hWnd, &clientRect);

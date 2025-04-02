@@ -1,7 +1,7 @@
 #include "SSplitter.h"
-#include "EngineLoop.h"
+#include "Editor/UnrealEd/Editor/EditorEngine.h"
 
-extern FEngineLoop GEngineLoop;
+extern FEditorEngine GEngineLoop;
 
 void SSplitter::Initialize(FRect initRect)
 {

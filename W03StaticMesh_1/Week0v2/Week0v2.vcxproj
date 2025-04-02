@@ -170,6 +170,8 @@
   <ItemGroup>
     <ClCompile Include="Engine\Source\Editor\LevelEditor\SLevelEditor.cpp" />
     <ClCompile Include="Engine\Source\Editor\PropertyEditor\ViewportTypePanel.cpp" />
+    <ClCompile Include="Engine\Source\Editor\PropertyEditor\WorldControlEditorPanel.cpp" />
+    <ClCompile Include="Engine\Source\Editor\UnrealEd\Editor\EditorEngine.cpp" />
     <ClCompile Include="Engine\Source\Editor\UnrealEd\ImGuiWidget.cpp" />
     <ClCompile Include="Engine\Source\Editor\UnrealEd\UnrealEdEventRouter.cpp" />
     <ClCompile Include="Engine\Source\Runtime\CoreUObject\UObject\Casts.cpp" />
@@ -177,7 +179,7 @@
     <ClCompile Include="Engine\Source\Runtime\CoreUObject\UObject\UObjectArray.cpp" />
     <ClCompile Include="Engine\Source\Runtime\CoreUObject\UObject\UObjectHash.cpp" />
     <ClCompile Include="Engine\Source\Runtime\Core\Container\String.cpp" />
-    <ClCompile Include="Engine\Source\Editor\PropertyEditor\ControlEditorPanel.cpp" />
+    <ClCompile Include="Engine\Source\Editor\PropertyEditor\ViewControlEditorPanel.cpp" />
     <ClCompile Include="Engine\Source\Editor\PropertyEditor\OutlinerEditorPanel.cpp" />
     <ClCompile Include="Engine\Source\Editor\PropertyEditor\PropertyEditorPanel.cpp" />
     <ClCompile Include="Engine\Source\Editor\UnrealEd\UnrealEd.cpp" />
@@ -190,6 +192,8 @@
     <ClCompile Include="Engine\Source\Runtime\Engine\Classes\Components\ActorComponent.cpp" />
     <ClCompile Include="Engine\Source\Editor\UnrealEd\EditorViewportClient.cpp" />
     <ClCompile Include="Engine\Source\Runtime\Engine\Classes\Engine\StaticMeshActor.cpp" />
+    <ClCompile Include="Engine\Source\Runtime\Engine\Engine.cpp" />
+    <ClCompile Include="Engine\Source\Runtime\Engine\Level.cpp" />
     <ClCompile Include="Engine\Source\Runtime\Slate\Widgets\Layout\SSplitter.cpp" />
     <ClCompile Include="Engine\Source\Runtime\Engine\Classes\Engine\ResourceMgr.cpp" />
     <ClCompile Include="Engine\Source\Runtime\Engine\UnrealClient.cpp" />
@@ -200,7 +204,6 @@
     <ClCompile Include="Engine\Source\Runtime\Core\Math\Define.cpp" />
     <ClCompile Include="Engine\Source\Runtime\InteractiveToolsFramework\BaseGizmos\GizmoBaseComponent.cpp" />
     <ClCompile Include="Engine\Source\Runtime\InteractiveToolsFramework\BaseGizmos\GizmoCircleComponent.cpp" />
-    <ClCompile Include="Engine\Source\Runtime\Launch\EngineLoop.cpp" />
     <ClCompile Include="Engine\Source\Runtime\Launch\ImGuiManager.cpp" />
     <ClCompile Include="Engine\Source\Runtime\SlateCore\Widgets\SWindow.cpp" />
     <ClCompile Include="Engine\Source\ThirdParty\include\ImGUI\imgui.cpp" />
@@ -234,9 +237,13 @@
     <ClCompile Include="Engine\Source\ThirdParty\tinyfiledialogs\tinyfiledialogs.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Engine\Source\Editor\PropertyEditor\WorldControlEditorPanel.h" />
+    <ClInclude Include="Engine\Source\Editor\UnrealEd\Editor\EditorEngine.h" />
     <ClInclude Include="Engine\Source\Runtime\Core\Delegates\Delegate.h" />
     <ClInclude Include="Engine\Source\Runtime\Core\Delegates\DelegateCombination.h" />
     <ClInclude Include="Engine\Source\Runtime\Engine\Classes\Engine\StaticMeshActor.h" />
+    <ClInclude Include="Engine\Source\Runtime\Engine\Engine.h" />
+    <ClInclude Include="Engine\Source\Runtime\Engine\Level.h" />
     <ClInclude Include="Engine\Source\Runtime\Engine\ViewportClient.h" />
     <ClInclude Include="Engine\Source\Editor\LevelEditor\SLevelEditor.h" />
     <ClInclude Include="Engine\Source\Editor\PropertyEditor\ViewportTypePanel.h" />
@@ -253,7 +260,7 @@
     <ClInclude Include="Engine\Source\Runtime\Core\Container\Pair.h" />
     <ClInclude Include="Engine\Source\Runtime\Core\Container\Set.h" />
     <ClInclude Include="Engine\Source\Runtime\Core\Container\String.h" />
-    <ClInclude Include="Engine\Source\Editor\PropertyEditor\ControlEditorPanel.h" />
+    <ClInclude Include="Engine\Source\Editor\PropertyEditor\ViewControlEditorPanel.h" />
     <ClInclude Include="Engine\Source\Editor\PropertyEditor\OutlinerEditorPanel.h" />
     <ClInclude Include="Engine\Source\Editor\PropertyEditor\PropertyEditorPanel.h" />
     <ClInclude Include="Engine\Source\Editor\UnrealEd\UnrealEd.h" />
@@ -276,7 +283,6 @@
     <ClInclude Include="Engine\Source\Runtime\InteractiveToolsFramework\BaseGizmos\GizmoCircleComponent.h" />
     <ClInclude Include="Engine\Source\Editor\UnrealEd\EditorPanel.h" />
     <ClInclude Include="Engine\Source\Runtime\Launch\EngineBaseTypes.h" />
-    <ClInclude Include="Engine\Source\Runtime\Launch\EngineLoop.h" />
     <ClInclude Include="Engine\Source\Runtime\Launch\ImGuiManager.h" />
     <ClInclude Include="Engine\Source\Runtime\SlateCore\Widgets\SWindow.h" />
     <ClInclude Include="Engine\Source\Runtime\Slate\Widgets\Layout\SSplitter.h" />

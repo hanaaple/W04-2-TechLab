@@ -31,8 +31,14 @@ void UImGuiManager::Initialize(HWND hWnd, ID3D11Device* device, ID3D11DeviceCont
         ICON_SLIDER,    ICON_SLIDER + 1,
         ICON_PLUS,      ICON_PLUS + 1,
         0 };
-
     io.Fonts->AddFontFromMemoryTTF(FeatherRawData, FontSizeOfFeather, 22.0f, &FeatherFontConfig, IconRanges);
+
+    ImFontConfig AwesomeFontConfig;
+    FeatherFontConfig.PixelSnapH = true;
+    FeatherFontConfig.FontDataOwnedByAtlas = false;
+    FeatherFontConfig.GlyphOffset = ImVec2(0, 0);
+    static const ImWchar AwesomeFontRanges[] = { 0x0021, 0xF8FF, 0 };
+    io.Fonts->AddFontFromFileTTF("Assets/Font/fa-solid-900.ttf", 18.0f, &AwesomeFontConfig, AwesomeFontRanges);
     PreferenceStyle();
 }
 

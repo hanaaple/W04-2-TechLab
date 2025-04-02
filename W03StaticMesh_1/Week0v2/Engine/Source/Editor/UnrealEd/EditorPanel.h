@@ -5,6 +5,7 @@
 #define __ICON_FONT_INDEX__
 #define DEFAULT_FONT		0
 #define	FEATHER_FONT		1
+#define	AWESOME_FONT		2
 
 #endif // !__ICON_FONT_INDEX__
 
