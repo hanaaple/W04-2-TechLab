@@ -27,12 +27,8 @@ void FEditorViewportClient::Draw(FViewport* Viewport)
 
 void FEditorViewportClient::Initialize(int32 viewportIndex)
 {
-
-    ViewTransformPerspective.SetLocation(FVector(8.0f, 8.0f, 8.f));
-    ViewTransformPerspective.SetRotation(FVector(0.0f, 45.0f, -135.0f));
-    Viewport = new FViewport(static_cast<EViewScreenLocation>(viewportIndex));
+    FViewportClient::Initialize(viewportIndex);
     ResizeViewport(GEngineLoop.graphicDevice.SwapchainDesc);
-    ViewportIndex = viewportIndex;
 }
 
 void FEditorViewportClient::Tick(float DeltaTime)

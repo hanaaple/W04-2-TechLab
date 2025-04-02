@@ -18,7 +18,6 @@ struct FViewportCameraTransform
 private:
 
 public:
-
     FVector GetForwardVector();
     FVector GetRightVector();
     FVector GetUpVector();
@@ -85,6 +84,7 @@ class FViewportClient
 public:
     virtual ~FViewportClient() = default;
 
+    void Initialize(int32);
     // FViewport에서 발생하는 이벤트를 처리하는 가상 함수들
     //virtual void OnInput(const FInputEvent& Event) = 0;
     virtual void Tick(float DeltaTime) = 0;
@@ -133,7 +133,8 @@ public:
     bool IsOrtho() const { return !IsPerspective(); };
     bool IsPerspective() const { return ViewMode == LVT_Perspective; };
     static void SetOthoSize(float _Value);
-    
+    void ResizeViewport(const DXGI_SWAP_CHAIN_DESC& swapchaindesc);
+
 private:
     template <typename T>
     T GetValueFromConfig(const TMap<FString, FString>& config, const FString& key, T defaultValue) {

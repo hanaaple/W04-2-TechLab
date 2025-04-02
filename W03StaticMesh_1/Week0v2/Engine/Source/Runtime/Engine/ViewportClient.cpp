@@ -4,6 +4,14 @@
 FVector FViewportClient::Pivot = FVector(0.0f, 0.0f, 0.0f);
 float FViewportClient::orthoSize = 10.0f;
 
+void FViewportClient::Initialize(int32 viewportIndex)
+{
+    ViewTransformPerspective.SetLocation(FVector(8.0f, 8.0f, 8.f));
+    ViewTransformPerspective.SetRotation(FVector(0.0f, 45.0f, -135.0f));
+    Viewport = new FViewport(static_cast<EViewScreenLocation>(viewportIndex));
+    ViewportIndex = viewportIndex;
+}
+
 void FViewportClient::LoadConfig(const TMap<FString, FString>& config)
 {
     FString ViewportNum = std::to_string(ViewportIndex);
