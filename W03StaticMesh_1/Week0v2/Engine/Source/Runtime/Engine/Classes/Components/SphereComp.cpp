@@ -31,8 +31,7 @@ void USphereComp::TickComponent(float DeltaTime)
 UObject* USphereComp::Duplicate()
 {
     USphereComp* dup = Cast<USphereComp>(FObjectFactory::DuplicateObject(this, this->GetClass()));
-    
-    Super::Duplicate();
+
 
     return dup;
 }

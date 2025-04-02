@@ -34,6 +34,6 @@ UObject* USkySphereComponent::Duplicate()
     USkySphereComponent* dup = Cast<USkySphereComponent>(FObjectFactory::DuplicateObject(this, this->GetClass()));
     dup->UOffset = this->UOffset;
     dup->VOffset = this->VOffset;
-    Super::Duplicate();
+
     return dup;
 }

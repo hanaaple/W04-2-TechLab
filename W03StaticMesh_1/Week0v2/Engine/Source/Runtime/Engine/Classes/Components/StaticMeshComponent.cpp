@@ -116,7 +116,7 @@ UObject* UStaticMeshComponent::Duplicate()
     UStaticMeshComponent* dup = Cast<UStaticMeshComponent>(FObjectFactory::DuplicateObject(this, this->GetClass()));
     dup->staticMesh = this->staticMesh;
     dup->selectedSubMeshIndex = this->selectedSubMeshIndex;
-    Super::Duplicate();
+
     
     return dup;
 }

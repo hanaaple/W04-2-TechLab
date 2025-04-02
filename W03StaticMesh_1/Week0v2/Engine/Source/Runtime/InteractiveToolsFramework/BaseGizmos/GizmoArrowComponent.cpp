@@ -30,7 +30,6 @@ UObject* UGizmoArrowComponent::Duplicate()
 {
     UGizmoArrowComponent* dup = Cast<UGizmoArrowComponent>(FObjectFactory::DuplicateObject(this, this->GetClass()));
     dup->Dir = this->Dir;
-    Super::Duplicate();
 
     return dup;
 }

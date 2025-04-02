@@ -131,7 +131,6 @@ UObject* UCameraComponent::Duplicate()
     Duplicate->nearClip = this->nearClip;
     Duplicate->farClip = this->farClip;
     
-    Super::Duplicate();
 
     return Duplicate;
 }

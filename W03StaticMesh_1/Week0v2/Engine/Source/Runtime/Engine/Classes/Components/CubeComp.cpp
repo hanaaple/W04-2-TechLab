@@ -39,8 +39,7 @@ void UCubeComp::TickComponent(float DeltaTime)
 UObject* UCubeComp::Duplicate()
 {
     UCubeComp* dup = Cast<UCubeComp>(FObjectFactory::DuplicateObject(this, this->GetClass()));
-    
-    Super::Duplicate();
+
 
     return dup;
 }

@@ -11,7 +11,7 @@ AStaticMeshActor::AStaticMeshActor()
 UObject* AStaticMeshActor::Duplicate()
 {
     AStaticMeshActor* duplicated = Cast<AStaticMeshActor>(FObjectFactory::DuplicateObject(this, this->GetClass()));
-    duplicated->StaticMeshComponent = Cast<UStaticMeshComponent>(FObjectFactory::DuplicateObject(this->StaticMeshComponent, this->StaticMeshComponent->GetClass()));
-    Super::Duplicate();
+    duplicated->StaticMeshComponent = Cast<UStaticMeshComponent>(this->StaticMeshComponent->Duplicate());
+ 
     return duplicated;
 }

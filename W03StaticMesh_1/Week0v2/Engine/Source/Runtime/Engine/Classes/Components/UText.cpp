@@ -80,7 +80,6 @@ UObject* UText::Duplicate()
 
     dup->quadWidth = this->quadWidth;
     dup->quadHeight = this->quadHeight;
-    Super::Duplicate();
 
     return dup;
 }

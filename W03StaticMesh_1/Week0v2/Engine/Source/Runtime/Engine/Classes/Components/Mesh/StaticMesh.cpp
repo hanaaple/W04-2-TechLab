@@ -69,7 +69,6 @@ UObject* UStaticMesh::Duplicate()
     UStaticMesh* dup = Cast<UStaticMesh>(FObjectFactory::DuplicateObject(this, this->GetClass()));
     dup->staticMeshRenderData = this->staticMeshRenderData;
     dup->materials = this->materials;
-    Super::Duplicate();
-
+ 
     return dup;
 }

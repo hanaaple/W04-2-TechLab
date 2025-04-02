@@ -84,7 +84,7 @@ UObject* UGizmoBaseComponent::Duplicate()
 {
     UGizmoBaseComponent* duplicated = Cast<UGizmoBaseComponent>(FObjectFactory::DuplicateObject(this, this->GetClass()));
     duplicated->gizmoType = this->gizmoType;
-    Super::Duplicate();
+
 
     return duplicated;
 }

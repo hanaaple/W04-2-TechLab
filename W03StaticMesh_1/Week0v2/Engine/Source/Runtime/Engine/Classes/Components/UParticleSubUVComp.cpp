@@ -87,8 +87,6 @@ UObject* UParticleSubUVComp::Duplicate()
     dup->second = second;
     dup->CellsPerColumn = CellsPerColumn;
     dup->CellsPerRow = CellsPerRow;
-    
-    Super::Duplicate();
 
     return dup;
 }

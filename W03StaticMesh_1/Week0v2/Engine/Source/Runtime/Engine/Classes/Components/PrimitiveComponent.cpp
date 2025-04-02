@@ -105,7 +105,7 @@ UObject* UPrimitiveComponent::Duplicate()
     UPrimitiveComponent* dup = Cast<UPrimitiveComponent>(FObjectFactory::DuplicateObject(this, this->GetClass()));
     dup->AABB = this->AABB;
     dup->m_Type = this->m_Type;
-    Super::Duplicate();
+
 
     return dup;
 }

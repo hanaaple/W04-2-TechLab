@@ -63,11 +63,11 @@ UObject* UMeshComponent::Duplicate()
 {
     UMeshComponent* dup = Cast<UMeshComponent>(FObjectFactory::DuplicateObject(this, this->GetClass()));
     dup->OverrideMaterials.Empty();
-    for (const auto item : OverrideMaterials)
+    for (const auto item : this->OverrideMaterials)
     {
-        dup->OverrideMaterials.Add(Cast<UMaterial>(FObjectFactory::DuplicateObject(item, item->GetClass())));
+        if (item != nullptr)
+            dup->OverrideMaterials.Add(Cast<UMaterial>(item->Duplicate()));
     }
-    Super::Duplicate();
 
     return dup;
 }

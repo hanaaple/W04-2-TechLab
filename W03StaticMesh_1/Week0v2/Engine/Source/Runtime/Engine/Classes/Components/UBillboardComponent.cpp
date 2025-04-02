@@ -124,9 +124,9 @@ UObject* UBillboardComponent::Duplicate()
     dup->finalIndexV = finalIndexV;
     dup->Texture = Texture;
 
-    m_parent = Cast<USceneComponent>(FObjectFactory::DuplicateObject(this->m_parent, this->m_parent->GetClass()));
+    m_parent = Cast<USceneComponent>(this->m_parent->Duplicate());
     
-    Super::Duplicate();
+
 
     return dup;
 }

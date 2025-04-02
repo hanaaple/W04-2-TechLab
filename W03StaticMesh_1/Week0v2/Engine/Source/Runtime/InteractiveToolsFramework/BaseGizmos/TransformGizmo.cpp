@@ -102,22 +102,22 @@ UObject* UTransformGizmo::Duplicate()
     Duplicated->ArrowArr.Empty();
     for (const auto item : this->ArrowArr)
     {
-        Duplicated->ArrowArr.Add(Cast<UStaticMeshComponent>( FObjectFactory::DuplicateObject(item, item->GetClass())));
+        Duplicated->ArrowArr.Add(Cast<UStaticMeshComponent>( item->Duplicate()));
     }
 
     Duplicated->RectangleArr.Empty();
     for (const auto item : this->RectangleArr)
     {
-       Duplicated->RectangleArr.Add(Cast<UStaticMeshComponent>(FObjectFactory::DuplicateObject(item, item->GetClass())));
+       Duplicated->RectangleArr.Add(Cast<UStaticMeshComponent>(item->Duplicate()));
     }
 
     Duplicated->CircleArr.Empty();
     for (const auto item : this->CircleArr)
     {
-        Duplicated->CircleArr.Add(Cast<UStaticMeshComponent>(FObjectFactory::DuplicateObject(item, item->GetClass())));
+        Duplicated->CircleArr.Add(Cast<UStaticMeshComponent>(item->Duplicate()));
     }
     
-    Super::Duplicate();
+
 
     return Duplicated;
 }

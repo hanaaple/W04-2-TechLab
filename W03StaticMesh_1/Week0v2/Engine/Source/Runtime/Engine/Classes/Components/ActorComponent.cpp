@@ -42,7 +42,7 @@ UObject* UActorComponent::Duplicate()
     UActorComponent* duplicated = Cast<UActorComponent>(FObjectFactory::DuplicateObject(this, this->GetClass()));
     if (this->Owner)
     {
-        duplicated->Owner = Cast<AActor>(FObjectFactory::DuplicateObject(this->Owner, this->Owner->GetClass()));
+        duplicated->Owner = Cast<AActor>(this->Owner->Duplicate());
     }
 
     duplicated->bHasBeenInitialized = this->bHasBeenInitialized;
@@ -50,8 +50,7 @@ UObject* UActorComponent::Duplicate()
     duplicated->bIsBeingDestroyed = this->bIsBeingDestroyed;
     duplicated->bIsActive = this->bIsActive;
     duplicated->bAutoActive = this->bAutoActive;
-    
-    Super::Duplicate();
+
 
     return duplicated;
 }

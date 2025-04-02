@@ -31,7 +31,7 @@ UObject* UGizmoCircleComponent::Duplicate()
 {
     UGizmoCircleComponent* dup = Cast<UGizmoCircleComponent>(FObjectFactory::DuplicateObject(this, this->GetClass()));
     dup->inner = this->inner;
-    Super::Duplicate();
+
 
     return dup;
 }

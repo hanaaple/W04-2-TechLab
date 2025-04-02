@@ -513,8 +513,7 @@ UObject* AEditorPlayer::Duplicate()
     DuplicatedAEditorPlayer->m_LastMousePos = this->m_LastMousePos;
     DuplicatedAEditorPlayer->cMode = this->cMode;
     DuplicatedAEditorPlayer->cdMode = this->cdMode;
-    
-    Super::Duplicate();
+
 
     return DuplicatedAEditorPlayer;
 }

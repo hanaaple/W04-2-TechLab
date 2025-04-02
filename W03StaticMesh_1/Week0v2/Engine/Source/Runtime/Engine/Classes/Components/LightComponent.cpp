@@ -38,7 +38,7 @@ UObject* ULightComponentBase::Duplicate()
     duplicate->color = this->color;
     duplicate->radius = this->radius;
     duplicate->AABB = this->AABB;
-    Super::Duplicate();
+
 
     return duplicate;
 }

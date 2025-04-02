@@ -26,7 +26,7 @@ void UTextUUID::SetUUID(uint32 UUID)
 UObject* UTextUUID::Duplicate()
 {
     UTextUUID* dup = Cast<UTextUUID>(FObjectFactory::DuplicateObject(this, this->GetClass()));
-    Super::Duplicate();
+
 
     return dup;
 }

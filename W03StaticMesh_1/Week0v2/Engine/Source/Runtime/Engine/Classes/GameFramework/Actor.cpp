@@ -147,8 +147,7 @@ UObject* AActor::Duplicate()
 
     if (this->RootComponent != nullptr)
     {
-        DuplicatedActor->RootComponent = Cast<USceneComponent>(FObjectFactory::DuplicateObject(this->RootComponent, this->RootComponent->GetClass()));
-        DuplicatedActor->OwnedComponents.Add(RootComponent);
+        DuplicatedActor->RootComponent = Cast<USceneComponent>(this->RootComponent->Duplicate());
         DuplicatedActor->DuplicateComponent(DuplicatedActor->RootComponent);
     }
     for (const auto comp : this->OwnedComponents)
@@ -157,12 +156,12 @@ UObject* AActor::Duplicate()
         {
             continue;
         }
-        const auto CopiedComp = Cast<UActorComponent> (FObjectFactory::DuplicateObject(comp, comp->GetClass()));
+        const auto CopiedComp = Cast<UActorComponent> (comp->Duplicate());
         DuplicatedActor->DuplicateComponent(CopiedComp);
     }
     DuplicatedActor->ActorLabel = this->ActorLabel;
     
-    Super::Duplicate();
+
 
     return DuplicatedActor;
 }

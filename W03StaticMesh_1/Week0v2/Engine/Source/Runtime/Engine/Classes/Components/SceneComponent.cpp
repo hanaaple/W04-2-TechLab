@@ -80,13 +80,13 @@ UObject* USceneComponent::Duplicate()
 
     if (this->AttachParent != nullptr)
     {
-        duplicated->AttachParent = Cast<USceneComponent>(FObjectFactory::DuplicateObject(this->AttachParent, this->AttachParent->GetClass()));
+        duplicated->AttachParent = Cast<USceneComponent>(this->AttachParent->Duplicate());
     }
 
     duplicated->AttachChildren.Empty();
     for (const auto item : AttachChildren)
     {
-        duplicated->AttachChildren.Add(Cast<USceneComponent>(FObjectFactory::DuplicateObject(item, item->GetClass())));
+        duplicated->AttachChildren.Add(Cast<USceneComponent>(item->Duplicate()));
     }
     
     UActorComponent::Duplicate();
