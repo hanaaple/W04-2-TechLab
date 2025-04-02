@@ -13,7 +13,7 @@
 #include "D3D11RHI/GraphicDevice.h"
 #include "Editor/UnrealEd/Editor/EditorEngine.h"
 #include "Math/JungleMath.h"
-#include "UnrealEd/EditorViewportClient.h"
+#include "ViewportClient.h"
 #include "UnrealEd/PrimitiveBatch.h"
 #include "UObject/Casts.h"
 #include "UObject/Object.h"
@@ -1001,7 +1001,7 @@ void FRenderer::ClearRenderArr()
     LightObjs.Empty();
 }
 
-void FRenderer::Render(UWorld* World, std::shared_ptr<FEditorViewportClient> ActiveViewport)
+void FRenderer::Render(UWorld* World, std::shared_ptr<FViewportClient> ActiveViewport)
 {
     Graphics->DeviceContext->RSSetViewports(1, &ActiveViewport->GetD3DViewport());
     Graphics->ChangeRasterizer(ActiveViewport->GetViewMode());
@@ -1019,7 +1019,7 @@ void FRenderer::Render(UWorld* World, std::shared_ptr<FEditorViewportClient> Act
     ClearRenderArr();
 }
 
-void FRenderer::RenderStaticMeshes(UWorld* World, std::shared_ptr<FEditorViewportClient> ActiveViewport)
+void FRenderer::RenderStaticMeshes(UWorld* World, std::shared_ptr<FViewportClient> ActiveViewport)
 {
     PrepareShader();
     for (UStaticMeshComponent* StaticMeshComp : StaticMeshObjs)
@@ -1069,7 +1069,7 @@ void FRenderer::RenderStaticMeshes(UWorld* World, std::shared_ptr<FEditorViewpor
     }
 }
 
-void FRenderer::RenderGizmos(const UWorld* World, const std::shared_ptr<FEditorViewportClient>& ActiveViewport)
+void FRenderer::RenderGizmos(const UWorld* World, const std::shared_ptr<FViewportClient>& ActiveViewport)
 {
     if (!World->GetSelectedActor())
     {
@@ -1132,7 +1132,7 @@ void FRenderer::RenderGizmos(const UWorld* World, const std::shared_ptr<FEditorV
 #pragma endregion GizmoDepth
 }
 
-void FRenderer::RenderBillboards(UWorld* World, std::shared_ptr<FEditorViewportClient> ActiveViewport)
+void FRenderer::RenderBillboards(UWorld* World, std::shared_ptr<FViewportClient> ActiveViewport)
 {
     PrepareTextureShader();
     PrepareSubUVConstant();
@@ -1176,7 +1176,7 @@ void FRenderer::RenderBillboards(UWorld* World, std::shared_ptr<FEditorViewportC
     PrepareShader();
 }
 
-void FRenderer::RenderLight(UWorld* World, std::shared_ptr<FEditorViewportClient> ActiveViewport)
+void FRenderer::RenderLight(UWorld* World, std::shared_ptr<FViewportClient> ActiveViewport)
 {
     for (auto Light : LightObjs)
     {

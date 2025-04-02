@@ -1,5 +1,5 @@
 #pragma once
-#include "Components/ActorComponent.h"
+#include "Define.h"
 #include "UnrealEd/EditorPanel.h"
 
 class UStaticMeshComponent;

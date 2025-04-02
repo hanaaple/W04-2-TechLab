@@ -1,7 +1,7 @@
 ﻿#include "OutlinerEditorPanel.h"
 #include "World.h"
 #include "GameFramework/Actor.h"
-
+#include "Editor/UnrealEd/Editor/EditorEngine.h"
 
 void OutlinerEditorPanel::Render()
 {

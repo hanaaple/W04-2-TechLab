@@ -2,7 +2,6 @@
 
 #include "World.h"
 #include "Actors/Player.h"
-#include "Components/CubeComp.h"
 #include "Components/LightComponent.h"
 #include "Components/SphereComp.h"
 #include "Components/UParticleSubUVComp.h"
@@ -14,6 +13,7 @@
 #include "tinyfiledialogs/tinyfiledialogs.h"
 #include "UnrealEd/EditorViewportClient.h"
 #include "PropertyEditor/ShowFlags.h"
+#include "Renderer/Renderer.h"
 
 void ViewportControlEditorPanel::Render()
 {
@@ -209,12 +209,11 @@ void ViewportControlEditorPanel::CreateModifyButton(ImVec2 ButtonSize, ImFont* I
         ImGui::Separator();
 
         ImGui::Text("Camera FOV");
-        FOV = &GEngineLoop.GetLevelEditor()->GetActiveViewportClient()->ViewFOV;
+        FOV = GEngineLoop.GetLevelEditor()->GetActiveViewportClient()->GetViewFOV();
         ImGui::SetNextItemWidth(120.0f);
-        if (ImGui::DragFloat("##Fov", FOV, 0.1f, 30.0f, 120.0f, "%.1f"))
+        if (ImGui::DragFloat("##Fov", &FOV, 0.1f, 30.0f, 120.0f, "%.1f"))
         {
-            //GEngineLoop.GetWorld()->GetCamera()->SetFOV(FOV);
-            
+            GEngineLoop.GetLevelEditor()->GetActiveViewportClient()->SetViewFOV(FOV);
         }
         ImGui::Spacing();
 

@@ -7,6 +7,7 @@
 #include "UnrealClient.h"
 #include "slate/Widgets/Layout/SSplitter.h"
 #include "LevelEditor/SLevelEditor.h"
+#include "Renderer/Renderer.h"
 
 
 extern LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
@@ -60,23 +61,27 @@ static LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
         zDelta = GET_WHEEL_DELTA_WPARAM(wParam); // 휠 회전 값 (+120 / -120)
         if (GEngineLoop.GetLevelEditor())
         {
-            if (GEngineLoop.GetLevelEditor()->GetActiveViewportClient()->IsPerspective())
+            FEditorViewportClient* viewportClient = dynamic_cast<FEditorViewportClient*>(GEngineLoop.GetLevelEditor()->GetActiveViewportClient().get());
+            if (viewportClient)
             {
-                if (GEngineLoop.GetLevelEditor()->GetActiveViewportClient()->GetIsOnRBMouseClick())
+                if (viewportClient->IsPerspective())
                 {
-                    GEngineLoop.GetLevelEditor()->GetActiveViewportClient()->SetCameraSpeedScalar(
-                        static_cast<float>(GEngineLoop.GetLevelEditor()->GetActiveViewportClient()->GetCameraSpeedScalar() + zDelta * 0.01)
-                    );
+                    if (viewportClient->GetIsOnRBMouseClick())
+                    {
+                        viewportClient->SetCameraSpeedScalar(
+                            static_cast<float>(GEngineLoop.GetLevelEditor()->GetActiveViewportClient()->GetCameraSpeedScalar() + zDelta * 0.01)
+                        );
+                    }
+                    else
+                    {
+                        viewportClient->CameraMoveForward(zDelta * 0.1f);
+                    }
                 }
                 else
                 {
-                    GEngineLoop.GetLevelEditor()->GetActiveViewportClient()->CameraMoveForward(zDelta * 0.1f);
+                    FEditorViewportClient::SetOthoSize(-zDelta * 0.01f);
                 }
-            }
-            else
-            {
-                FEditorViewportClient::SetOthoSize(-zDelta * 0.01f);
-            }
+            } 
         }
         break;
     default:
@@ -135,7 +140,7 @@ void FEditorEngine::Render()
     graphicDevice.Prepare();
     if (LevelEditor->IsMultiViewport())
     {
-        std::shared_ptr<FEditorViewportClient> viewportClient = GetLevelEditor()->GetActiveViewportClient();
+        std::shared_ptr<FEditorViewportClient> viewportClient = std::dynamic_pointer_cast<FEditorViewportClient>(GetLevelEditor()->GetActiveViewportClient());
         for (int i = 0; i < 4; ++i)
         {
             LevelEditor->SetViewportClient(i);

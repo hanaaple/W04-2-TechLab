@@ -2,7 +2,6 @@
 #include "Engine.h"
 #include "Core/HAL/PlatformType.h"
 #include "D3D11RHI/GraphicDevice.h"
-#include "Renderer/Renderer.h"
 #include "Engine/ResourceMgr.h"
 
 class UnrealEd;
@@ -12,6 +11,7 @@ class FEditorViewportClient;
 class SSplitterV;
 class SSplitterH;
 class SLevelEditor;
+class FRenderer;
 
 // TODO 임시로 UObject 상속 안함.
 class FEditorEngine : public FEngine

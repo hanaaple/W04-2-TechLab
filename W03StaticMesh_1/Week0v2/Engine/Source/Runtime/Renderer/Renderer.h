@@ -7,6 +7,7 @@
 #include <d3d11.h>
 #include "EngineBaseTypes.h"
 #include "Define.h"
+#include "ViewportClient.h"
 #include "Container/Set.h"
 
 class ULightComponentBase;
@@ -138,11 +139,11 @@ public: // line shader
     //Render Pass Demo
     void PrepareRender();
     void ClearRenderArr();
-    void Render(UWorld* World, std::shared_ptr<FEditorViewportClient> ActiveViewport);
-    void RenderStaticMeshes(UWorld* World, std::shared_ptr<FEditorViewportClient> ActiveViewport);
-    void RenderGizmos(const UWorld* World, const std::shared_ptr<FEditorViewportClient>& ActiveViewport);
-    void RenderLight(UWorld* World, std::shared_ptr<FEditorViewportClient> ActiveViewport);
-    void RenderBillboards(UWorld* World,std::shared_ptr<FEditorViewportClient> ActiveViewport);
+    void Render(UWorld* World, std::shared_ptr<FViewportClient> ActiveViewport);
+    void RenderStaticMeshes(UWorld* World, std::shared_ptr<FViewportClient> ActiveViewport);
+    void RenderGizmos(const UWorld* World, const std::shared_ptr<FViewportClient>& ActiveViewport);
+    void RenderLight(UWorld* World, std::shared_ptr<FViewportClient> ActiveViewport);
+    void RenderBillboards(UWorld* World, std::shared_ptr<FViewportClient> ActiveViewport);
 private:
     TArray<UStaticMeshComponent*> StaticMeshObjs;
     TArray<UGizmoBaseComponent*> GizmoObjs;

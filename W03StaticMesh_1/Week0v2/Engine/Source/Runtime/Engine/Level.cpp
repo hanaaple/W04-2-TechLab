@@ -2,7 +2,7 @@
 
 void ULevel::Tick(float DeltaTime)
 {
-    if (LevelState == ELevelState::Play)
+    if (LevelState != ELevelState::Play)
         return;
     for (AActor* Actor: Actors)
     {

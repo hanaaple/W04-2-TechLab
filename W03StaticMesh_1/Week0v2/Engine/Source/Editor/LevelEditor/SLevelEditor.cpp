@@ -7,7 +7,6 @@
 #include "SlateCore/Widgets/SWindow.h"
 #include "Slate/Widgets/Layout/SSplitter.h"
 #include "UnrealClient.h"
-#include "UnrealEd/EditorViewportClient.h"
 #include "UnrealEd/Editor/EditorEngine.h"
 
 
@@ -30,6 +29,7 @@ void SLevelEditor::Initialize()
         viewportClients[i]->Initialize(i);
     }
     ActiveViewportClient = viewportClients[0];
+    PIEViewportClient = nullptr;
     OnResize();
     VSplitter = new SSplitterV();
     VSplitter->Initialize(FRect(0.0f, EditorHeight * 0.5f - 10, EditorHeight, 20));

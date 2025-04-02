@@ -8,12 +8,12 @@
 #include "World.h"
 #include "GameFramework/Actor.h"
 
-FVector FEditorViewportClient::Pivot = FVector(0.0f, 0.0f, 0.0f);
-float FEditorViewportClient::orthoSize = 10.0f;
 FEditorViewportClient::FEditorViewportClient()
-    : Viewport(nullptr), ViewMode(VMI_Lit), ViewportType(LVT_Perspective), ShowFlag(31)
 {
-
+    Viewport = nullptr;
+    ViewMode = VMI_Lit;
+    ViewportType = LVT_Perspective;
+    ShowFlag = 31;
 }
 
 FEditorViewportClient::~FEditorViewportClient()
@@ -170,10 +170,7 @@ bool FEditorViewportClient::IsSelected(POINT point)
     }
     return false;
 }
-D3D11_VIEWPORT& FEditorViewportClient::GetD3DViewport()
-{
-    return Viewport->GetViewport();
-}
+
 void FEditorViewportClient::CameraMoveForward(float _Value)
 {
     if (IsPerspective()) {
@@ -291,16 +288,6 @@ void FEditorViewportClient::UpdateProjectionMatrix()
     }
 }
 
-bool FEditorViewportClient::IsOrtho() const
-{
-    return !IsPerspective();
-}
-
-bool FEditorViewportClient::IsPerspective() const
-{
-    return (GetViewportType() == LVT_Perspective);
-}
-
 ELevelViewportType FEditorViewportClient::GetViewportType() const
 {
     ELevelViewportType EffectiveViewportType = ViewportType;
@@ -365,46 +352,6 @@ void FEditorViewportClient::UpdateOrthoCameraLoc()
     }
 }
 
-void FEditorViewportClient::SetOthoSize(float _Value)
-{
-    orthoSize += _Value;
-    if (orthoSize <= 0.1f)
-        orthoSize = 0.1f;
-    
-}
-
-void FEditorViewportClient::LoadConfig(const TMap<FString, FString>& config)
-{
-    FString ViewportNum = std::to_string(ViewportIndex);
-    CameraSpeedSetting = GetValueFromConfig(config, "CameraSpeedSetting" + ViewportNum, 1);
-    CameraSpeedScalar = GetValueFromConfig(config, "CameraSpeedScalar" + ViewportNum, 1.0f);
-    GridSize = GetValueFromConfig(config, "GridSize"+ ViewportNum, 10.0f);
-    ViewTransformPerspective.ViewLocation.x = GetValueFromConfig(config, "PerspectiveCameraLocX" + ViewportNum, 0.0f);
-    ViewTransformPerspective.ViewLocation.y = GetValueFromConfig(config, "PerspectiveCameraLocY" + ViewportNum, 0.0f);
-    ViewTransformPerspective.ViewLocation.z = GetValueFromConfig(config, "PerspectiveCameraLocZ" + ViewportNum, 0.0f);
-    ViewTransformPerspective.ViewRotation.x = GetValueFromConfig(config, "PerspectiveCameraRotX" + ViewportNum, 0.0f);
-    ViewTransformPerspective.ViewRotation.y = GetValueFromConfig(config, "PerspectiveCameraRotY" + ViewportNum, 0.0f);
-    ViewTransformPerspective.ViewRotation.z = GetValueFromConfig(config, "PerspectiveCameraRotZ" + ViewportNum, 0.0f);
-    ShowFlag = GetValueFromConfig(config, "ShowFlag" + ViewportNum, 31.0f);
-    ViewMode = static_cast<EViewModeIndex>(GetValueFromConfig(config, "ViewMode" + ViewportNum, 0));
-    ViewportType = static_cast<ELevelViewportType>(GetValueFromConfig(config, "ViewportType" + ViewportNum, 3));
-}
-void FEditorViewportClient::SaveConfig(TMap<FString, FString>& config)
-{
-    FString ViewportNum = std::to_string(ViewportIndex);
-    config["CameraSpeedSetting"+ ViewportNum] = std::to_string(CameraSpeedSetting);
-    config["CameraSpeedScalar"+ ViewportNum] = std::to_string(CameraSpeedScalar);
-    config["GridSize"+ ViewportNum] = std::to_string(GridSize);
-    config["PerspectiveCameraLocX" + ViewportNum] = std::to_string(ViewTransformPerspective.GetLocation().x);
-    config["PerspectiveCameraLocY" + ViewportNum] = std::to_string(ViewTransformPerspective.GetLocation().y);
-    config["PerspectiveCameraLocZ" + ViewportNum] = std::to_string(ViewTransformPerspective.GetLocation().z);
-    config["PerspectiveCameraRotX" + ViewportNum] = std::to_string(ViewTransformPerspective.GetRotation().x);
-    config["PerspectiveCameraRotY" + ViewportNum] = std::to_string(ViewTransformPerspective.GetRotation().y);
-    config["PerspectiveCameraRotZ" + ViewportNum] = std::to_string(ViewTransformPerspective.GetRotation().z);
-    config["ShowFlag"+ ViewportNum] = std::to_string(ShowFlag);
-    config["ViewMode" + ViewportNum] = std::to_string(int32(ViewMode));
-    config["ViewportType" + ViewportNum] = std::to_string(int32(ViewportType));
-}
 TMap<FString, FString> FEditorViewportClient::ReadIniFile(const FString& filePath)
 {
     TMap<FString, FString> config;

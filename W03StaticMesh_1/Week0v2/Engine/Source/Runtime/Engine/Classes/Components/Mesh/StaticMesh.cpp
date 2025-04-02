@@ -1,6 +1,7 @@
 #include "StaticMesh.h"
 #include "Engine/FLoaderOBJ.h"
 #include "UObject/ObjectFactory.h"
+#include "Renderer/Renderer.h"
 
 UStaticMesh::UStaticMesh()
 {

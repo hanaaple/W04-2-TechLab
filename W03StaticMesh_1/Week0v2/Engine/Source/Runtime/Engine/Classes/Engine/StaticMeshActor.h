@@ -1,6 +1,6 @@
 ﻿#pragma once
 #include "GameFramework/Actor.h"
-
+#include "Engine/Classes/Components/StaticMeshComponent.h"
 
 class AStaticMeshActor : public AActor
 {

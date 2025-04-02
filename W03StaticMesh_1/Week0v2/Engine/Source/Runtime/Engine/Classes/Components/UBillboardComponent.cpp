@@ -8,7 +8,7 @@
 #include "Math/MathUtility.h"
 #include "UnrealEd/EditorViewportClient.h"
 #include "LevelEditor/SLevelEditor.h"
-#include "PropertyEditor/ShowFlags.h"
+#include "Renderer/Renderer.h"
 
 
 UBillboardComponent::UBillboardComponent()

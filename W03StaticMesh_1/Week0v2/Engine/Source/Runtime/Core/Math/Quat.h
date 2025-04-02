@@ -1,4 +1,6 @@
 #pragma once
+#include "Core/Math/Vector.h"
+#include "Core/Math/Matrix.h"
 
 // 쿼터니언
 struct FQuat

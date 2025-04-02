@@ -1,6 +1,6 @@
 #pragma once
 #include "PrimitiveComponent.h"
-#include "UTexture.h"
+#include "Engine/Texture.h"
 
 class UBillboardComponent : public UPrimitiveComponent
 {

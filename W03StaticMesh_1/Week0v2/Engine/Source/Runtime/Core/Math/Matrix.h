@@ -1,6 +1,8 @@
 #pragma once
-
 #include <DirectXMath.h>
+
+#include "Core/Math/Vector.h"
+#include "Core/Math/Vector4.h"
 
 // 4x4 행렬 연산
 struct FMatrix

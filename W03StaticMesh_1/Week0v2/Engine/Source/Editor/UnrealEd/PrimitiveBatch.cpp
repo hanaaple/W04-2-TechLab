@@ -1,6 +1,7 @@
 #include "PrimitiveBatch.h"
 #include "Editor/UnrealEd/Editor/EditorEngine.h"
 #include "UnrealEd/EditorViewportClient.h"
+#include "Renderer/Renderer.h"
 
 extern FEditorEngine GEngineLoop;
 

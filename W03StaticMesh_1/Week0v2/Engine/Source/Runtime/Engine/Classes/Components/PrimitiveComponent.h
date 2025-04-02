@@ -1,4 +1,5 @@
 #pragma once
+#include "Define.h"
 #include "Engine/Source/Runtime/Engine/Classes/Components/SceneComponent.h"
 
 class UPrimitiveComponent : public USceneComponent

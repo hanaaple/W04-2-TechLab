@@ -1,4 +1,5 @@
 ﻿#pragma once
+#include "ImGUI/imgui.h"
 #include "Components/ActorComponent.h"
 #include "UnrealEd/EditorPanel.h"
 
@@ -24,7 +25,7 @@ private:
     float Width = 300, Height = 100;
     bool bOpenMenu = false;
 
-    float* FOV = nullptr;
+    float FOV;
     float CameraSpeed = 0.0f;
     float GridScale = 1.0f;
 };

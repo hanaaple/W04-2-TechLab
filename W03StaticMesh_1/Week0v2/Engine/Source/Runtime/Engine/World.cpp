@@ -6,7 +6,6 @@
 #include "LevelEditor/SLevelEditor.h"
 #include "Engine/FLoaderOBJ.h"
 #include "Classes/Components/StaticMeshComponent.h"
-#include "Engine/StaticMeshActor.h"
 #include "Components/SkySphereComponent.h"
 
 
@@ -75,7 +74,7 @@ void UWorld::ReleaseBaseObject()
 
 void UWorld::Tick(float DeltaTime)
 {
-	camera->TickComponent(DeltaTime);
+	// camera->TickComponent(DeltaTime);
 	EditorPlayer->Tick(DeltaTime);
 	LocalGizmo->Tick(DeltaTime);
 
@@ -91,6 +90,8 @@ void UWorld::Tick(float DeltaTime)
 	// {
 	//     Actor->Tick(DeltaTime);
 	// }
+    if (Level->LevelState != ELevelState::Play)
+        return;
     Level->Tick(DeltaTime);
 }
 
