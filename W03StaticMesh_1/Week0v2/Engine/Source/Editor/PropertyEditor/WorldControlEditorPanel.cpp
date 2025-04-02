@@ -125,7 +125,7 @@ void WorldControlEditorPanel::CreateLevelEditorPlayButton(ImVec2 ButtonSize, ImF
     ImGui::PushFont(IconFont);
     if (TargetLevel->LevelState == ELevelState::Stop)
     {
-        ImGui::PushStyleColor(ImGuiCol_Text, Red);
+        ImGui::PushStyleColor(ImGuiCol_Text, Green);
         // Play Level
         if (ImGui::Button(ICON_FA_PLAY, ButtonSize))
         {

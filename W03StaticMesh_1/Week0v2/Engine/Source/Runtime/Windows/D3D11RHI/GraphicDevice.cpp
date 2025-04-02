@@ -6,6 +6,7 @@ void FGraphicsDevice::Initialize(HWND hWindow) {
     CreateDepthStencilBuffer(hWindow);
     CreateDepthStencilState();
     CreateRasterizerState();
+    CreateBlendState();
     CurrentRasterizer = RasterizerStateSOLID;
 }
 void FGraphicsDevice::CreateDeviceAndSwapChain(HWND hWindow) {

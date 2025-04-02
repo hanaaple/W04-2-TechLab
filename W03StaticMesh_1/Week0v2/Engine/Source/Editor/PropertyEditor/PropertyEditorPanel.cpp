@@ -794,65 +794,48 @@ void PropertyEditorPanel::DrawActorHierarchyRecursive(USceneComponent* TargetSce
 
     UWorld* World = GEngineLoop.GetWorld();
     FString Name = TargetSceneComponent->GetName() + "##";
-    if (TargetSceneComponent->GetChildrenCount() == 0)
+    
+    bool bWasSelected = (World->GetSelectedComponent() == TargetSceneComponent);
+
+    if (bWasSelected)
     {
-        bool bWasSelected = false;
-        if (World->GetSelectedComponent() == TargetSceneComponent)
-        {
-            bWasSelected = true;
-            ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0.2f, 0.6f, 0.8f, 1.0f));
-        }
-        if (ImGui::TreeNodeEx(GetData(Name), ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_Selected))
-        {
-            if (ImGui::IsItemClicked() && !bClicked) // 클릭 감지
-            {
-                bClicked = true;
-                World->SetPickedActor(nullptr);
-                World->SetPickedComponent(TargetSceneComponent);
-            }
-            ImGui::TreePop(); // 자식 노드는 닫아야 함
-        }
-        if (bWasSelected && World->GetSelectedComponent() == TargetSceneComponent)
-        {
-            ImGui::PopStyleColor();
-        }
+        //SelectedCount++;
+        ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0.2f, 0.6f, 0.8f, 1.0f));
     }
-    else
+
+    // 자식이 있는지 여부 확인
+    ImGuiTreeNodeFlags NodeFlags = (TargetSceneComponent->GetChildrenCount() == 0) 
+        ? ImGuiTreeNodeFlags_Leaf 
+        : ImGuiTreeNodeFlags_DefaultOpen;
+
+    if (bWasSelected)
     {
-        bool bWasSelected = false;
-        bool bWasTree = false;
-        if (World->GetSelectedComponent() == TargetSceneComponent)
+        NodeFlags |= ImGuiTreeNodeFlags_Selected;
+    }
+
+    bool bIsOpen = ImGui::TreeNodeEx(GetData(Name), NodeFlags);
+
+    if (ImGui::IsItemClicked() && !bClicked) // 클릭 감지
+    {
+        bClicked = true;
+        World->SetPickedActor(nullptr);
+        World->SetPickedComponent(TargetSceneComponent);
+    }
+
+    // TreeNode가 열린 경우에만 자식 재귀 호출
+    if (bIsOpen)
+    {
+        for (auto* AttachChild : TargetSceneComponent->GetAttachChildren())
         {
-            bWasSelected = true;
-            ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0.2f, 0.6f, 0.8f, 1.0f));
+            DrawActorHierarchyRecursive(AttachChild, bClicked);
         }
-        if (ImGui::TreeNodeEx(GetData(Name), ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_Selected))
-        {
-            if (bWasSelected && World->GetSelectedComponent() == TargetSceneComponent)
-            {
-                bWasTree = true;
-                ImGui::PopStyleColor();
-            }
-            for (auto* AttachChild : TargetSceneComponent->GetAttachChildren())
-            {
-                if (ImGui::IsItemClicked() && !bClicked) // 클릭 감지
-                {
-                    bClicked = true;
-                    World->SetPickedActor(nullptr);
-                    World->SetPickedComponent(TargetSceneComponent);
-                }
-                
-                DrawActorHierarchyRecursive(AttachChild, bClicked);
-            } 
-            ImGui::TreePop(); // 자식 노드는 닫아야 함
-        }
-        if (bWasTree && World->GetSelectedComponent() == TargetSceneComponent)
-        {
-            ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0.2f, 0.6f, 0.8f, 1.0f));
-        }
-        if (bWasSelected && World->GetSelectedComponent() == TargetSceneComponent)
-        {
-            ImGui::PopStyleColor();
-        }
+        ImGui::TreePop();
+    }
+
+    // Push된 스타일이 있으면 Pop
+    if (bWasSelected)
+    {
+        //SelectedCount--;
+        ImGui::PopStyleColor();
     }
 }
