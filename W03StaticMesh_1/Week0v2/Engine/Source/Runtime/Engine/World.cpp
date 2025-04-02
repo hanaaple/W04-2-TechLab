@@ -14,6 +14,7 @@ void UWorld::Initialize()
 {
     // TODO: Load Scene
     CreateBaseObject();
+    Level = FObjectFactory::ConstructObject<ULevel>();
     //SpawnObject(OBJ_CUBE);
     FManagerOBJ::CreateStaticMesh("Assets/Dodge/Dodge.obj");
 
@@ -86,15 +87,16 @@ void UWorld::Tick(float DeltaTime)
     PendingBeginPlayActors.Empty();
 
     // 매 틱마다 Actor->Tick(...) 호출
-	for (AActor* Actor : ActorsArray)
-	{
-	    Actor->Tick(DeltaTime);
-	}
+	// for (AActor* Actor : ActorsArray)
+	// {
+	//     Actor->Tick(DeltaTime);
+	// }
+    Level->Tick(DeltaTime);
 }
 
 void UWorld::Release()
 {
-	for (AActor* Actor : ActorsArray)
+	for (AActor* Actor : Level->Actors)
 	{
 		Actor->EndPlay(EEndPlayReason::WorldTransition);
         TSet<UActorComponent*> Components = Actor->GetComponents();
@@ -104,7 +106,7 @@ void UWorld::Release()
 	    }
 	    GUObjectArray.MarkRemoveObject(Actor);
 	}
-    ActorsArray.Empty();
+    Level->Actors.Empty();
 
 	pickingGizmo = nullptr;
 	ReleaseBaseObject();
@@ -139,7 +141,7 @@ bool UWorld::DestroyActor(AActor* ThisActor)
     }
 
     // World에서 제거
-    ActorsArray.Remove(ThisActor);
+    Level->Actors.Remove(ThisActor);
 
     // 제거 대기열에 추가
     GUObjectArray.MarkRemoveObject(ThisActor);

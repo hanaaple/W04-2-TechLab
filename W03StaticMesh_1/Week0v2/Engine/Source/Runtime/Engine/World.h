@@ -15,7 +15,6 @@ class AEditorPlayer;
 class USceneComponent;
 class UTransformGizmo;
 
-
 class UWorld : public UObject
 {
     DECLARE_CLASS(UWorld, UObject)
@@ -49,8 +48,7 @@ private:
     EWorldType::Type WorldType;
     
     /** World에서 관리되는 모든 Actor의 목록 */
-    TSet<AActor*> ActorsArray;
-
+    // TSet<AActor*> ActorsArray;
     /** Actor가 Spawn되었고, 아직 BeginPlay가 호출되지 않은 Actor들 */
     TArray<AActor*> PendingBeginPlayActors;
 
@@ -63,7 +61,7 @@ private:
 public:
     UObject* worldGizmo = nullptr;
 
-    const TSet<AActor*>& GetActors() const { return ActorsArray; }
+    const TArray<AActor*>& GetActors() const { return Level->Actors; }
 
     UTransformGizmo* LocalGizmo = nullptr;
     UCameraComponent* GetCamera() const { return camera; }
@@ -91,7 +89,7 @@ T* UWorld::SpawnActor()
     // TODO: 일단 AddComponent에서 Component마다 초기화
     // 추후에 RegisterComponent() 만들어지면 주석 해제
     // Actor->InitializeComponents();
-    ActorsArray.Add(Actor);
+    Level->Actors.Add(Actor);
     PendingBeginPlayActors.Add(Actor);
     return Actor;
 }
