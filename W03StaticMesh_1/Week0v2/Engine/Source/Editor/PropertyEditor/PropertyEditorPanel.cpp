@@ -680,6 +680,8 @@ void PropertyEditorPanel::DrawAddComponent(ImVec2 ButtonSize, ImFont* IconFont)
                 else if (label == FName("ULightComponentBase"))
                 {
                     TargetComponent = SelectedActor->AddComponent<ULightComponentBase>();
+                    auto billboard = SelectedActor->AddComponent<UBillboardComponent>();
+                    billboard->SetTexture(L"Assets/Texture/spotLight.png");
                 }
                 else if (label == FName("UText"))
                 {
