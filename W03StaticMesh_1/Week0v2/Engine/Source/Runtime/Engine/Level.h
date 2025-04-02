@@ -5,8 +5,9 @@
 
 enum class ELevelState
 {
-    Play,
-    Pause,
+    Play,   // PIE
+    Pause,  // PIE
+    Stop,   // Edit
 };
 
 class ULevel : public UObject

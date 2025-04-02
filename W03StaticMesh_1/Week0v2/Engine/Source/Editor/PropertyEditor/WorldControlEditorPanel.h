@@ -6,6 +6,8 @@
 #define ICON_FA_STOP "\xE2\x97\xBB"   // ■
 #define ICON_PAUSE "\xE2\x8F\xB8"     // ⏸
 
+class ULevel;
+
 // World로 해야될지 Level로 해야될지 헷갈림.
 class WorldControlEditorPanel : public UEditorPanel
 {
@@ -15,7 +17,6 @@ public:
 public:
     virtual void Render() override;
     virtual void OnResize(HWND hWnd) override;
-
 
 private:
     void CreateLevelEditorPlayButton(ImVec2 ButtonSize, ImFont* IconFont);

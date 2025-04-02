@@ -1,10 +1,14 @@
 ﻿#include "UnrealEd.h"
 #include "EditorPanel.h"
+#include "World.h"
+#include "Editor/EditorEngine.h"
 
 #include "PropertyEditor/ViewControlEditorPanel.h"
 #include "PropertyEditor/OutlinerEditorPanel.h"
 #include "PropertyEditor/PropertyEditorPanel.h"
 #include "PropertyEditor/WorldControlEditorPanel.h"
+
+extern FEditorEngine GEngineLoop;
 
 void UnrealEd::Initialize()
 {

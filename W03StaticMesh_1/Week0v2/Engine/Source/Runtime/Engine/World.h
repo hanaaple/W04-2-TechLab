@@ -78,6 +78,8 @@ public:
     UObject* GetWorldGizmo() const { return worldGizmo; }
     USceneComponent* GetPickingGizmo() const { return pickingGizmo; }
     void SetPickingGizmo(UObject* Object);
+
+    ULevel* GetLevel() const { return Level; }
 };
 
 

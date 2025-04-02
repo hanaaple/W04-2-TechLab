@@ -1,4 +1,7 @@
 #include "WorldControlEditorPanel.h"
+#include "Level.h"
+#include "World.h"
+#include "UnrealEd/Editor/EditorEngine.h"
 
 void WorldControlEditorPanel::Render()
 {
@@ -70,52 +73,55 @@ void WorldControlEditorPanel::CreateLevelEditorPlayButton(ImVec2 ButtonSize, ImF
     ImVec4 Red = ImVec4(0.7f, 0.f, 0.f, 1.0f);
     ImVec4 ActiveGray = ImVec4(0.4f, 0.4f, 0.4f, 1.0f);
     ImVec4 InActiveGray = ImVec4(0.2f, 0.2f, 0.2f, 1.0f);
+    ULevel* TargetLevel = GEngineLoop.GetWorld()->GetLevel();
     
     ImGui::PushFont(IconFont);
-    // if (State == Editor)
+    if (TargetLevel->LevelState == ELevelState::Stop)
     {
         ImGui::PushStyleColor(ImGuiCol_Text, Red);
         // Play Level
         if (ImGui::Button(ICON_FA_PLAY, ButtonSize))
         {
             // GEngineLoop.GetLevelEditor()->GetActiveViewportClient()->SetGridSize(GridScale);
+            TargetLevel->LevelState = ELevelState::Play;
         }
     }
-    // else if (State == Play중)
-    // {
-    //     ImGui::PushStyleColor(ImGuiCol_Text, ActiveGray);
-    //     // Pause
-    //     if (ImGui::Button(ICON_PAUSE, ButtonSize))
-    //     {
-    //         // GEngineLoop.GetLevelEditor()->GetActiveViewportClient()->SetGridSize(GridScale);
-    //     }   
-    // }
-    // else if (State == 일시정지)
-    // {
-    //     ImGui::PushStyleColor(ImGuiCol_Text, ActiveGray);
-    //     // Play Continue
-    //     if (ImGui::Button(ICON_FA_PLAY, ButtonSize))
-    //     {
-    //         
-    //         // GEngineLoop.GetLevelEditor()->GetActiveViewportClient()->SetGridSize(GridScale);
-    //     }   
-    // }
+    else if (TargetLevel->LevelState == ELevelState::Play)
+    {
+        ImGui::PushStyleColor(ImGuiCol_Text, ActiveGray);
+        // Pause
+        if (ImGui::Button(ICON_PAUSE, ButtonSize))
+        {
+            // GEngineLoop.GetLevelEditor()->GetActiveViewportClient()->SetGridSize(GridScale);
+            TargetLevel->LevelState = ELevelState::Pause;
+        }   
+    }
+    else if (TargetLevel->LevelState == ELevelState::Pause)
+    {
+        ImGui::PushStyleColor(ImGuiCol_Text, ActiveGray);
+        // Play Continue
+        if (ImGui::Button(ICON_FA_PLAY, ButtonSize))
+        {
+            // GEngineLoop.GetLevelEditor()->GetActiveViewportClient()->SetGridSize(GridScale);
+            TargetLevel->LevelState = ELevelState::Play;
+        }   
+    }
     ImGui::PopStyleColor();
     ImGui::PopFont();
  
     ImGui::SameLine();
     
     ImGui::PushFont(IconFont);
-    // if (State == Playing || State == Paused)
-    // {
-    //     ImGui::PushStyleColor(ImGuiCol_Text, Red);
-    //
-    //     if (ImGui::Button(ICON_FA_STOP, ButtonSize)) // Slider
-    //     {
-    //         // GEngineLoop.GetLevelEditor()->GetActiveViewportClient()->SetGridSize(GridScale);
-    //     }
-    // }
-    // else
+    if (TargetLevel->LevelState == ELevelState::Play || TargetLevel->LevelState == ELevelState::Pause)
+    {
+        ImGui::PushStyleColor(ImGuiCol_Text, Red);
+    
+        if (ImGui::Button(ICON_FA_STOP, ButtonSize)) // Slider
+        {
+            // GEngineLoop.GetLevelEditor()->GetActiveViewportClient()->SetGridSize(GridScale);
+        }
+    }
+    else
     {
         ImGui::PushStyleColor(ImGuiCol_Text, InActiveGray);
 
