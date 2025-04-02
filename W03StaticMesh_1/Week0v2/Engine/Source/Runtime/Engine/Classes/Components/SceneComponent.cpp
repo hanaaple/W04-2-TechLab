@@ -145,5 +145,6 @@ void USceneComponent::DetachFromComponent()
     if (Owner && Owner->GetRootComponent() && Owner->GetRootComponent()->AttachChildren.Contains(this))
     {
         Owner->GetRootComponent()->AttachChildren.Remove(this);
+        AttachParent = nullptr;
     }
 }

@@ -620,7 +620,7 @@ void PropertyEditorPanel::RenderCreateMaterialView()
 void PropertyEditorPanel::RenderForBillBoard(UBillboardComponent* BillBoardComponent)
 {
     ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0.1f, 0.1f, 0.1f, 1.0f));
-    if (ImGui::TreeNodeEx("Static Mesh", ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_DefaultOpen)) // 트리 노드 생성
+    if (ImGui::TreeNodeEx("Sprite", ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_DefaultOpen)) // 트리 노드 생성
     {
         ImGui::Text("Sprite");
         ImGui::SameLine();
@@ -796,6 +796,12 @@ void PropertyEditorPanel::DrawActorHierarchyRecursive(USceneComponent* TargetSce
     FString Name = TargetSceneComponent->GetName() + "##";
     if (TargetSceneComponent->GetChildrenCount() == 0)
     {
+        bool bWasSelected = false;
+        if (World->GetSelectedComponent() == TargetSceneComponent)
+        {
+            bWasSelected = true;
+            ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0.2f, 0.6f, 0.8f, 1.0f));
+        }
         if (ImGui::TreeNodeEx(GetData(Name), ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_Selected))
         {
             if (ImGui::IsItemClicked() && !bClicked) // 클릭 감지
@@ -806,11 +812,27 @@ void PropertyEditorPanel::DrawActorHierarchyRecursive(USceneComponent* TargetSce
             }
             ImGui::TreePop(); // 자식 노드는 닫아야 함
         }
+        if (bWasSelected && World->GetSelectedComponent() == TargetSceneComponent)
+        {
+            ImGui::PopStyleColor();
+        }
     }
     else
     {
-        if (ImGui::TreeNodeEx(GetData(Name), ImGuiTreeNodeFlags_DefaultOpen))
+        bool bWasSelected = false;
+        bool bWasTree = false;
+        if (World->GetSelectedComponent() == TargetSceneComponent)
         {
+            bWasSelected = true;
+            ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0.2f, 0.6f, 0.8f, 1.0f));
+        }
+        if (ImGui::TreeNodeEx(GetData(Name), ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_Selected))
+        {
+            if (bWasSelected && World->GetSelectedComponent() == TargetSceneComponent)
+            {
+                bWasTree = true;
+                ImGui::PopStyleColor();
+            }
             for (auto* AttachChild : TargetSceneComponent->GetAttachChildren())
             {
                 if (ImGui::IsItemClicked() && !bClicked) // 클릭 감지
@@ -823,6 +845,14 @@ void PropertyEditorPanel::DrawActorHierarchyRecursive(USceneComponent* TargetSce
                 DrawActorHierarchyRecursive(AttachChild, bClicked);
             } 
             ImGui::TreePop(); // 자식 노드는 닫아야 함
+        }
+        if (bWasTree && World->GetSelectedComponent() == TargetSceneComponent)
+        {
+            ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0.2f, 0.6f, 0.8f, 1.0f));
+        }
+        if (bWasSelected && World->GetSelectedComponent() == TargetSceneComponent)
+        {
+            ImGui::PopStyleColor();
         }
     }
 }
