@@ -283,6 +283,10 @@ void ViewportControlEditorPanel::CreateModifyButton(ImVec2 ButtonSize, ImFont* I
                     SpawnedActor = World->SpawnActor<AActor>();
                     SpawnedActor->SetActorLabel(TEXT("OBJ_SpotLight"));
                     SpawnedActor->AddComponent<ULightComponentBase>();
+                    auto BillBoardComponent = SpawnedActor->AddComponent<UBillboardComponent>();
+                    BillBoardComponent->SetTexture(L"Assets/Texture/spotLight.png");
+                    //BillBoardComponent->InitializeComponent();
+                    //a->SetTexture(L"Assets/Texture/spotLight.png");
                     break;
                 }
                 case OBJ_PARTICLE:
@@ -292,7 +296,7 @@ void ViewportControlEditorPanel::CreateModifyButton(ImVec2 ButtonSize, ImFont* I
                     UParticleSubUVComp* ParticleComponent = SpawnedActor->AddComponent<UParticleSubUVComp>();
                     ParticleComponent->SetTexture(L"Assets/Texture/T_Explosion_SubUV.png");
                     ParticleComponent->SetRowColumnCount(6, 6);
-                    ParticleComponent->SetScale(FVector(10.0f, 10.0f, 1.0f));
+                    ParticleComponent->SetLocalScale(FVector(10.0f, 10.0f, 1.0f));
                     ParticleComponent->Activate();
                     break;
                 }
@@ -316,6 +320,7 @@ void ViewportControlEditorPanel::CreateModifyButton(ImVec2 ButtonSize, ImFont* I
                 if (SpawnedActor)
                 {
                     World->SetPickedActor(SpawnedActor);
+                    World->SetPickedComponent(nullptr);
                 }
             }
         }

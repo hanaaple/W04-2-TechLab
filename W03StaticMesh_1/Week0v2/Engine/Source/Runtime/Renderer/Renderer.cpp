@@ -1138,6 +1138,9 @@ void FRenderer::RenderBillboards(UWorld* World, std::shared_ptr<FEditorViewportC
     PrepareSubUVConstant();
     for (auto BillboardComp : BillboardObjs)
     {
+        if (BillboardComp->Texture == nullptr)
+            continue;
+        
         UpdateSubUVConstant(BillboardComp->finalIndexU, BillboardComp->finalIndexV);
 
         FMatrix Model = BillboardComp->CreateBillboardMatrix();

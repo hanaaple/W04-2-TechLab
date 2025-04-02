@@ -110,7 +110,7 @@ bool AActor::SetActorLocation(const FVector& NewLocation)
 {
     if (RootComponent)
     {
-        RootComponent->SetLocation(NewLocation);
+        RootComponent->SetLocalLocation(NewLocation);
         return true;
     }
     return false;
@@ -120,7 +120,7 @@ bool AActor::SetActorRotation(const FVector& NewRotation)
 {
     if (RootComponent)
     {
-        RootComponent->SetRotation(NewRotation);
+        RootComponent->SetLocalRotation(NewRotation);
         return true;
     }
     return false;
@@ -130,7 +130,7 @@ bool AActor::SetActorScale(const FVector& NewScale)
 {
     if (RootComponent)
     {
-        RootComponent->SetScale(NewScale);
+        RootComponent->SetLocalScale(NewScale);
         return true;
     }
     return false;
