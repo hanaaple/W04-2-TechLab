@@ -115,6 +115,8 @@ protected:
     float CameraSpeedScalar = 1.0f;
     float GridSize;
     float ViewFOV = 60.0f;
+    float nearPlane = 0.1f;
+    float farPlane = 1000000.0f;
     ELevelViewportType ViewportType;
     EViewModeIndex ViewMode;
     uint64 ShowFlag;
