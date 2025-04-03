@@ -40,3 +40,14 @@ void USkySphereComponent::CopyPropertiesFrom(UObject* Source, TMap<UObject*, UOb
         VOffset = SourceUSkySphereComponent->VOffset;
     }
 }
+
+void USkySphereComponent::CopyPropertiesTo(UObject* Source, TMap<UObject*, UObject*>& OutMap)
+{
+    UStaticMeshComponent::CopyPropertiesTo(Source, OutMap);
+    USkySphereComponent* DestSkySphereComponent = Cast<USkySphereComponent>(Source);
+    if (DestSkySphereComponent)
+    {
+        DestSkySphereComponent->UOffset = UOffset;
+        DestSkySphereComponent->VOffset = VOffset;
+    }
+}

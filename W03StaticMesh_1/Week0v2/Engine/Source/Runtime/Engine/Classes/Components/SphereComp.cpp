@@ -32,3 +32,8 @@ void USphereComp::CopyPropertiesFrom(UObject* Source, TMap<UObject*, UObject*>& 
 {
     Super::CopyPropertiesFrom(Source, DupMap);
 }
+
+void USphereComp::CopyPropertiesTo(UObject* Dest, TMap<UObject*, UObject*>& DupMap)
+{
+    UStaticMeshComponent::CopyPropertiesTo(Dest, DupMap);
+}

@@ -36,3 +36,13 @@ void UGizmoCircleComponent::CopyPropertiesFrom(UObject* Source, TMap<UObject*, U
         inner = SourceUGizmoComponent->inner;
     }
 }
+
+void UGizmoCircleComponent::CopyPropertiesTo(UObject* Dest, TMap<UObject*, UObject*>& OutMap)
+{
+    UGizmoBaseComponent::CopyPropertiesTo(Dest, OutMap);
+    UGizmoCircleComponent* DestGizmoComponent = Cast<UGizmoCircleComponent>(Dest);
+    if (DestGizmoComponent)
+    {
+        DestGizmoComponent->inner = inner;
+    }
+}

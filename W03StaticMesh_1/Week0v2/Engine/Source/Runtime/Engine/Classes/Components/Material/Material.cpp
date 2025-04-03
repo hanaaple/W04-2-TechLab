@@ -11,3 +11,14 @@ void UMaterial::CopyPropertiesFrom(UObject* Source, TMap<UObject*, UObject*>& Du
         materialInfo = SourceUMaterial->materialInfo;
     }
 }
+
+void UMaterial::CopyPropertiesTo(UObject* Dest, TMap<UObject*, UObject*>& DupMap)
+{
+    UObject::CopyPropertiesTo(Dest, DupMap);
+
+    UMaterial* DestUMaterial = Cast<UMaterial>(Dest);
+    if (DestUMaterial)
+    {
+        DestUMaterial->materialInfo = materialInfo;
+    }
+}

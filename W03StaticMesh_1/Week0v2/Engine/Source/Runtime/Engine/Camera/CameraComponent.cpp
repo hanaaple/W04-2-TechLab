@@ -136,3 +136,21 @@ void UCameraComponent::CopyPropertiesFrom(UObject* Source, TMap<UObject*, UObjec
         farClip = SourceUCameraComponent->farClip;
     }
 }
+
+void UCameraComponent::CopyPropertiesTo(UObject* Dest, TMap<UObject*, UObject*>& OutMap)
+{
+    USceneComponent::CopyPropertiesTo(Dest, OutMap);
+    UCameraComponent* SourceUCameraComponent = Cast<UCameraComponent>(Dest);
+    if (SourceUCameraComponent)
+    {
+        SourceUCameraComponent->mouseSpeed = mouseSpeed;
+        SourceUCameraComponent->lastMousePos = lastMousePos;
+        SourceUCameraComponent->bRightMouseDown = bRightMouseDown;
+        SourceUCameraComponent->zAxis = zAxis;
+        SourceUCameraComponent->xAxis = xAxis;
+        SourceUCameraComponent->yAxis = yAxis;
+        SourceUCameraComponent->FOV = FOV;
+        SourceUCameraComponent->nearClip = nearClip;
+        SourceUCameraComponent->farClip = farClip;
+    }
+}

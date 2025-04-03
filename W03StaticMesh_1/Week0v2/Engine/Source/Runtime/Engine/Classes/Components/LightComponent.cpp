@@ -51,6 +51,20 @@ void ULightComponentBase::CopyPropertiesFrom(UObject* Source, TMap<UObject*, UOb
     }
 }
 
+void ULightComponentBase::CopyPropertiesTo(UObject* Dest, TMap<UObject*, UObject*>& OutMap)
+{
+    USceneComponent::CopyPropertiesTo(Dest, OutMap);
+    ULightComponentBase* DestLight = Cast<ULightComponentBase>(Dest);
+    if (DestLight)
+    {
+        DestLight->color = color;
+        DestLight->radius = radius;
+
+        DestLight->AABB = AABB;
+        DestLight->texture2D = FObjectFactory::DuplicateObject(texture2D, texture2D->GetClass(), OutMap);
+    }
+}
+
 void ULightComponentBase::InitializeLight()
 {
     texture2D = new UBillboardComponent();

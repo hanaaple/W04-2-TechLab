@@ -115,11 +115,16 @@ public:
          // 복제 맵에 등록하여 재귀 호출 시 순환 참조를 방지
          DupMap[InDuplicated] = Obj;
 
-         // 객체의 속성 복사 (DupMap을 전달)
-         Obj->CopyPropertiesFrom(InDuplicated, DupMap);
-         Obj->UUID = id;
-         Obj->NamePrivate = Name;
-         GUObjectArray.AddObject(Obj);
+        InDuplicated->CopyPropertiesTo(Obj, DupMap);
+        Obj->UUID = id;
+        Obj->NamePrivate = Name;
+        GUObjectArray.AddObject(Obj);
+
+         // // 객체의 속성 복사 (DupMap을 전달)
+         // Obj->CopyPropertiesFrom(InDuplicated, DupMap);
+         // Obj->UUID = id;
+         // Obj->NamePrivate = Name;
+         // GUObjectArray.AddObject(Obj);
 
          return Obj;
      }

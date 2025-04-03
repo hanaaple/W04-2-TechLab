@@ -109,3 +109,17 @@ void UPrimitiveComponent::CopyPropertiesFrom(UObject* Source, TMap<UObject*, UOb
         m_Type = SourcePrimitvieComponent->m_Type;
     }
 }
+
+void UPrimitiveComponent::CopyPropertiesTo(UObject* Dest, TMap<UObject*, UObject*>& DupMap)
+{
+    USceneComponent::CopyPropertiesTo(Dest, DupMap);
+    UPrimitiveComponent* DestPrimitive = Cast<UPrimitiveComponent>(Dest);
+    if (DestPrimitive)
+    {
+        DestPrimitive->AABB = AABB;
+        if (m_Type.Len() != 0)
+        {
+            DestPrimitive->m_Type = m_Type;
+        }
+    }
+}

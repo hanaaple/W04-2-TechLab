@@ -86,6 +86,27 @@ void UText::CopyPropertiesFrom(UObject* Source, TMap<UObject*, UObject*>& DupMap
     }
 }
 
+void UText::CopyPropertiesTo(UObject* Dest, TMap<UObject*, UObject*>& OutMap)
+{
+    UBillboardComponent::CopyPropertiesTo(Dest, OutMap);
+    UText* DestUText = Cast<UText>(Dest);
+    if (DestUText)
+    {
+        DestUText->vertexTextBuffer = vertexTextBuffer;
+        DestUText->numTextVertices = numTextVertices;
+        DestUText->text = text;
+        for (auto item : quad)
+        {
+            DestUText->quad.Add(item);
+        }
+        DestUText->RowCount = RowCount;
+        DestUText->ColumnCount = ColumnCount;
+
+        DestUText->quadWidth = quadWidth;
+        DestUText->quadHeight = quadHeight;
+    }
+}
+
 
 void UText::SetText(FWString _text)
 {

@@ -164,3 +164,32 @@ void AActor::CopyPropertiesFrom(UObject* Source, TMap<UObject*, UObject*>& DupMa
         ActorLabel = SourceActor->GetActorLabel();
     }
 }
+
+void AActor::CopyPropertiesTo(UObject* Dest, TMap<UObject*, UObject*>& DupMap)
+{
+    UObject::CopyPropertiesTo(Dest, DupMap);
+    AActor* DestActor = Cast<AActor>(Dest);
+    if (DestActor != nullptr)
+    {
+        if (this->Owner != nullptr)
+        {
+            DestActor->Owner = FObjectFactory::DuplicateObject(this->Owner, this->Owner->GetClass(), DupMap);
+        }
+        DestActor->bActorIsBeingDestroyed = this->bActorIsBeingDestroyed;
+
+        if (this->RootComponent != nullptr)
+        {
+            DestActor->DuplicateComponent(FObjectFactory::DuplicateObject(this->RootComponent, this->RootComponent->GetClass(), DupMap));
+        }
+
+        for (const auto comp : this->OwnedComponents)
+        {
+            if (this->RootComponent == comp)
+            {
+                continue;
+            }
+            DestActor->DuplicateComponent(FObjectFactory::DuplicateObject(comp, comp->GetClass(), DupMap));
+        }
+        DestActor->ActorLabel = this->ActorLabel;
+    }
+}

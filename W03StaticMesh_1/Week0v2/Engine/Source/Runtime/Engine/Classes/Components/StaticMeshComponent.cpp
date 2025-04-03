@@ -122,3 +122,14 @@ void UStaticMeshComponent::CopyPropertiesFrom(UObject* Source, TMap<UObject*, UO
         selectedSubMeshIndex = SourceUStaticMeshComponent->selectedSubMeshIndex;
     }
 }
+
+void UStaticMeshComponent::CopyPropertiesTo(UObject* Dest, TMap<UObject*, UObject*>& DupMap)
+{
+    UMeshComponent::CopyPropertiesTo(Dest, DupMap);
+    UStaticMeshComponent* DestUMeshComponent = Cast<UStaticMeshComponent>(Dest);
+    if (DestUMeshComponent)
+    {
+        DestUMeshComponent->staticMesh = staticMesh;
+        DestUMeshComponent->selectedSubMeshIndex = selectedSubMeshIndex;
+    }
+}

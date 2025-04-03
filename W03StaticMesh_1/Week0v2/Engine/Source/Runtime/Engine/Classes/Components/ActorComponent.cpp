@@ -53,6 +53,25 @@ void UActorComponent::CopyPropertiesFrom(UObject* Source, TMap<UObject*, UObject
     }
 }
 
+void UActorComponent::CopyPropertiesTo(UObject* Dest, TMap<UObject*, UObject*>& DupMap)
+{
+    UObject::CopyPropertiesTo(Dest, DupMap);
+
+    UActorComponent* DestActorComponent = Cast<UActorComponent>(Dest);
+    if (DestActorComponent != nullptr)
+    {
+        if (Owner != nullptr)
+        {
+            DestActorComponent->Owner = FObjectFactory::DuplicateObject(this->Owner, this->Owner->GetClass(), DupMap);
+        }
+        DestActorComponent->bHasBeenInitialized = this->bHasBeenInitialized;
+        DestActorComponent->bHasBegunPlay = this->bHasBegunPlay;
+        DestActorComponent->bIsActive = this->bIsActive;
+        DestActorComponent->bIsBeingDestroyed = this->bIsBeingDestroyed;
+        DestActorComponent->bAutoActive = this->bAutoActive;
+    }
+}
+
 void UActorComponent::DestroyComponent()
 {
     if (bIsBeingDestroyed)

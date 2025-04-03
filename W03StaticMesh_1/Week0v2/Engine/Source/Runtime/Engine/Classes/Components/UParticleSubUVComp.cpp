@@ -95,6 +95,24 @@ void UParticleSubUVComp::CopyPropertiesFrom(UObject* Source, TMap<UObject*, UObj
     }
 }
 
+void UParticleSubUVComp::CopyPropertiesTo(UObject* Dest, TMap<UObject*, UObject*>& OutMap)
+{
+    UBillboardComponent::CopyPropertiesTo(Dest, OutMap);
+    UParticleSubUVComp* DestUParticleSubUVComp = Cast<UParticleSubUVComp>(Dest);
+    if (DestUParticleSubUVComp)
+    {
+        DestUParticleSubUVComp->vertexSubUVBuffer = vertexSubUVBuffer;
+        DestUParticleSubUVComp->numTextVertices = numTextVertices;
+        DestUParticleSubUVComp->bIsLoop = bIsLoop;
+        DestUParticleSubUVComp->indexU = indexU;
+        DestUParticleSubUVComp->indexV = indexV;
+        DestUParticleSubUVComp->second = second;
+
+        DestUParticleSubUVComp->CellsPerRow = CellsPerRow;
+        DestUParticleSubUVComp->CellsPerColumn = CellsPerColumn;
+    }
+}
+
 void UParticleSubUVComp::UpdateVertexBuffer(const TArray<FVertexTexture>& vertices)
 {
 	/*

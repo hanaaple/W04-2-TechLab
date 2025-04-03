@@ -520,3 +520,19 @@ void AEditorPlayer::CopyPropertiesFrom(UObject* Source, TMap<UObject*, UObject*>
         cdMode = SourceEditorPlayer->cdMode;
     }
 }
+
+void AEditorPlayer::CopyPropertiesTo(UObject* Dest, TMap<UObject*, UObject*>& DupMap)
+{
+    AActor::CopyPropertiesTo(Dest, DupMap);
+
+    AEditorPlayer* DestEditorPlayer = Cast<AEditorPlayer>(Dest);
+    if (DestEditorPlayer)
+    {
+        DestEditorPlayer->bLeftMouseDown = bLeftMouseDown;
+        DestEditorPlayer->bRightMouseDown = bRightMouseDown;
+        DestEditorPlayer->bSpaceDown = bSpaceDown;
+        DestEditorPlayer->m_LastMousePos = m_LastMousePos;
+        DestEditorPlayer->cMode = cMode;
+        DestEditorPlayer->cdMode = cdMode;
+    }
+}

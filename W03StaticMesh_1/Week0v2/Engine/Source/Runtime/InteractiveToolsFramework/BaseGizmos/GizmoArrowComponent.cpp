@@ -36,6 +36,16 @@ void UGizmoArrowComponent::CopyPropertiesFrom(UObject* Source, TMap<UObject*, UO
     }
 }
 
+void UGizmoArrowComponent::CopyPropertiesTo(UObject* Dest, TMap<UObject*, UObject*>& OutMap)
+{
+    UGizmoBaseComponent::CopyPropertiesTo(Dest, OutMap);
+    UGizmoArrowComponent* destGizmoComponent = Cast<UGizmoArrowComponent>(Dest);
+    if (destGizmoComponent)
+    {
+        destGizmoComponent->Dir = Dir;
+    }
+}
+
 // void UGizmoArrowComponent::Render()
 // {
 // #pragma region GizmoDepth

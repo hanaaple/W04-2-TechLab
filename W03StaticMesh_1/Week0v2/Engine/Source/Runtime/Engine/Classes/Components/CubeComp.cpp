@@ -40,3 +40,8 @@ void UCubeComp::CopyPropertiesFrom(UObject* Source, TMap<UObject*, UObject*>& Du
 {
     Super::CopyPropertiesFrom(Source, DupMap);
 }
+
+void UCubeComp::CopyPropertiesTo(UObject* Dest, TMap<UObject*, UObject*>& OutMap)
+{
+    UStaticMeshComponent::CopyPropertiesTo(Dest, OutMap);
+}

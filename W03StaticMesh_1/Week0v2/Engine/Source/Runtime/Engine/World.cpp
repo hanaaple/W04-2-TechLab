@@ -182,6 +182,54 @@ void UWorld::CopyPropertiesFrom(UObject* Source, TMap<UObject*, UObject*>& DupMa
     }
 }
 
+void UWorld::CopyPropertiesTo(UObject* Dest, TMap<UObject*, UObject*>& DupMap)
+{
+    UObject::CopyPropertiesTo(Dest, DupMap);
+    UWorld* DestUWorld = Cast<UWorld>(Dest);
+    if (DestUWorld)
+    {
+        for (auto item : ActorsArray)
+        {
+            DestUWorld->ActorsArray.Add(FObjectFactory::DuplicateObject(item, item->GetClass(), DupMap));
+        }
+
+        for (auto item : PendingBeginPlayActors)
+        {
+            DestUWorld->PendingBeginPlayActors.Add(FObjectFactory::DuplicateObject(item, item->GetClass(), DupMap));
+        }
+
+        if (SelectedActor)
+        {
+            DestUWorld->SelectedActor = FObjectFactory::DuplicateObject(SelectedActor, SelectedActor->GetClass(), DupMap);
+        }
+
+        if (pickingGizmo)
+        {
+            DestUWorld->pickingGizmo = FObjectFactory::DuplicateObject(pickingGizmo, pickingGizmo->GetClass(), DupMap);
+        }
+
+        if (camera)
+        {
+            DestUWorld->camera = FObjectFactory::DuplicateObject(camera, camera->GetClass(), DupMap);
+        }
+
+        if (EditorPlayer)
+        {
+            DestUWorld->EditorPlayer = FObjectFactory::DuplicateObject(EditorPlayer, EditorPlayer->GetClass(), DupMap);
+        }
+
+        if (worldGizmo)
+        {
+            DestUWorld->worldGizmo = FObjectFactory::DuplicateObject(worldGizmo, worldGizmo->GetClass(), DupMap);
+        }
+
+        if (LocalGizmo)
+        {
+            DestUWorld->LocalGizmo = FObjectFactory::DuplicateObject(LocalGizmo, LocalGizmo->GetClass(), DupMap);
+        }
+    }
+}
+
 void UWorld::SetPickingGizmo(UObject* Object)
 {
 	pickingGizmo = Cast<USceneComponent>(Object);

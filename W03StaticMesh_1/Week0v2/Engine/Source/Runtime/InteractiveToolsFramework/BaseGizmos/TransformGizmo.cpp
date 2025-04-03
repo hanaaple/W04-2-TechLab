@@ -118,3 +118,26 @@ void UTransformGizmo::CopyPropertiesFrom(UObject* Source, TMap<UObject*, UObject
         }
     }
 }
+
+void UTransformGizmo::CopyPropertiesTo(UObject* Dest, TMap<UObject*, UObject*>& DupMap)
+{
+    AActor::CopyPropertiesTo(Dest, DupMap);
+    UTransformGizmo* DestTransformGizmo = Cast<UTransformGizmo>(Dest);
+    if (DestTransformGizmo != nullptr)
+    {
+        for (const auto item : ArrowArr)
+        {
+            DestTransformGizmo->ArrowArr.Add(FObjectFactory::DuplicateObject(item, item->GetClass(), DupMap));
+        }
+
+        for (const auto item : RectangleArr)
+        {
+            DestTransformGizmo->RectangleArr.Add(FObjectFactory::DuplicateObject(item, item->GetClass(), DupMap));
+        }
+
+        for (const auto item : CircleArr)
+        {
+            DestTransformGizmo->CircleArr.Add(FObjectFactory::DuplicateObject(item, item->GetClass(), DupMap));
+        }
+    }
+}

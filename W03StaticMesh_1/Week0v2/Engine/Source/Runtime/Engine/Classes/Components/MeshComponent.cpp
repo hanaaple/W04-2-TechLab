@@ -70,3 +70,17 @@ void UMeshComponent::CopyPropertiesFrom(UObject* Source, TMap<UObject*, UObject*
         }
     }
 }
+
+void UMeshComponent::CopyPropertiesTo(UObject* Dest, TMap<UObject*, UObject*>& DupMap)
+{
+    UPrimitiveComponent::CopyPropertiesTo(Dest, DupMap);
+    UMeshComponent* DestUMeshComponent = Cast<UMeshComponent>(Dest);
+    if (DestUMeshComponent)
+    {
+        for (const auto item : OverrideMaterials)
+        {
+            if (item != nullptr)
+                DestUMeshComponent->OverrideMaterials.Add(FObjectFactory::DuplicateObject(item, item->GetClass(), DupMap));
+        }
+    }
+}

@@ -84,3 +84,13 @@ void UGizmoBaseComponent::CopyPropertiesFrom(UObject* Source, TMap<UObject*, UOb
         gizmoType = SourceUGizmoComponent->gizmoType;
     }
 }
+
+void UGizmoBaseComponent::CopyPropertiesTo(UObject* Dest, TMap<UObject*, UObject*>& OutMap)
+{
+    UStaticMeshComponent::CopyPropertiesTo(Dest, OutMap);
+    UGizmoBaseComponent* DestUGizmoComponent = Cast<UGizmoBaseComponent>(Dest);
+    if (DestUGizmoComponent)
+    {
+        DestUGizmoComponent->gizmoType = gizmoType;
+    }
+}

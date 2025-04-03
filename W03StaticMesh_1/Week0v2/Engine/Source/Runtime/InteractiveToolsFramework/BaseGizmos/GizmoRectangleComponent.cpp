@@ -29,3 +29,8 @@ void UGizmoRectangleComponent::CopyPropertiesFrom(UObject* Source, TMap<UObject*
 {
     Super::CopyPropertiesFrom(Source, DupMap);
 }
+
+void UGizmoRectangleComponent::CopyPropertiesTo(UObject* Source, TMap<UObject*, UObject*>& OutMap)
+{
+    UGizmoBaseComponent::CopyPropertiesTo(Source, OutMap);
+}

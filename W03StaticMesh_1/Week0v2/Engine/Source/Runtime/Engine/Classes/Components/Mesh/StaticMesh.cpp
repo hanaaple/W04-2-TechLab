@@ -73,3 +73,14 @@ void UStaticMesh::CopyPropertiesFrom(UObject* Source, TMap<UObject*, UObject*>& 
         materials = SourceUStaticMesh->materials;
     }
 }
+
+void UStaticMesh::CopyPropertiesTo(UObject* Dest, TMap<UObject*, UObject*>& DupMap)
+{
+    UObject::CopyPropertiesTo(Dest, DupMap);
+    UStaticMesh* DestUStaticMesh = Cast<UStaticMesh>(Dest);
+    if (DestUStaticMesh)
+    {
+        DestUStaticMesh->staticMeshRenderData = staticMeshRenderData;
+        materials = DestUStaticMesh->materials;
+    }
+}

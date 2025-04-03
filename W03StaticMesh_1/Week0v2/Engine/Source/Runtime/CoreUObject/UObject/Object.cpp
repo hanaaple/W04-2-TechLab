@@ -31,3 +31,8 @@ void UObject::CopyPropertiesFrom(UObject* Source, TMap<UObject*, UObject*>& DupM
     ClassPrivate = Source->ClassPrivate;
     //OuterPrivate = FObjectFactory::DuplicateObject(Source->OuterPrivate);
 }
+
+void UObject::CopyPropertiesTo(UObject* Dest, TMap<UObject*, UObject*>& DupMap)
+{
+    Dest->ClassPrivate = ClassPrivate;
+}

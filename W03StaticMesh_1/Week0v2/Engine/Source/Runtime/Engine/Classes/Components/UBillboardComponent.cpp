@@ -132,6 +132,24 @@ void UBillboardComponent::CopyPropertiesFrom(UObject* Source, TMap<UObject*, UOb
     
 }
 
+void UBillboardComponent::CopyPropertiesTo(UObject* Dest, TMap<UObject*, UObject*>& OutMap)
+{
+    UPrimitiveComponent::CopyPropertiesTo(Dest, OutMap);
+    UBillboardComponent* DestUBillboardComponent = Cast<UBillboardComponent>(Dest);
+    if (DestUBillboardComponent)
+    {
+        DestUBillboardComponent->vertexTextureBuffer = vertexTextureBuffer;
+        DestUBillboardComponent->indexTextureBuffer = indexTextureBuffer;
+        DestUBillboardComponent->numVertices = numVertices;
+        DestUBillboardComponent->numIndices = numIndices;
+        DestUBillboardComponent->finalIndexU = finalIndexU;
+        DestUBillboardComponent->finalIndexV = finalIndexV;
+        DestUBillboardComponent->Texture = Texture;
+
+        DestUBillboardComponent->m_parent = FObjectFactory::DuplicateObject(m_parent, m_parent->GetClass(), OutMap);
+    }
+}
+
 bool UBillboardComponent::CheckPickingOnNDC(const TArray<FVector>& checkQuad, float& hitDistance)
 {
 	bool result = false;

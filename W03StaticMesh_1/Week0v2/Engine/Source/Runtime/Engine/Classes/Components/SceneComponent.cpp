@@ -96,6 +96,29 @@ void USceneComponent::CopyPropertiesFrom(UObject* Source, TMap<UObject*, UObject
     }
 }
 
+void USceneComponent::CopyPropertiesTo(UObject* Dest, TMap<UObject*, UObject*>& DupMap)
+{
+    UActorComponent::CopyPropertiesTo(Dest, DupMap);
+    USceneComponent* DestUScenenComponent = Cast<USceneComponent>(Dest);
+    if (DestUScenenComponent)
+    {
+        DestUScenenComponent->RelativeLocation = RelativeLocation;
+        DestUScenenComponent->RelativeRotation = RelativeRotation;
+        DestUScenenComponent->RelativeScale3D = RelativeScale3D;
+        DestUScenenComponent->QuatRotation = QuatRotation;
+
+        if (AttachParent != nullptr)
+        {
+            DestUScenenComponent->AttachParent = FObjectFactory::DuplicateObject(AttachParent, AttachParent->GetClass(), DupMap);
+        }
+
+        for (const auto item : AttachChildren)
+        {
+            DestUScenenComponent->AttachChildren.Add(FObjectFactory::DuplicateObject(item, item->GetClass(), DupMap));
+        }
+    }
+}
+
 FVector USceneComponent::GetWorldRotation()
 {
 	if (AttachParent)
