@@ -61,7 +61,7 @@ public:
     void RemoveOwnedComponent(UActorComponent* Component);
 
     /** Actor가 가지고 있는 모든 컴포넌트를 가져옵니다. */
-    const TSet<UActorComponent*>& GetComponents() const { return OwnedComponents; }
+    const TArray<UActorComponent*>& GetComponents() const { return OwnedComponents; }
 
     template<typename T>
         requires std::derived_from<T, UActorComponent>
@@ -100,7 +100,7 @@ private:
     AActor* Owner = nullptr;
 
     /** 본인이 소유하고 있는 컴포넌트들의 정보 */
-    TSet<UActorComponent*> OwnedComponents;
+    TArray<UActorComponent*> OwnedComponents;
 
 
     /** 현재 Actor가 삭제 처리중인지 여부 */
@@ -118,7 +118,8 @@ public:
     void SetActorLabel(const FString& NewActorLabel);
 
 public:
-    UObject* Duplicate() override;
+    AActor* Duplicate();
+    UObject* Duplicate(FDuplicateContext& Context) override;
 private:
     /** 에디터상에 보이는 Actor의 이름 */
     FString ActorLabel;

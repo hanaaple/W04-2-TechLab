@@ -9,7 +9,12 @@
 
 UClass* UObject::StaticClass()
 {
-    static UClass ClassInfo{TEXT("UObject"), sizeof(UObject), alignof(UObject), nullptr};
+    static UClass ClassInfo{TEXT("UObject"), sizeof(UObject), alignof(UObject), nullptr, []() -> UObject*
+    {
+        void* RawMemory = FPlatformMemory::Malloc<EAT_Object>(sizeof(UObject));
+        ::new (RawMemory) UObject;
+        return static_cast<UObject*>(RawMemory);
+    } };
     return &ClassInfo;
 }
 
@@ -59,7 +64,20 @@ bool UObject::IsA(const UClass* SomeBase) const
 
 UObject* UObject::Duplicate()
 {
-    return FObjectFactory::DuplicateObject(this, GetClass());
+    FDuplicateContext Context;
+    return Duplicate(Context); 
+}
+
+UObject* UObject::Duplicate(FDuplicateContext& Context)
+{
+    if (Context.DuplicateMap.Contains(this))
+    {
+        return Context.DuplicateMap[this];
+    }
+    UObject* Obj = FObjectFactory::ConstructObject(this->GetClass());
+    Context.DuplicateMap.Add(this, Obj);
+    // 기본 멤버 복사 작업
+    return Obj;
 }
 
 FString UObject::GetName() const

@@ -94,30 +94,30 @@ void UTransformGizmo::Tick(float DeltaTime)
             SetActorRotation(FVector(0.0f, 0.0f, 0.0f));
     }
 }
-
-UObject* UTransformGizmo::Duplicate()
-{
-    UTransformGizmo* Duplicated = Cast<UTransformGizmo>(FObjectFactory::DuplicateObject(this, this->GetClass()));
-
-    Duplicated->ArrowArr.Empty();
-    for (const auto item : this->ArrowArr)
-    {
-        Duplicated->ArrowArr.Add(Cast<UStaticMeshComponent>( item->Duplicate()));
-    }
-
-    Duplicated->RectangleArr.Empty();
-    for (const auto item : this->RectangleArr)
-    {
-       Duplicated->RectangleArr.Add(Cast<UStaticMeshComponent>(item->Duplicate()));
-    }
-
-    Duplicated->CircleArr.Empty();
-    for (const auto item : this->CircleArr)
-    {
-        Duplicated->CircleArr.Add(Cast<UStaticMeshComponent>(item->Duplicate()));
-    }
-    
-
-
-    return Duplicated;
-}
+//
+// UObject* UTransformGizmo::Duplicate()
+// {
+//     UTransformGizmo* Duplicated = Cast<UTransformGizmo>(FObjectFactory::DuplicateObject(this, this->GetClass()));
+//
+//     Duplicated->ArrowArr.Empty();
+//     for (const auto item : this->ArrowArr)
+//     {
+//         Duplicated->ArrowArr.Add(Cast<UStaticMeshComponent>( item->Duplicate()));
+//     }
+//
+//     Duplicated->RectangleArr.Empty();
+//     for (const auto item : this->RectangleArr)
+//     {
+//        Duplicated->RectangleArr.Add(Cast<UStaticMeshComponent>(item->Duplicate()));
+//     }
+//
+//     Duplicated->CircleArr.Empty();
+//     for (const auto item : this->CircleArr)
+//     {
+//         Duplicated->CircleArr.Add(Cast<UStaticMeshComponent>(item->Duplicate()));
+//     }
+//     
+//
+//
+//     return Duplicated;
+// }

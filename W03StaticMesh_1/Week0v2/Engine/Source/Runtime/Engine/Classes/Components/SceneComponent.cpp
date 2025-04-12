@@ -70,28 +70,43 @@ void USceneComponent::AddScale(FVector _added)
 }
 
 
-UObject* USceneComponent::Duplicate()
+USceneComponent* USceneComponent::Duplicate()
 {
-    USceneComponent* duplicated = Cast<USceneComponent>(FObjectFactory::DuplicateObject(this, this->GetClass()));
-    duplicated->RelativeLocation = this->RelativeLocation;
-    duplicated->RelativeRotation = this->RelativeRotation;
-    duplicated->RelativeScale3D = this->RelativeScale3D;
-    duplicated->QuatRotation = this->QuatRotation;
+    FDuplicateContext Context;
+    return dynamic_cast<USceneComponent*>( Duplicate(Context));
+}
+
+UObject* USceneComponent::Duplicate(FDuplicateContext& Context)
+{
+    if (Context.DuplicateMap.Contains(this))
+    {
+        return Context.DuplicateMap[this];
+    }
+    
+    USceneComponent* DuplicatedObject = reinterpret_cast<USceneComponent*>(Super::Duplicate(Context));
+    Context.DuplicateMap.Add(this, DuplicatedObject);
+    
+    memcpy(reinterpret_cast<char*>(DuplicatedObject) + sizeof(Super),
+           reinterpret_cast<char*>(this) + sizeof(Super),
+           sizeof(USceneComponent) - sizeof(Super));
+    
+    DuplicatedObject->RelativeLocation = this->RelativeLocation;
+    DuplicatedObject->RelativeRotation = this->RelativeRotation;
+    DuplicatedObject->RelativeScale3D = this->RelativeScale3D;
+    DuplicatedObject->QuatRotation = this->QuatRotation;
 
     if (this->AttachParent != nullptr)
     {
-        duplicated->AttachParent = Cast<USceneComponent>(this->AttachParent->Duplicate());
+        DuplicatedObject->AttachParent = Cast<USceneComponent>(this->AttachParent->Duplicate(Context));
     }
 
-    duplicated->AttachChildren.Empty();
-    for (const auto item : AttachChildren)
+    memset(&DuplicatedObject->AttachChildren, 0, sizeof(DuplicatedObject->AttachChildren));
+    for (const auto item : this->AttachChildren)
     {
-        duplicated->AttachChildren.Add(Cast<USceneComponent>(item->Duplicate()));
+        DuplicatedObject->AttachChildren.Add(Cast<USceneComponent>(item->Duplicate(Context)));
     }
-    
-    UActorComponent::Duplicate();
 
-    return duplicated;
+    return DuplicatedObject;
 }
 
 FVector USceneComponent::GetWorldRotation()

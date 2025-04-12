@@ -10,7 +10,9 @@
 class UClass : public UObject
 {
 public:
-    UClass(const char* InClassName, uint32 InClassSize, uint32 InAlignment, UClass* InSuperClass);
+    using ObjectCreator = UObject*(*)();
+    
+    UClass(const char* InClassName, uint32 InClassSize, uint32 InAlignment, UClass* InSuperClass, ObjectCreator InCreator);
     virtual ~UClass() override = default;
     FName GetDefaultObjectName() const;
 
@@ -51,6 +53,11 @@ public:
         }
         return ClassDefaultObject;
     }
+    
+    UObject* CreateObject() const
+    {
+        return ClassConstructor();
+    }
 
     static TSet<UClass*>& GetClassRegistry() {
         static TSet<UClass*> Registry;
@@ -76,5 +83,6 @@ private:
 
     UClass* SuperClass = nullptr;
 
+    ObjectCreator ClassConstructor;
     UObject* ClassDefaultObject = nullptr;
 };

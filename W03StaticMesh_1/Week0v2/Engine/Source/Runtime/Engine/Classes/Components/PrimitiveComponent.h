@@ -19,7 +19,9 @@ public:
     );
     FBoundingBox AABB;
 
-    UObject* Duplicate() override;
+    UPrimitiveComponent* Duplicate();
+
+    UObject* Duplicate(FDuplicateContext& Context) override;
 private:
     FString m_Type;
 

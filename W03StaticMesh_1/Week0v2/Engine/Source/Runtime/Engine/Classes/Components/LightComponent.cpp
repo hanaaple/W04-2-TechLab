@@ -32,16 +32,16 @@ void ULightComponentBase::SetRadius(float r)
     radius = r;
 }
 
-UObject* ULightComponentBase::Duplicate()
-{
-    ULightComponentBase* duplicate = Cast<ULightComponentBase>(FObjectFactory::DuplicateObject(this, this->GetClass()));
-    duplicate->color = this->color;
-    duplicate->radius = this->radius;
-    duplicate->AABB = this->AABB;
-
-
-    return duplicate;
-}
+// UObject* ULightComponentBase::Duplicate()
+// {
+//     ULightComponentBase* duplicate = Cast<ULightComponentBase>(FObjectFactory::DuplicateObject(this, this->GetClass()));
+//     duplicate->color = this->color;
+//     duplicate->radius = this->radius;
+//     duplicate->AABB = this->AABB;
+//
+//
+//     return duplicate;
+// }
 
 void ULightComponentBase::InitializeLight()
 {

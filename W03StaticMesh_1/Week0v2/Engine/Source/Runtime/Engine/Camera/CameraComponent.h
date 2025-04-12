@@ -21,7 +21,6 @@ public:
 
     bool IsCameraMode() const { return bRightMouseDown; }
 
-    UObject* Duplicate() override;
 private:
     float mouseSpeed = 0.25f;
     POINT lastMousePos;

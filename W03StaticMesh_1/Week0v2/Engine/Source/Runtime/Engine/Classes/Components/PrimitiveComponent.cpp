@@ -100,12 +100,23 @@ bool UPrimitiveComponent::IntersectRayTriangle(const FVector& rayOrigin, const F
     return false;
 }
 
-UObject* UPrimitiveComponent::Duplicate()
+UPrimitiveComponent* UPrimitiveComponent::Duplicate()
 {
-    UPrimitiveComponent* dup = Cast<UPrimitiveComponent>(FObjectFactory::DuplicateObject(this, this->GetClass()));
-    dup->AABB = this->AABB;
-    dup->m_Type = this->m_Type;
+    FDuplicateContext Context;
+    return dynamic_cast<UPrimitiveComponent*>( Duplicate(Context));
+}
 
-
-    return dup;
+UObject* UPrimitiveComponent::Duplicate(FDuplicateContext& Context)
+{
+    if (Context.DuplicateMap.Contains(this))
+    {
+        return Context.DuplicateMap[this];
+    }
+    
+    UPrimitiveComponent* DuplicatedObject = reinterpret_cast<UPrimitiveComponent*>(Super::Duplicate(Context));
+    memcpy(reinterpret_cast<char*>(DuplicatedObject) + sizeof(Super), reinterpret_cast<char*>(this) + sizeof(Super), sizeof(UPrimitiveComponent) - sizeof(Super));
+    DuplicatedObject->AABB = this->AABB;
+    DuplicatedObject->m_Type = this->m_Type;
+    
+    return DuplicatedObject;
 }

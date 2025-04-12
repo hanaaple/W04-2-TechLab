@@ -20,7 +20,7 @@ public:
     ID3D11Buffer* vertexTextBuffer;
     TArray<FVertexTexture> vertexTextureArr;
     uint32 numTextVertices;
-    UObject* Duplicate() override;
+ 
 protected:
     FWString text;
 

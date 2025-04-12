@@ -117,20 +117,20 @@ void UCameraComponent::RotatePitch(float _Value)
 	if (RelativeRotation.y > 90.0f)
 		RelativeRotation.y = 90.0f;
 }
-
-UObject* UCameraComponent::Duplicate()
-{
-    UCameraComponent* Duplicate = Cast<UCameraComponent>(FObjectFactory::DuplicateObject(this, this->GetClass()));
-    Duplicate->mouseSpeed = this->mouseSpeed;
-    Duplicate->lastMousePos = this->lastMousePos;
-    Duplicate->bRightMouseDown = this->bRightMouseDown;
-    Duplicate->zAxis = this-> zAxis;
-    Duplicate->xAxis =  this->xAxis;
-    Duplicate->yAxis =  this->yAxis;
-    Duplicate->FOV = this->FOV;
-    Duplicate->nearClip = this->nearClip;
-    Duplicate->farClip = this->farClip;
-    
-
-    return Duplicate;
-}
+//
+// UObject* UCameraComponent::Duplicate()
+// {
+//     UCameraComponent* Duplicate = Cast<UCameraComponent>(FObjectFactory::DuplicateObject(this, this->GetClass()));
+//     Duplicate->mouseSpeed = this->mouseSpeed;
+//     Duplicate->lastMousePos = this->lastMousePos;
+//     Duplicate->bRightMouseDown = this->bRightMouseDown;
+//     Duplicate->zAxis = this-> zAxis;
+//     Duplicate->xAxis =  this->xAxis;
+//     Duplicate->yAxis =  this->yAxis;
+//     Duplicate->FOV = this->FOV;
+//     Duplicate->nearClip = this->nearClip;
+//     Duplicate->farClip = this->farClip;
+//     
+//
+//     return Duplicate;
+// }

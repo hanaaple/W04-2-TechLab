@@ -25,9 +25,9 @@ void UGizmoRectangleComponent::TickComponent(float DeltaTime)
     Super::TickComponent(DeltaTime);
 }
 
-UObject* UGizmoRectangleComponent::Duplicate()
-{
-    UGizmoRectangleComponent* dup = Cast<UGizmoRectangleComponent>(FObjectFactory::DuplicateObject(this, this->GetClass()));
-
-    return dup;
-}
+// UObject* UGizmoRectangleComponent::Duplicate()
+// {
+//     UGizmoRectangleComponent* dup = Cast<UGizmoRectangleComponent>(FObjectFactory::DuplicateObject(this, this->GetClass()));
+//
+//     return dup;
+// }

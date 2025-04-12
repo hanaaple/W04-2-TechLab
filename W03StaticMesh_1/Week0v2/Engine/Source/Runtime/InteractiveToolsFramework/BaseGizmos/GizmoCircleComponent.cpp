@@ -26,12 +26,12 @@ bool UGizmoCircleComponent::IntersectsRay(const FVector& rayOrigin, const FVecto
 
     return (inner * inner < intersectionToDiscCenterSquared && intersectionToDiscCenterSquared < 1);
 }
-
-UObject* UGizmoCircleComponent::Duplicate()
-{
-    UGizmoCircleComponent* dup = Cast<UGizmoCircleComponent>(FObjectFactory::DuplicateObject(this, this->GetClass()));
-    dup->inner = this->inner;
-
-
-    return dup;
-}
+//
+// UObject* UGizmoCircleComponent::Duplicate()
+// {
+//     UGizmoCircleComponent* dup = Cast<UGizmoCircleComponent>(FObjectFactory::DuplicateObject(this, this->GetClass()));
+//     dup->inner = this->inner;
+//
+//
+//     return dup;
+// }

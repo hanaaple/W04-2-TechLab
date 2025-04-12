@@ -29,11 +29,11 @@ void USkySphereComponent::TickComponent(float DeltaTime)
     Super::TickComponent(DeltaTime);
 }
 
-UObject* USkySphereComponent::Duplicate()
-{
-    USkySphereComponent* dup = Cast<USkySphereComponent>(FObjectFactory::DuplicateObject(this, this->GetClass()));
-    dup->UOffset = this->UOffset;
-    dup->VOffset = this->VOffset;
-
-    return dup;
-}
+// UObject* USkySphereComponent::Duplicate()
+// {
+//     USkySphereComponent* dup = Cast<USkySphereComponent>(FObjectFactory::DuplicateObject(this, this->GetClass()));
+//     dup->UOffset = this->UOffset;
+//     dup->VOffset = this->VOffset;
+//
+//     return dup;
+// }

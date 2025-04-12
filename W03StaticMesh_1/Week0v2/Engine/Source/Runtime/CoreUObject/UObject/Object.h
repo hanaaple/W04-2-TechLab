@@ -1,5 +1,6 @@
 #pragma once
 #include "NameTypes.h"
+#include "Container/Map.h"
 
 class FEditorEngine;
 extern FEditorEngine GEngineLoop;
@@ -7,6 +8,12 @@ extern FEditorEngine GEngineLoop;
 class UClass;
 class UWorld;
 class FVector4;
+
+struct FDuplicateContext
+{
+    // UObject 포인터를 키로 하여, 이미 복제된 UObject를 저장합니다.
+    TMap<const class UObject*, class UObject*> DuplicateMap;
+};
 
 class UObject
 {
@@ -54,7 +61,9 @@ public:
 
     /** this가 SomeBase인지, SomeBase의 자식 클래스인지 확인합니다. */
     bool IsA(const UClass* SomeBase) const;
-    virtual UObject* Duplicate();
+    UObject* Duplicate();
+
+    virtual UObject* Duplicate(FDuplicateContext& Context);
 
     template <typename T>
         requires std::derived_from<T, UObject>

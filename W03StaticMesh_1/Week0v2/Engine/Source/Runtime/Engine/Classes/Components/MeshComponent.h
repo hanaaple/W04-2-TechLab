@@ -19,7 +19,8 @@ public:
     virtual void GetUsedMaterials(TArray<UMaterial*>& Out) const;
 #pragma endregion
 
-    UObject* Duplicate() override;
+    UMeshComponent* Duplicate();
+    UObject* Duplicate(FDuplicateContext& Context) override;
 protected:
     TArray<UMaterial*> OverrideMaterials;
 public:

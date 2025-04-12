@@ -25,6 +25,22 @@ public:
          return Obj;
      }
 
+    static UObject* ConstructObject(UClass* InClass)
+    {
+        const uint32 id = UEngineStatics::GenUUID();
+        FString Name = InClass->GetName() + "_" + std::to_string(id);
+
+         UObject* Obj = InClass->CreateObject();
+
+        Obj->ClassPrivate = InClass;
+        Obj->NamePrivate = Name;
+        Obj->UUID = id;
+
+        GUObjectArray.AddObject(Obj);
+
+        return Obj;
+    }
+
     //template<typename T>
     //    requires std::derived_from<T, UObject>
     //static T* ConstructObject(FName InName = FName(TEXT("")), UObject* InOuter = nullptr)
@@ -79,9 +95,14 @@ public:
     }
     
     // UObject 포인터를 키, 복제된 UObject 포인터를 값으로 저장합니다.
-    using DuplicationMap = TMap<UObject*, UObject*>;
+    using DuplicationMap = TMap<uint32, UObject*>;
+
+    static void Duplicate(void* src, void* dst)
+    {
+        
+    }
     
-    static UObject* DuplicateObject(UObject* InDuplicated, const UClass* InClass = nullptr)
+    static UObject* DuplicateObject(UObject* InDuplicated, const UClass* InClass)
     {
         DuplicationMap DupMap;
         return DuplicateObject(InDuplicated, InClass, DupMap);
@@ -93,7 +114,7 @@ public:
              return nullptr;
 
          // 이미 복제된 객체가 있는지 확인
-         auto Found = DupMap.Find(InDuplicated);
+         auto Found = DupMap.Find(InDuplicated->GetUUID());
          if (Found != nullptr)
          {
              return *Found;
@@ -107,7 +128,7 @@ public:
         memcpy(RawMemory, InDuplicated, InClass->GetClassSize());
         
          // 복제 맵에 등록하여 재귀 호출 시 순환 참조를 방지
-         DupMap[InDuplicated] = ObjectPtr;
+         DupMap[InDuplicated->GetUUID()] = ObjectPtr;
 
          // 객체의 속성 복사 (DupMap을 전달)
          ObjectPtr->UUID = id;

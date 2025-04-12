@@ -976,7 +976,7 @@ void FRenderer::PrepareRender()
         if (UStaticMeshComponent* pStaticMeshComp = Cast<UStaticMeshComponent>(iter))
         {
             if (!Cast<UGizmoBaseComponent>(iter))
-                StaticMeshObjs.Add(pStaticMeshComp);
+                StaticMeshObjs.Add(reinterpret_cast<UStaticMeshComponent*>(iter));
         }
         if (UGizmoBaseComponent* pGizmoComp = Cast<UGizmoBaseComponent>(iter))
         {

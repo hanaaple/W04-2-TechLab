@@ -17,7 +17,6 @@ public:
     float GetRadius() const;
     void SetRadius(float r);
 
-    UObject* Duplicate() override;
 public:
     FVector4 color;
     float radius;

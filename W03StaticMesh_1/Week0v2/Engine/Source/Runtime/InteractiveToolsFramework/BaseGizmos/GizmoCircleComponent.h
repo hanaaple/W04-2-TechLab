@@ -13,7 +13,6 @@ public:
     float GetInnerRadius() const { return inner; }
     void SetInnerRadius(float value) { inner = value; }
 
-    UObject* Duplicate() override;
 private:
     float inner = 1.0f;
 };

@@ -76,20 +76,20 @@ void UParticleSubUVComp::SetRowColumnCount(int _cellsPerRow, int _cellsPerColumn
 	CreateSubUVVertexBuffer();
 }
 
-UObject* UParticleSubUVComp::Duplicate()
-{
-    UParticleSubUVComp* dup = Cast<UParticleSubUVComp>(FObjectFactory::DuplicateObject(this, this->GetClass()));
-    dup->vertexSubUVBuffer = vertexSubUVBuffer;
-    dup->numTextVertices = numTextVertices;
-    dup->bIsLoop = bIsLoop;
-    dup->indexU = indexU;
-    dup->indexV = indexV;
-    dup->second = second;
-    dup->CellsPerColumn = CellsPerColumn;
-    dup->CellsPerRow = CellsPerRow;
-
-    return dup;
-}
+// UObject* UParticleSubUVComp::Duplicate()
+// {
+//     UParticleSubUVComp* dup = Cast<UParticleSubUVComp>(FObjectFactory::DuplicateObject(this, this->GetClass()));
+//     dup->vertexSubUVBuffer = vertexSubUVBuffer;
+//     dup->numTextVertices = numTextVertices;
+//     dup->bIsLoop = bIsLoop;
+//     dup->indexU = indexU;
+//     dup->indexV = indexV;
+//     dup->second = second;
+//     dup->CellsPerColumn = CellsPerColumn;
+//     dup->CellsPerRow = CellsPerRow;
+//
+//     return dup;
+// }
 
 void UParticleSubUVComp::UpdateVertexBuffer(const TArray<FVertexTexture>& vertices)
 {

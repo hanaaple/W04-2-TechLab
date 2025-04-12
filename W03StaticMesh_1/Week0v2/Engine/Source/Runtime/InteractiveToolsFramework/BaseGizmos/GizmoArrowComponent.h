@@ -19,5 +19,4 @@ private:
 public:
     ARROW_DIR GetDir() const { return Dir; }
     void SetDir(ARROW_DIR _Dir) { Dir = _Dir; }
-    UObject* Duplicate() override;
 };

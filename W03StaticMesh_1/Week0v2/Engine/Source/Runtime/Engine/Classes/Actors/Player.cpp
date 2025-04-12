@@ -504,17 +504,17 @@ void AEditorPlayer::ControlScale(USceneComponent* pObj, UGizmoBaseComponent* Giz
     }
 }
 
-UObject* AEditorPlayer::Duplicate()
-{
-    AEditorPlayer* DuplicatedAEditorPlayer = Cast<AEditorPlayer>( FObjectFactory::DuplicateObject(this, this->GetClass()));
-
-    DuplicatedAEditorPlayer->bLeftMouseDown = this->bLeftMouseDown;
-    DuplicatedAEditorPlayer->bRightMouseDown = this->bRightMouseDown;
-    DuplicatedAEditorPlayer->m_LastMousePos = this->m_LastMousePos;
-    DuplicatedAEditorPlayer->cMode = this->cMode;
-    DuplicatedAEditorPlayer->cdMode = this->cdMode;
-
-
-    return DuplicatedAEditorPlayer;
-}
+// UObject* AEditorPlayer::Duplicate()
+// {
+//     AEditorPlayer* DuplicatedAEditorPlayer = Cast<AEditorPlayer>( FObjectFactory::DuplicateObject(this, this->GetClass()));
+//
+//     DuplicatedAEditorPlayer->bLeftMouseDown = this->bLeftMouseDown;
+//     DuplicatedAEditorPlayer->bRightMouseDown = this->bRightMouseDown;
+//     DuplicatedAEditorPlayer->m_LastMousePos = this->m_LastMousePos;
+//     DuplicatedAEditorPlayer->cMode = this->cMode;
+//     DuplicatedAEditorPlayer->cdMode = this->cdMode;
+//
+//
+//     return DuplicatedAEditorPlayer;
+// }
 

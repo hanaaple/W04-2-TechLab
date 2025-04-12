@@ -32,5 +32,4 @@ public:
     GizmoType GetGizmoType() const { return gizmoType; }
     void SetGizmoType(GizmoType _gizmoType) { gizmoType = _gizmoType; }
 
-    UObject* Duplicate() override;
 };

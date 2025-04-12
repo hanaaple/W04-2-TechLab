@@ -113,23 +113,23 @@ void UBillboardComponent::CreateQuadTextureVertexBuffer()
 	}
 }
 
-UObject* UBillboardComponent::Duplicate()
-{
-    UBillboardComponent* dup = Cast<UBillboardComponent>(FObjectFactory::DuplicateObject(this, this->GetClass()));
-    dup->vertexTextureBuffer = vertexTextureBuffer;
-    dup->indexTextureBuffer = indexTextureBuffer;
-    dup->numVertices = numVertices;
-    dup->numIndices = numIndices;
-    dup->finalIndexU = finalIndexU;
-    dup->finalIndexV = finalIndexV;
-    dup->Texture = Texture;
-
-    m_parent = Cast<USceneComponent>(this->m_parent->Duplicate());
-    
-
-
-    return dup;
-}
+// UObject* UBillboardComponent::Duplicate()
+// {
+//     UBillboardComponent* dup = Cast<UBillboardComponent>(FObjectFactory::DuplicateObject(this, this->GetClass()));
+//     dup->vertexTextureBuffer = vertexTextureBuffer;
+//     dup->indexTextureBuffer = indexTextureBuffer;
+//     dup->numVertices = numVertices;
+//     dup->numIndices = numIndices;
+//     dup->finalIndexU = finalIndexU;
+//     dup->finalIndexV = finalIndexV;
+//     dup->Texture = Texture;
+//
+//     m_parent = Cast<USceneComponent>(this->m_parent->Duplicate());
+//     
+//
+//
+//     return dup;
+// }
 
 bool UBillboardComponent::CheckPickingOnNDC(const TArray<FVector>& checkQuad, float& hitDistance)
 {

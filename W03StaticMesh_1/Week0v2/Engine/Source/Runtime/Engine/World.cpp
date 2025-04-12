@@ -25,7 +25,8 @@ void UWorld::Initialize(EWorldType::Type worldType)
     skySphere->SetStaticMesh(FManagerOBJ::GetStaticMesh(L"Dodge.obj"));
     //skySphere->GetStaticMesh()->GetMaterials()[0]->Material->SetDiffuse(FVector((float)32/255, (float)171/255, (float)191/255));
 
-    AActor* dupActor = Cast<AActor>(SpawnedActor->Duplicate());
+    AActor* dupActor = SpawnedActor->Duplicate();
+    Level->Actors.Add(dupActor);
     
     WorldType = worldType;
 }
@@ -108,7 +109,7 @@ void UWorld::Release()
 	for (AActor* Actor : Level->Actors)
 	{
 		Actor->EndPlay(EEndPlayReason::WorldTransition);
-        TSet<UActorComponent*> Components = Actor->GetComponents();
+        TArray<UActorComponent*> Components = Actor->GetComponents();
 	    for (UActorComponent* Component : Components)
 	    {
 	        GUObjectArray.MarkRemoveObject(Component);
@@ -143,7 +144,7 @@ bool UWorld::DestroyActor(AActor* ThisActor)
         ThisActor->SetOwner(nullptr);
     }
 
-    TSet<UActorComponent*> Components = ThisActor->GetComponents();
+    TArray<UActorComponent*> Components = ThisActor->GetComponents();
     for (UActorComponent* Component : Components)
     {
         Component->DestroyComponent();
@@ -157,44 +158,44 @@ bool UWorld::DestroyActor(AActor* ThisActor)
     return true;
 }
 
-UObject* UWorld::Duplicate()
-{
-     UWorld* dup = Cast<UWorld>(FObjectFactory::DuplicateObject(this, this->GetClass()));
-    
-    dup->Level = Cast<ULevel>(Level->Duplicate());
-    
-     dup->PendingBeginPlayActors.Empty();
-     for (const auto item : this->PendingBeginPlayActors)
-     {
-         dup->PendingBeginPlayActors.Add(Cast<AActor>(item->Duplicate()));
-     }
-
-    dup->SelectedActor = nullptr;
-    // if (this->SelectedActor != nullptr)
-    //      dup->SelectedActor = Cast<AActor>(this->SelectedActor->Duplicate());
-
-    dup->SelectedComponent = nullptr;
-    // if (this->SelectedComponent != nullptr)
-    //     dup->SelectedComponent = Cast<UActorComponent>(this->SelectedComponent->Duplicate());
-
-    // if (this->pickingGizmo != nullptr)
-    //      dup->pickingGizmo = Cast<USceneComponent>(this->pickingGizmo->Duplicate());
-    dup->pickingGizmo = nullptr;
-    
-    if (this->camera != nullptr)
-        dup->camera = Cast<UCameraComponent>(this->camera->Duplicate());
-
-    dup->EditorPlayer = nullptr;
-    // if (this->EditorPlayer != nullptr)
-    //     dup->EditorPlayer = Cast<AEditorPlayer>(this->EditorPlayer->Duplicate());
-
-    dup->worldGizmo = nullptr;
-    // if (this->worldGizmo != nullptr)
-    //      dup->worldGizmo = Cast<UObject>(this->worldGizmo->Duplicate());
-    
-    
-    return dup;
-}
+// UObject* UWorld::Duplicate()
+// {
+//      UWorld* dup = Cast<UWorld>(FObjectFactory::DuplicateObject(this, this->GetClass()));
+//     
+//     dup->Level = Cast<ULevel>(Level->Duplicate());
+//     
+//      dup->PendingBeginPlayActors.Empty();
+//      for (const auto item : this->PendingBeginPlayActors)
+//      {
+//          dup->PendingBeginPlayActors.Add(Cast<AActor>(item->Duplicate()));
+//      }
+//
+//     dup->SelectedActor = nullptr;
+//     // if (this->SelectedActor != nullptr)
+//     //      dup->SelectedActor = Cast<AActor>(this->SelectedActor->Duplicate());
+//
+//     dup->SelectedComponent = nullptr;
+//     // if (this->SelectedComponent != nullptr)
+//     //     dup->SelectedComponent = Cast<UActorComponent>(this->SelectedComponent->Duplicate());
+//
+//     // if (this->pickingGizmo != nullptr)
+//     //      dup->pickingGizmo = Cast<USceneComponent>(this->pickingGizmo->Duplicate());
+//     dup->pickingGizmo = nullptr;
+//     
+//     if (this->camera != nullptr)
+//         dup->camera = Cast<UCameraComponent>(this->camera->Duplicate());
+//
+//     dup->EditorPlayer = nullptr;
+//     // if (this->EditorPlayer != nullptr)
+//     //     dup->EditorPlayer = Cast<AEditorPlayer>(this->EditorPlayer->Duplicate());
+//
+//     dup->worldGizmo = nullptr;
+//     // if (this->worldGizmo != nullptr)
+//     //      dup->worldGizmo = Cast<UObject>(this->worldGizmo->Duplicate());
+//     
+//     
+//     return dup;
+// }
 
 void UWorld::SetPickingGizmo(UObject* Object)
 {

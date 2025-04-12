@@ -35,7 +35,8 @@ public:
         }
     }
 
-    UObject* Duplicate() override;
+    UStaticMeshComponent* Duplicate();
+    UObject* Duplicate(FDuplicateContext& Context) override;
 protected:
     UStaticMesh* staticMesh = nullptr;
     int selectedSubMeshIndex = -1;

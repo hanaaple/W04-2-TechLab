@@ -26,7 +26,8 @@ public:
         materialInfo.bTransparent = (TransparencyIn < 1.0f);
     }
 
-    UObject* Duplicate() override;
+    UMaterial* Duplicate();
+    UObject* Duplicate(FDuplicateContext& Context) override;
 private:
     FObjMaterialInfo materialInfo;
 };

@@ -63,7 +63,7 @@ void AActor::RemoveOwnedComponent(UActorComponent* Component)
 
 void AActor::InitializeComponents()
 {
-    TSet<UActorComponent*> Components = GetComponents();
+    TArray<UActorComponent*> Components = GetComponents();
     for (UActorComponent* ActorComp : Components)
     {
         if (ActorComp->bAutoActive && !ActorComp->IsActive())
@@ -80,7 +80,7 @@ void AActor::InitializeComponents()
 
 void AActor::UninitializeComponents()
 {
-    TSet<UActorComponent*> Components = GetComponents();
+    TArray<UActorComponent*> Components = GetComponents();
     for (UActorComponent* ActorComp : Components)
     {
         if (ActorComp->HasBeenInitialized())
@@ -136,32 +136,56 @@ bool AActor::SetActorScale(const FVector& NewScale)
     return false;
 }
 
-UObject* AActor::Duplicate()
+AActor* AActor::Duplicate()
 {
-    AActor* DuplicatedActor = Cast<AActor>( FObjectFactory::DuplicateObject(this, this->GetClass()));
+    FDuplicateContext Context;
+    return Cast<AActor>( Duplicate(Context));
+}
+
+UObject* AActor::Duplicate(FDuplicateContext& Context)
+{
+    if (Context.DuplicateMap.Contains(this))
+    {
+        return Context.DuplicateMap[this];
+    }
+    
+    // Super::Duplicate(Context)로 UObject의 Duplicate를 호출합니다.
+    AActor* DuplicatedObject = reinterpret_cast<AActor*>(Super::Duplicate(Context));
+    Context.DuplicateMap.Add(this, DuplicatedObject);
+
+    // UObject 부분 이후(즉, Super 부분)부터 AActor에 추가된 멤버들을 복사합니다.
+    memcpy(reinterpret_cast<char*>(DuplicatedObject) + sizeof(Super),
+           reinterpret_cast<char*>(this) + sizeof(Super),
+           sizeof(AActor) - sizeof(Super));
+
     if (this->Owner != nullptr)
     {
-        DuplicatedActor->Owner = Cast<AActor>(FObjectFactory::DuplicateObject(this->Owner, this->Owner->GetClass()));
+        // 소유자가 있다면, 소유자도 컨텍스트를 이용해 복제합니다.
+        DuplicatedObject->Owner = reinterpret_cast<AActor*>(this->Owner->Duplicate(Context));
     }
-    DuplicatedActor->bActorIsBeingDestroyed = this->bActorIsBeingDestroyed;
+    DuplicatedObject->bActorIsBeingDestroyed = this->bActorIsBeingDestroyed;
+
+    // OwnedComponents 메모리 초기화
+    memset(&DuplicatedObject->OwnedComponents, 0, sizeof(DuplicatedObject->OwnedComponents));
 
     if (this->RootComponent != nullptr)
     {
-        DuplicatedActor->RootComponent = Cast<USceneComponent>(this->RootComponent->Duplicate());
-        DuplicatedActor->DuplicateComponent(DuplicatedActor->RootComponent);
+        DuplicatedObject->RootComponent = reinterpret_cast<USceneComponent*>(this->RootComponent->Duplicate(Context));
+        DuplicatedObject->OwnedComponents.Add(DuplicatedObject->RootComponent);
+        DuplicatedObject->RootComponent->Owner = DuplicatedObject;
     }
+    
+    // 소유한 컴포넌트들에 대해 복제를 수행 (RootComponent는 이미 처리했으므로 건너뜁니다)
     for (const auto comp : this->OwnedComponents)
     {
         if (this->RootComponent == comp)
         {
             continue;
         }
-        const auto CopiedComp = Cast<UActorComponent> (comp->Duplicate());
-        DuplicatedActor->DuplicateComponent(CopiedComp);
+        const auto CopiedComp = reinterpret_cast<UActorComponent*>(comp->Duplicate(Context));
+        DuplicatedObject->DuplicateComponent(CopiedComp);
     }
-    DuplicatedActor->ActorLabel = this->ActorLabel;
     
-
-
-    return DuplicatedActor;
+    DuplicatedObject->ActorLabel = this->ActorLabel;
+    return DuplicatedObject;
 }

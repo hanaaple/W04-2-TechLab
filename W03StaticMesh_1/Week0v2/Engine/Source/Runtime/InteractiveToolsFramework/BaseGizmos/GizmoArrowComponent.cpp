@@ -26,13 +26,13 @@ void UGizmoArrowComponent::TickComponent(float DeltaTime)
 
 }
 
-UObject* UGizmoArrowComponent::Duplicate()
-{
-    UGizmoArrowComponent* dup = Cast<UGizmoArrowComponent>(FObjectFactory::DuplicateObject(this, this->GetClass()));
-    dup->Dir = this->Dir;
-
-    return dup;
-}
+// UObject* UGizmoArrowComponent::Duplicate()
+// {
+//     UGizmoArrowComponent* dup = Cast<UGizmoArrowComponent>(FObjectFactory::DuplicateObject(this, this->GetClass()));
+//     dup->Dir = this->Dir;
+//
+//     return dup;
+// }
 // void UGizmoArrowComponent::Render()
 // {
 // #pragma region GizmoDepth

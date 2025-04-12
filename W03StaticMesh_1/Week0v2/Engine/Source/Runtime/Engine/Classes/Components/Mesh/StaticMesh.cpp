@@ -64,11 +64,23 @@ void UStaticMesh::SetData(OBJ::FStaticMeshRenderData* renderData)
     }
 }
 
-UObject* UStaticMesh::Duplicate()
+UStaticMesh* UStaticMesh::Duplicate()
 {
-    UStaticMesh* dup = Cast<UStaticMesh>(FObjectFactory::DuplicateObject(this, this->GetClass()));
-    dup->staticMeshRenderData = this->staticMeshRenderData;
-    dup->materials = this->materials;
+    FDuplicateContext context;
+    return dynamic_cast<UStaticMesh*>( Duplicate(context));
+}
+
+UObject* UStaticMesh::Duplicate(FDuplicateContext& Context)
+{
+    if (Context.DuplicateMap.Find(this))
+    {
+        return Context.DuplicateMap[this];
+    }
+    
+    UStaticMesh* DuplicatedObject = reinterpret_cast<UStaticMesh*>(UObject::Duplicate(Context));
+    memcpy(reinterpret_cast<char*>(DuplicatedObject) + sizeof(Super), reinterpret_cast<char*>(this) + sizeof(Super), sizeof(UStaticMesh) - sizeof(Super));
+    DuplicatedObject->staticMeshRenderData = this->staticMeshRenderData;
+    DuplicatedObject->materials = this->materials;
  
-    return dup;
+    return DuplicatedObject;
 }

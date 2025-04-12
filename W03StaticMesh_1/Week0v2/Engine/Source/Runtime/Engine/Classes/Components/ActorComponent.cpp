@@ -37,22 +37,38 @@ void UActorComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
     bHasBegunPlay = false;
 }
 
-UObject* UActorComponent::Duplicate()
+UActorComponent* UActorComponent::Duplicate()
 {
-    UActorComponent* duplicated = Cast<UActorComponent>(FObjectFactory::DuplicateObject(this, this->GetClass()));
+    FDuplicateContext Context;
+    return dynamic_cast<UActorComponent*>( Duplicate(Context));
+}
+
+UObject* UActorComponent::Duplicate(FDuplicateContext& Context)
+{
+    if (Context.DuplicateMap.Contains(this))
+    {
+        return Context.DuplicateMap[this];
+    }
+    
+    UActorComponent* DuplicatedObject = reinterpret_cast<UActorComponent*>(Super::Duplicate(Context));
+    Context.DuplicateMap.Add(this, DuplicatedObject);
+    
+    memcpy(reinterpret_cast<char*>(DuplicatedObject) + sizeof(Super),
+           reinterpret_cast<char*>(this) + sizeof(Super),
+           sizeof(UActorComponent) - sizeof(Super));    
+    
     if (this->Owner)
     {
-        duplicated->Owner = Cast<AActor>(this->Owner->Duplicate());
+        DuplicatedObject->Owner = Cast<AActor>(this->Owner->Duplicate(Context));
     }
 
-    duplicated->bHasBeenInitialized = this->bHasBeenInitialized;
-    duplicated->bHasBegunPlay = this->bHasBegunPlay;
-    duplicated->bIsBeingDestroyed = this->bIsBeingDestroyed;
-    duplicated->bIsActive = this->bIsActive;
-    duplicated->bAutoActive = this->bAutoActive;
+    DuplicatedObject->bHasBeenInitialized = this->bHasBeenInitialized;
+    DuplicatedObject->bHasBegunPlay = this->bHasBegunPlay;
+    DuplicatedObject->bIsBeingDestroyed = this->bIsBeingDestroyed;
+    DuplicatedObject->bIsActive = this->bIsActive;
+    DuplicatedObject->bAutoActive = this->bAutoActive;
 
-
-    return duplicated;
+    return DuplicatedObject;
 }
 
 void UActorComponent::DestroyComponent()

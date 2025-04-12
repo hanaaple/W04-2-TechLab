@@ -8,10 +8,10 @@ AStaticMeshActor::AStaticMeshActor()
     RootComponent = StaticMeshComponent;
 }
 
-UObject* AStaticMeshActor::Duplicate()
-{
-    AStaticMeshActor* duplicated = Cast<AStaticMeshActor>(FObjectFactory::DuplicateObject(this, this->GetClass()));
-    duplicated->StaticMeshComponent = Cast<UStaticMeshComponent>(this->StaticMeshComponent->Duplicate());
- 
-    return duplicated;
-}
+// UObject* AStaticMeshActor::Duplicate()
+// {
+//     AStaticMeshActor* duplicated = Cast<AStaticMeshActor>(FObjectFactory::DuplicateObject(this, this->GetClass()));
+//     duplicated->StaticMeshComponent = Cast<UStaticMeshComponent>(this->StaticMeshComponent->Duplicate());
+//  
+//     return duplicated;
+// }

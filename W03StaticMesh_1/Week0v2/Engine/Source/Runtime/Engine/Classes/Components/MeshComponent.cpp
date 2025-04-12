@@ -59,15 +59,28 @@ void UMeshComponent::GetUsedMaterials(TArray<UMaterial*>& Out) const
 }
 
 
-UObject* UMeshComponent::Duplicate()
+UMeshComponent* UMeshComponent::Duplicate()
 {
-    UMeshComponent* dup = Cast<UMeshComponent>(FObjectFactory::DuplicateObject(this, this->GetClass()));
-    dup->OverrideMaterials.Empty();
+    FDuplicateContext Context;
+    return dynamic_cast<UMeshComponent*>( Duplicate(Context));
+}
+
+UObject* UMeshComponent::Duplicate(FDuplicateContext& Context)
+{
+    if (Context.DuplicateMap.Find(this))
+    {
+        return Context.DuplicateMap[this];
+    }
+    
+    UMeshComponent* DuplicatedObject = reinterpret_cast<UMeshComponent*>(Super::Duplicate(Context));
+    memcpy(reinterpret_cast<char*>(DuplicatedObject) + sizeof(Super), reinterpret_cast<char*>(this) + sizeof(Super), sizeof(UMeshComponent) - sizeof(Super));
+
+    memset(&DuplicatedObject->OverrideMaterials, 0, sizeof(DuplicatedObject->OverrideMaterials));
     for (const auto item : this->OverrideMaterials)
     {
         if (item != nullptr)
-            dup->OverrideMaterials.Add(Cast<UMaterial>(item->Duplicate()));
+            DuplicatedObject->OverrideMaterials.Add(Cast<UMaterial>(item->Duplicate()));
     }
 
-    return dup;
+    return DuplicatedObject;
 }

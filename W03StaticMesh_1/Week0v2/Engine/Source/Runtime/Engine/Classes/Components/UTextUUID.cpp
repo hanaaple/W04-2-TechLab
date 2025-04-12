@@ -23,12 +23,12 @@ void UTextUUID::SetUUID(uint32 UUID)
     SetText(std::to_wstring(UUID));
 }
 
-UObject* UTextUUID::Duplicate()
-{
-    UTextUUID* dup = Cast<UTextUUID>(FObjectFactory::DuplicateObject(this, this->GetClass()));
-
-
-    return dup;
-}
+// UObject* UTextUUID::Duplicate()
+// {
+//     UTextUUID* dup = Cast<UTextUUID>(FObjectFactory::DuplicateObject(this, this->GetClass()));
+//
+//
+//     return dup;
+// }
 
 

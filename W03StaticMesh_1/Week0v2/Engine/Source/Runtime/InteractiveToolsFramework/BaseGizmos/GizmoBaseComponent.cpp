@@ -79,13 +79,13 @@ void UGizmoBaseComponent::TickComponent(float DeltaTime)
         }
     }
 }
-
-UObject* UGizmoBaseComponent::Duplicate()
-{
-    UGizmoBaseComponent* duplicated = Cast<UGizmoBaseComponent>(FObjectFactory::DuplicateObject(this, this->GetClass()));
-    duplicated->gizmoType = this->gizmoType;
-
-
-    return duplicated;
-}
+//
+// UObject* UGizmoBaseComponent::Duplicate()
+// {
+//     UGizmoBaseComponent* duplicated = Cast<UGizmoBaseComponent>(FObjectFactory::DuplicateObject(this, this->GetClass()));
+//     duplicated->gizmoType = this->gizmoType;
+//
+//
+//     return duplicated;
+// }
 

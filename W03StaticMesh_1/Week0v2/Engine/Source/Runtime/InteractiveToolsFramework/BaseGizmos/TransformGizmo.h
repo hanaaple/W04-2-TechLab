@@ -16,7 +16,7 @@ public:
     TArray<UStaticMeshComponent*>& GetDiscArr() { return CircleArr; }
     TArray<UStaticMeshComponent*>& GetScaleArr() { return RectangleArr; }
 
-    UObject* Duplicate() override;
+
 private:
     TArray<UStaticMeshComponent*> ArrowArr;
     TArray<UStaticMeshComponent*> CircleArr;

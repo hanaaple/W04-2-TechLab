@@ -22,7 +22,9 @@ public:
     void AddRotation(FVector _added);
     void AddScale(FVector _added);
 
-    UObject* Duplicate() override;
+    USceneComponent* Duplicate();
+
+    UObject* Duplicate(FDuplicateContext& Context) override;
 protected:
     FVector RelativeLocation;
     FVector RelativeRotation;

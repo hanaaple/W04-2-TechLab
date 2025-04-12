@@ -4,11 +4,11 @@
 #include "ObjectFactory.h"
 #include "ObjectMacros.h"
 
-
-UClass::UClass(const char* InClassName, uint32 InClassSize, uint32 InAlignment, UClass* InSuperClass)
-    : ClassSize(InClassSize)
-    , ClassAlignment(InAlignment)
-    , SuperClass(InSuperClass)
+UClass::UClass(const char* InClassName, uint32 InClassSize, uint32 InAlignment, UClass* InSuperClass, ObjectCreator InCreator)
+: ClassSize(InClassSize)
+, ClassAlignment(InAlignment)
+, SuperClass(InSuperClass)
+, ClassConstructor(InCreator)
 {
     NamePrivate = InClassName;
     RegisterUClass(this);

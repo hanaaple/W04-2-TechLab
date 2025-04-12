@@ -111,12 +111,23 @@ int UStaticMeshComponent::CheckRayIntersection(FVector& rayOrigin, FVector& rayD
     return nIntersections;
 }
 
-UObject* UStaticMeshComponent::Duplicate()
+UStaticMeshComponent* UStaticMeshComponent::Duplicate()
 {
-    UStaticMeshComponent* dup = Cast<UStaticMeshComponent>(FObjectFactory::DuplicateObject(this, this->GetClass()));
-    dup->staticMesh = this->staticMesh;
-    dup->selectedSubMeshIndex = this->selectedSubMeshIndex;
+    FDuplicateContext Context;
+    return dynamic_cast<UStaticMeshComponent*>(Duplicate(Context));
+}
 
+UObject* UStaticMeshComponent::Duplicate(FDuplicateContext& Context)
+{
+    if (Context.DuplicateMap.Find(this))
+    {
+        return Context.DuplicateMap[this];
+    }
     
-    return dup;
+    UStaticMeshComponent* DuplicatedObject = reinterpret_cast<UStaticMeshComponent*>(Super::Duplicate(Context));
+    memcpy(reinterpret_cast<char*>(DuplicatedObject) + sizeof(Super), reinterpret_cast<char*>(this) + sizeof(Super), sizeof(UStaticMeshComponent) - sizeof(Super));
+    DuplicatedObject->staticMesh = this->staticMesh;
+    DuplicatedObject->selectedSubMeshIndex = this->selectedSubMeshIndex;
+    
+    return DuplicatedObject;
 }

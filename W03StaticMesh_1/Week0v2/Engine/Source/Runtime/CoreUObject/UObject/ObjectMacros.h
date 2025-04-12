@@ -17,7 +17,18 @@ public: \
     using Super = TSuperClass; \
     using ThisClass = TClass; \
     static UClass* StaticClass() { \
-        static UClass ClassInfo{ TEXT(#TClass), static_cast<uint32>(sizeof(TClass)), static_cast<uint32>(alignof(TClass)), TSuperClass::StaticClass() }; \
+        static UClass ClassInfo{ \
+            TEXT(#TClass), \
+            static_cast<uint32>(sizeof(TClass)), \
+            static_cast<uint32>(alignof(TClass)), \
+            TSuperClass::StaticClass(), \
+            []() -> UObject* \
+            { \
+                void* RawMemory = FPlatformMemory::Malloc<EAT_Object>(sizeof(TClass)); \
+                ::new (RawMemory) TClass; \
+                return static_cast<UObject*>(RawMemory); \
+            } \
+        }; \
         return &ClassInfo; \
     }
 

@@ -36,7 +36,9 @@ public:
      */
     virtual void EndPlay(const EEndPlayReason::Type EndPlayReason);
     
-    UObject* Duplicate() override;
+    UActorComponent* Duplicate();
+
+    UObject* Duplicate(FDuplicateContext& Context) override;
 public:
     /** 이 컴포넌트를 소유하고 있는 Actor를 반환합니다. */
     AActor* GetOwner() const { return Owner; }

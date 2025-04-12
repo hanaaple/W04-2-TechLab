@@ -28,7 +28,6 @@ public:
     uint32 numIndices;
     float finalIndexU = 0.0f;
     float finalIndexV = 0.0f;
-    UObject* Duplicate() override;
 protected:
 
 

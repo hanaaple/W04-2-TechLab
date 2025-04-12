@@ -35,11 +35,11 @@ void UCubeComp::TickComponent(float DeltaTime)
     Super::TickComponent(DeltaTime);
 
 }
-
-UObject* UCubeComp::Duplicate()
-{
-    UCubeComp* dup = Cast<UCubeComp>(FObjectFactory::DuplicateObject(this, this->GetClass()));
-
-
-    return dup;
-}
+//
+// UObject* UCubeComp::Duplicate()
+// {
+//     UCubeComp* dup = Cast<UCubeComp>(FObjectFactory::DuplicateObject(this, this->GetClass()));
+//
+//
+//     return dup;
+// }
